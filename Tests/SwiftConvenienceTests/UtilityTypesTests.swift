@@ -1,5 +1,4 @@
-import sMHT
-import sMHTTestUtils
+import SwiftConvenience
 
 import XCTest
 

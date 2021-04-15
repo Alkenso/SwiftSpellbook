@@ -4,32 +4,32 @@
 import PackageDescription
 
 let package = Package(
-    name: "sMHT",
+    name: "SwiftConvenience",
     platforms: [.macOS(.v10_10), .iOS(.v8), .tvOS(.v9), .watchOS(.v2)],
     products: [
         // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(
-            name: "sMHT",
-            targets: ["sMHT"]),
+            name: "SwiftConvenience",
+            targets: ["SwiftConvenience"]),
         .library(
-            name: "sMHTTestUtils",
-            targets: ["sMHT"]),
+            name: "SwiftConvenienceTestUtils",
+            targets: ["SwiftConvenience"]),
     ],
     dependencies: [
     ],
     targets: [
         .target(
-            name: "sMHT",
+            name: "SwiftConvenience",
             dependencies: []),
         .target(
-            name: "sMHTTestUtils",
+            name: "SwiftConvenienceTestUtils",
             dependencies: []),
         .testTarget(
-            name: "sMHTTests",
-            dependencies: ["sMHT", "sMHTTestUtils"],
+            name: "SwiftConvenienceTests",
+            dependencies: ["SwiftConvenience", "SwiftConvenienceTestUtils"],
             linkerSettings: [LinkerSetting.linkedLibrary("bsm", .when(platforms: [.macOS]))]),
         .testTarget(
-            name: "sMHTTestUtilsTests",
-            dependencies: ["sMHT", "sMHTTestUtils"]),
+            name: "SwiftConvenienceTestUtilsTests",
+            dependencies: ["SwiftConvenience", "SwiftConvenienceTestUtils"]),
     ]
 )

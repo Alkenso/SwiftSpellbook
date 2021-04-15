@@ -1,5 +1,6 @@
+import SwiftConvenience
+
 import XCTest
-@testable import sMHT
 
 
 class WildcardExTests: XCTestCase {

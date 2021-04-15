@@ -1,2 +1,2 @@
-# sMHT
+# SwiftConvenience
 Swift Must Have Tools

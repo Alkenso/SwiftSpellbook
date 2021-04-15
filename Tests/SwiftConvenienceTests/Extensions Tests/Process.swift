@@ -1,6 +1,6 @@
 #if os(macOS)
-import sMHT
-import sMHTTestUtils
+import SwiftConvenience
+import SwiftConvenienceTestUtils
 
 import XCTest
 

@@ -1,5 +1,5 @@
 #if os(macOS)
-import sMHT
+import SwiftConvenience
 
 import XCTest
 

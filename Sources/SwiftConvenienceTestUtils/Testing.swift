@@ -1,5 +1,5 @@
 import Foundation
-import sMHT
+import SwiftConvenience
 
 
 public enum Testing {
