@@ -13,7 +13,7 @@ let package = Package(
             targets: ["SwiftConvenience"]),
         .library(
             name: "SwiftConvenienceTestUtils",
-            targets: ["SwiftConvenience"]),
+            targets: ["SwiftConvenienceTestUtils"]),
     ],
     dependencies: [
     ],
