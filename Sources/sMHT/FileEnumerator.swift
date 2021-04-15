@@ -1,7 +1,7 @@
 import Foundation
 
 
-public class FileEnumerator {
+public final class FileEnumerator {
     private var locations: [URL]
     private var enumerator: NSEnumerator?
     
@@ -9,8 +9,12 @@ public class FileEnumerator {
     
     
     public init(locations: [URL], filter: Filter? = nil) {
-        self.locations = locations
+        self.locations = locations.reversed()
         self.filter = filter
+    }
+    
+    public convenience init(_ location: URL, filter: Filter? = nil) {
+        self.init(locations: [location], filter: filter)
     }
 }
 
@@ -39,19 +43,19 @@ extension FileEnumerator: Sequence, IteratorProtocol {
             return next
         }
         
-        //  All files/locations enumerated. 'nil' means the end of sequence.
+        //  All files/locations enumerated. 'nil' means the end of the sequence.
         guard let nextLocation = locations.popLast() else {
             return nil
         }
         
         //  If location doesn't exists, just skip it.
-        var isDirectory = ObjCBool(false)
-        guard FileManager.default.fileExists(atPath: nextLocation.path, isDirectory: &isDirectory) else {
+        var isDirectory = false
+        guard FileManager.default.fileExists(at: nextLocation, isDirectory: &isDirectory) else {
             return nextUnfiltered()
         }
         
         //  If location is directory, update enumerator.
-        if isDirectory.boolValue {
+        if isDirectory {
             enumerator = FileManager.default.enumerator(at: nextLocation, includingPropertiesForKeys: nil)
         }
         

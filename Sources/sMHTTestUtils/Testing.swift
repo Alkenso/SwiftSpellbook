@@ -13,7 +13,7 @@ public enum Testing {
     public enum Files {
         public static func url(_ index: Int, isDirectory: Bool = false) -> URL {
             URL(
-                fileURLWithPath: "/path/to/\(UUID().uuidString).txt",
+                fileURLWithPath: "/path/to/\(index).txt",
                 isDirectory: isDirectory
             )
         }

@@ -1,6 +1,12 @@
 import Foundation
 
 
+public enum SynchronizationType {
+    case serial
+    case concurrent
+    case custom(DispatchQueue)
+}
+
 public final class Synchronized<Value> {
     private let _queue: DispatchQueue
     private var _value: Value
@@ -11,26 +17,25 @@ public final class Synchronized<Value> {
     }
     
     public static func serial(_ value: Value) -> Synchronized {
-        Synchronized(value, concurrentReads: false)
+        Synchronized(value, synchronization: .serial)
     }
     
     public static func concurrent(_ value: Value) -> Synchronized {
-        Synchronized(value, concurrentReads: true)
+        Synchronized(value, synchronization: .concurrent)
     }
     
-    public convenience init(_ value: Value, concurrentReads: Bool = true) {
-        self.init(
-            value,
-            queue: DispatchQueue(
-                label: String(describing: Self.self),
-                attributes: concurrentReads ? .concurrent : []
-            )
-        )
-    }
-
-    public init(_ value: Value, queue: DispatchQueue) {
+    public init(_ value: Value, synchronization: SynchronizationType) {
         _value = value
-        _queue = queue
+        
+        let queueLabel = String(describing: Self.self)
+        switch synchronization {
+        case .serial:
+            _queue = DispatchQueue(label: queueLabel)
+        case .concurrent:
+            _queue = DispatchQueue(label: queueLabel, attributes: .concurrent)
+        case .custom(let queue):
+            _queue = queue
+        }
     }
     
     public func read<R>(_ reader: (Value) throws -> R) rethrows -> R {
@@ -61,5 +66,61 @@ public extension Synchronized {
     
     func write<S>(_ subValue: S, at keyPath: WritableKeyPath<Value, S>) {
         writeAsync { $0[keyPath: keyPath] = subValue }
+    }
+    
+    func exchange(_ value: Value) -> Value {
+        write {
+            let existing = $0
+            $0 = value
+            return existing
+        }
+    }
+}
+
+public extension Synchronized where Value: AdditiveArithmetic {
+    static func + (lhs: Synchronized, rhs: Value) -> Value {
+        lhs.read() + rhs
+    }
+    
+    static func += (lhs: inout Synchronized, rhs: Value) {
+        lhs.write { $0 += rhs }
+    }
+    
+    static func - (lhs: Synchronized, rhs: Value) -> Value {
+        lhs.read() - rhs
+    }
+    
+    static func -= (lhs: inout Synchronized, rhs: Value) {
+        lhs.write { $0 -= rhs }
+    }
+}
+
+public extension Synchronized where Value: Numeric {
+    static func * (lhs: Synchronized, rhs: Value) -> Value {
+        lhs.read() * rhs
+    }
+    
+    static func *= (lhs: inout Synchronized, rhs: Value) {
+        lhs.write { $0 *= rhs }
+    }
+}
+
+public extension Synchronized where Value: BinaryInteger {
+    static func / (lhs: Synchronized, rhs: Value) -> Value {
+        lhs.read() / rhs
+    }
+    
+    static func /= (lhs: inout Synchronized, rhs: Value) {
+        lhs.write { $0 /= rhs }
+    }
+}
+
+public extension Synchronized where Value: FloatingPoint {
+    static func / (lhs: Synchronized, rhs: Value) -> Value {
+        lhs.read() / rhs
+    }
+    
+    static func /= (lhs: inout Synchronized, rhs: Value) {
+        lhs.write { $0 /= rhs }
     }
 }

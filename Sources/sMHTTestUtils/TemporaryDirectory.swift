@@ -29,7 +29,7 @@ public class TestTemporaryDirectory {
         }
     }
     
-    public func createSubdirectory(subpath: String) throws -> URL {
+    public func createSubdirectory(_ subpath: String) throws -> URL {
         precondition(!subpath.isEmpty)
         
         let subdirectory = url.appendingPathComponent(subpath, isDirectory: true)
@@ -42,14 +42,14 @@ public class TestTemporaryDirectory {
     
     public func createUniqueSubdirectory(prefix: String? = nil) throws -> URL {
         let directoryName = Self.makeDirectoryUniqueName(prefix: prefix)
-        return try createSubdirectory(subpath: directoryName)
+        return try createSubdirectory(directoryName)
     }
     
-    public func createFile(name: String, contents: Data = Data()) throws -> URL {
+    public func createFile(_ name: String, content: Data = Data()) throws -> URL {
         precondition(!name.isEmpty)
         
         let file = url.appendingPathComponent(name, isDirectory: false)
-        try contents.write(to: file, options: [.withoutOverwriting])
+        try content.write(to: file, options: [.withoutOverwriting])
         
         return file
     }
@@ -64,6 +64,7 @@ public class TestTemporaryDirectory {
     }
     
     private static func makeDirectoryUniqueName(prefix: String? = nil) -> String {
-        prefix.flatMap { "\($0)-" } ?? "" + UUID().uuidString
+        let fullPrefix = prefix.flatMap { "\($0)-" } ?? ""
+        return fullPrefix + UUID().uuidString
     }
 }

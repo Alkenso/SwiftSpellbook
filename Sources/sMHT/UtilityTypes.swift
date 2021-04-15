@@ -13,7 +13,7 @@ public enum CommonError: Error {
 public extension Optional where Wrapped == Error {
     /// Unwraps Error that is expected to be not nil, but syntactically is optional.
     /// Often happens when bridge ObjC <-> Swift API.
-    func unwrapError(unexpected: Error? = nil) -> Error {
+    func unwrapSafely(unexpected: Error? = nil) -> Error {
         self ?? unexpected ?? CommonError.unexpected("Unexpected nil error.")
     }
 }
@@ -22,7 +22,7 @@ public extension Optional where Wrapped == Error {
 // MARK: - ValueView
 
 @dynamicMemberLookup
-public class ValueView<T> {
+public final class ValueView<T> {
     public init(_ accessor: @escaping () -> T) {
         _accessor = accessor
     }
@@ -58,7 +58,7 @@ extension KeyValue: Hashable where Key: Hashable, Value: Hashable {}
 
 // MARK: - DeinitAction
 
-public class DeinitAction {
+public final class DeinitAction {
     private let action: () -> Void
     
     

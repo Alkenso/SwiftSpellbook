@@ -13,7 +13,7 @@ public extension Process {
         proc.launchPath = tool.path
         proc.arguments = arguments
         proc.standardOutput = standardOutPipe.fileHandleForWriting
-        proc.standardOutput = standardOutPipe.fileHandleForWriting
+        proc.standardError = standardErrPipe.fileHandleForWriting
         
         proc.launch()
         

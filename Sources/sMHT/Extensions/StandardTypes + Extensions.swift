@@ -5,19 +5,37 @@ import Darwin
 // MARK: - Data
 
 public extension Data {
+    init?(hexString string: String) {
+        let hexString = string.dropFirst(string.hasPrefix("0x") ? 2 : 0)
+//        guard !hexString.isEmpty else {
+//            self = Data()
+//            return
+//        }
+        guard hexString.count.isMultiple(of: 2) else { return nil }
+        
+        var data = Data(capacity: hexString.count / 2)
+        for i in stride(from: 0, to: hexString.count, by: 2) {
+            let byteStart = hexString.index(hexString.startIndex, offsetBy: i)
+            let byteEnd = hexString.index(after: byteStart)
+            let byteString = hexString[byteStart...byteEnd]
+            guard let byte = UInt8(byteString, radix: 16) else { return nil }
+            data.append(byte)
+        }
+        self = data
+    }
+    
     var hexString: String {
         map { String(format: "%02x", $0) }.joined()
     }
 }
 
+
 public extension Data {
     init<PODType>(pod: PODType) {
-        var podCopy = pod
-        self.init(pod: &podCopy)
-    }
-
-    init<PODType>(pod: inout PODType) {
-        self.init(bytes: &pod, count: MemoryLayout<PODType>.size)
+        self = Swift.withUnsafeBytes(of: pod) {
+            guard let address = $0.baseAddress else { return Data() }
+            return Data(bytes: address, count: MemoryLayout<PODType>.size)
+        }
     }
 
     func pod<PODType>(of type: PODType.Type) -> PODType? {
