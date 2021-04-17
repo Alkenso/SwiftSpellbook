@@ -7,6 +7,7 @@ public enum SynchronizationType {
     case custom(DispatchQueue)
 }
 
+/// Wrapper around DispatchQueue for convenient and safe multithreaded access to any value.
 public final class Synchronized<Value> {
     private let _queue: DispatchQueue
     private var _value: Value

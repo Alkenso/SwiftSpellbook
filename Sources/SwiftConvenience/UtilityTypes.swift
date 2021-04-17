@@ -3,6 +3,7 @@ import Foundation
 
 // MARK: - CommonError
 
+/// Type representing error for common situations.
 public enum CommonError: Error {
     case fatal(String)
     case unexpected(String)
@@ -21,6 +22,7 @@ public extension Optional where Wrapped == Error {
 
 // MARK: - ValueView
 
+/// Wrapper that provides access to value. Useful when value is a struct that may be changed over time.
 @dynamicMemberLookup
 public final class ValueView<T> {
     public init(_ accessor: @escaping () -> T) {
@@ -44,7 +46,6 @@ public struct KeyValue<Key, Value> {
     public var key: Key
     public var value: Value
     
-
     public init(_ key: Key, _ value: Value) {
         self.key = key
         self.value = value
@@ -58,6 +59,7 @@ extension KeyValue: Hashable where Key: Hashable, Value: Hashable {}
 
 // MARK: - DeinitAction
 
+/// Performs action on deinit.
 public final class DeinitAction {
     private let action: () -> Void
     

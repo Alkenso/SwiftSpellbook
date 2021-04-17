@@ -2,6 +2,8 @@ import Foundation
 
 
 public extension Process {
+    /// Invoke given tool with arguments, returning executaion results in convenient form.
+    /// - Warning: if the tool url is invalid, the function raises Objective-C NSInvalidArgumentException.
     static func launch(
         tool: URL,
         arguments: [String]

@@ -1,11 +1,18 @@
 import Foundation
 
 
-public struct WildcardEx {
+/// In contrast to NSRegularExpression, implements matching for string by wildcards "*" and "?".
+public struct WildcardExpression {
     public var pattern: String
     public var caseSensitive = true
     public var fileNames = true
     
+    
+    public init(pattern: String, caseSensitive: Bool = true, fileNames: Bool = true) {
+        self.pattern = pattern
+        self.caseSensitive = caseSensitive
+        self.fileNames = fileNames
+    }
     
     public init(pattern: String) {
         self.pattern = pattern

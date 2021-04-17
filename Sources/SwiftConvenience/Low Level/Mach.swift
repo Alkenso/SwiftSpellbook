@@ -4,10 +4,12 @@ import Foundation
 // MARK: - audit_token_t
 
 public extension audit_token_t {
+    /// Returns current task audit token.
     static var current: audit_token_t? {
         withTask(mach_task_self_)
     }
     
+    /// Returns task audit token.
     static func withTask(_ task: task_name_t) -> audit_token_t? {
         var token = audit_token_t()
         

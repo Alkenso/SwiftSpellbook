@@ -5,12 +5,11 @@ import Darwin
 // MARK: - Data
 
 public extension Data {
+    /// Initializes Data with hex string.
+    /// - Parameters:
+    ///     - hexString: string in form "00FAB1C0". May be prefixed with "0x".
     init?(hexString string: String) {
         let hexString = string.dropFirst(string.hasPrefix("0x") ? 2 : 0)
-//        guard !hexString.isEmpty else {
-//            self = Data()
-//            return
-//        }
         guard hexString.count.isMultiple(of: 2) else { return nil }
         
         var data = Data(capacity: hexString.count / 2)
@@ -24,6 +23,8 @@ public extension Data {
         self = data
     }
     
+    /// Returns data representation as hex string.
+    /// - returns: string in form "00FAB1C0".
     var hexString: String {
         map { String(format: "%02x", $0) }.joined()
     }
@@ -31,6 +32,7 @@ public extension Data {
 
 
 public extension Data {
+    /// Initializes Data with binary representation of POD (Plain Old Data) value.
     init<PODType>(pod: PODType) {
         self = Swift.withUnsafeBytes(of: pod) {
             guard let address = $0.baseAddress else { return Data() }
@@ -38,6 +40,7 @@ public extension Data {
         }
     }
 
+    /// Converts data to POD (Plain Old Data) value.
     func pod<PODType>(of type: PODType.Type) -> PODType? {
         guard MemoryLayout<PODType>.size == count else { return nil }
         return withUnsafeBytes { $0.load(fromByteOffset: 0, as: type) }
@@ -48,6 +51,7 @@ public extension Data {
 // MARK: - URL
 
 public extension URL {
+    /// Initialized URL with string that is guaranteed to be valid URL string.
     init(staticString: StaticString) {
         guard let url = Self(string: "\(staticString)") else {
             preconditionFailure("Invalid static URL string: \(staticString)")
@@ -67,8 +71,11 @@ public extension URL {
         case symbolicLink
     }
     
+    /// Determines file type of given URL.
+    /// - returns: file type or nil if URL is not a file URL or file can't be stat'ed.
     var fileType: FileType? {
-        stat(self)
+        guard isFileURL else { return nil }
+        return stat(self)
             .map(\.st_mode)
             .flatMap(FileType.init)
     }
@@ -99,6 +106,7 @@ extension URL.FileType {
 // MARK: - UUID
 
 public extension UUID {
+    /// Initialized UUID with string that is guaranteed to be valid UUID string.
     init(staticString: StaticString) {
         guard let value = Self(uuidString: "\(staticString)") else {
             preconditionFailure("Invalid static UUID string: \(staticString)")
@@ -111,8 +119,10 @@ public extension UUID {
 // MARK: - Result
 
 public extension Result {
+    /// Returns Success value if Result if .success, nil otherwise.
     var value: Success? { try? get() }
     
+    /// Returns Failure value if Result if .failure, nil otherwise.
     var error: Failure? {
         switch self {
         case .success:

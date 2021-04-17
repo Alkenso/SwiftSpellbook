@@ -1,6 +1,7 @@
 import Foundation
 
 
+/// Performs convenient enumeration of filesystem items at given locations.
 public final class FileEnumerator {
     private var locations: [URL]
     private var enumerator: NSEnumerator?
