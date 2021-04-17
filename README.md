@@ -30,6 +30,6 @@ Once I've decided stop to copy-paste code from project to project and make singl
 
 ### Other
 You can also find Swift libraries for macOS / *OS development
-- sXPC: type-safe wrapper around NSXPCConnection and proxy object
-- sLaunchctl: register and manage daemons and user-agents
-- sMock: Swift unit-test mocking framework similar to gtest/gmock
+- [sXPC](https://github.com/Alkenso/sXPC): type-safe wrapper around NSXPCConnection and proxy object
+- [sLaunchctl](https://github.com/Alkenso/sLaunchctl): register and manage daemons and user-agents
+- [sMock](https://github.com/Alkenso/sMock): Swift unit-test mocking framework similar to gtest/gmock
