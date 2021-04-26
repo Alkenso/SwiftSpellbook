@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 
 
@@ -39,3 +40,5 @@ public extension Process {
         )
     }
 }
+
+#endif
