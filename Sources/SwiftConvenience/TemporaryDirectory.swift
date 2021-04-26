@@ -16,9 +16,13 @@ public struct TemporaryDirectory {
     public let url: URL
     
     
-    public func createDirectoryTree() throws {
-        if !FileManager.default.directoryExists(at: url) {
-            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
+    public func createDirectoryTree(includingLastPathComponent: Bool = true) throws {
+        var createURL = url
+        if !includingLastPathComponent {
+            createURL.deleteLastPathComponent()
+        }
+        if !FileManager.default.directoryExists(at: createURL) {
+            try FileManager.default.createDirectory(at: createURL, withIntermediateDirectories: true, attributes: nil)
         }
     }
     

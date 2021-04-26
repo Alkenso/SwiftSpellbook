@@ -41,15 +41,15 @@ public extension Resource where T == Void {
 }
 
 public extension Resource where T == URL {
-    static func raii(file: URL) -> Resource {
-        raii(file) { try? FileManager.default.removeItem(at: $0) }
+    static func raii(location filesystemURL: URL) -> Resource {
+        raii(filesystemURL) { try? FileManager.default.removeItem(at: $0) }
     }
     
-    static func raii(temporary: URL) throws -> Resource {
-        let owned = TemporaryDirectory().uniqueSubdir(prefix: temporary.lastPathComponent)
+    static func raii(temporaryFile: URL) throws -> Resource {
+        let owned = TemporaryDirectory().uniqueFile(name: temporaryFile.lastPathComponent)
         try owned.createDirectoryTree()
-        try FileManager.default.moveItem(at: temporary, to: owned.url)
-        return raii(owned.url) { try? FileManager.default.removeItem(at: $0) }
+        try FileManager.default.moveItem(at: temporaryFile, to: owned.url)
+        return raii(location: owned.url)
     }
 }
 
