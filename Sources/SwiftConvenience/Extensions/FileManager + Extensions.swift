@@ -28,16 +28,6 @@ public extension FileManager {
         return exists
     }
     
-    /// Creates unique location at system temporary directory.
-    /// Does NOT create anything at that location.
-    func makeUniqueTempLocation(subfolder: String? = nil, prefix: String? = nil) -> URL {
-        let name = prefix.flatMap { "\($0)-" } ?? "" + UUID().uuidString
-        return URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent(name)
-            .appendingPathComponent(subfolder ?? "")
-            .standardizedFileURL
-    }
-    
     /// Copies contents of given directory to other directory.
     func copyContents(ofDirectory src: URL, to target: URL, createTarget: Bool = false) throws {
         if !fileExists(at: target) && createTarget {

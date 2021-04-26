@@ -55,20 +55,3 @@ public struct KeyValue<Key, Value> {
 extension KeyValue: Codable where Key: Codable, Value: Codable {}
 extension KeyValue: Equatable where Key: Equatable, Value: Equatable {}
 extension KeyValue: Hashable where Key: Hashable, Value: Hashable {}
-
-
-// MARK: - DeinitAction
-
-/// Performs action on deinit.
-public final class DeinitAction {
-    private let action: () -> Void
-    
-    
-    public init(action: @escaping () -> Void) {
-        self.action = action
-    }
-    
-    deinit {
-        action()
-    }
-}

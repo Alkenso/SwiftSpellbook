@@ -1,15 +1,15 @@
+import SwiftConvenience
+
 import Foundation
 
 
 public class TestTemporaryDirectory {
-    public let url: URL
+    private let _temp: TemporaryDirectory
+    public var url: URL { _temp.url }
     
 
     public init(prefix: String? = nil) {
-        let directoryName = Self.makeDirectoryUniqueName(prefix: prefix)
-        url = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent(directoryName)
-            .standardizedFileURL
+        _temp = TemporaryDirectory().uniqueSubdir(prefix: prefix)
     }
     
     public func setUp() throws {
@@ -32,7 +32,7 @@ public class TestTemporaryDirectory {
     public func createSubdirectory(_ subpath: String) throws -> URL {
         precondition(!subpath.isEmpty)
         
-        let subdirectory = url.appendingPathComponent(subpath, isDirectory: true)
+        let subdirectory = _temp.subdir(subpath).url
         if !FileManager.default.fileExists(atPath: subdirectory.path) {
             try FileManager.default.createDirectory(at: subdirectory, withIntermediateDirectories: true)
         }
@@ -41,8 +41,9 @@ public class TestTemporaryDirectory {
     }
     
     public func createUniqueSubdirectory(prefix: String? = nil) throws -> URL {
-        let directoryName = Self.makeDirectoryUniqueName(prefix: prefix)
-        return try createSubdirectory(directoryName)
+        let directory = _temp.uniqueSubdir(prefix: prefix).url
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
     }
     
     public func createFile(_ name: String, content: Data = Data()) throws -> URL {
@@ -61,10 +62,5 @@ public class TestTemporaryDirectory {
         try FileManager.default.copyItem(at: location, to: file)
         
         return file
-    }
-    
-    private static func makeDirectoryUniqueName(prefix: String? = nil) -> String {
-        let fullPrefix = prefix.flatMap { "\($0)-" } ?? ""
-        return fullPrefix + UUID().uuidString
     }
 }
