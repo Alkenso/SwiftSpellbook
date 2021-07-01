@@ -39,11 +39,24 @@ public extension Data {
             return Data(bytes: address, count: MemoryLayout<PODType>.size)
         }
     }
-
+    
     /// Converts data to POD (Plain Old Data) value.
-    func pod<PODType>(of type: PODType.Type) -> PODType? {
+    func pod<PODType>(exactly type: PODType.Type) -> PODType? {
         guard MemoryLayout<PODType>.size == count else { return nil }
         return withUnsafeBytes { $0.load(fromByteOffset: 0, as: type) }
+    }
+    
+    /// Converts data to POD (Plain Old Data) value.
+    /// If count > PODType size, only 'size' bytes are taken.
+    /// If count < PODType size, the data are appended with zeroes to match the size.
+    func pod<PODType>(adopting type: PODType.Type) -> PODType {
+        var adopted = self
+        let advanceSize = MemoryLayout<PODType>.size - adopted.count
+        if advanceSize > 0 {
+            adopted += Data(count: advanceSize)
+        }
+        
+        return adopted.withUnsafeBytes { $0.load(fromByteOffset: 0, as: type) }
     }
 }
 
