@@ -1,7 +1,7 @@
 import Foundation
 
 
-/// Resource wrapper that follows the rule 'Resource acquisition is initialization'.
+/// Resource wrapper that follows the RAII rule: 'Resource acquisition is initialization'.
 /// It is a resource wrapper that performs cleanup when resource is not used anymore.
 public class Resource<T> {
     public var value: T
