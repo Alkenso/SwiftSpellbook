@@ -1,25 +1,6 @@
 import Foundation
 
 
-// MARK: - CommonError
-
-/// Type representing error for common situations.
-public enum CommonError: Error {
-    case fatal(String)
-    case unexpected(String)
-    case unwrapNil
-    case invalidArgument
-}
-
-public extension Optional where Wrapped == Error {
-    /// Unwraps Error that is expected to be not nil, but syntactically is optional.
-    /// Often happens when bridge ObjC <-> Swift API.
-    func unwrapSafely(unexpected: Error? = nil) -> Error {
-        self ?? unexpected ?? CommonError.unexpected("Unexpected nil error.")
-    }
-}
-
-
 // MARK: - ValueView
 
 /// Wrapper that provides access to value. Useful when value is a struct that may be changed over time.

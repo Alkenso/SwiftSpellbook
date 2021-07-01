@@ -9,11 +9,8 @@
 import Foundation
 
 
+/// IOKit error type, wrapping codes from IOReturn.h
 public struct IOKitError {
-    public static var errorDomain: String { "IOKitErrorDomain" }
-    
-    public typealias Code = IOKitErrorCode
-    
     public init(_ code: Code, userInfo: [String: Any] = [:]) {
         self.code = code
         self.userInfo = userInfo
@@ -24,174 +21,177 @@ public struct IOKitError {
 }
 
 extension IOKitError: CustomNSError {
+    public static var errorDomain: String { "IOKitErrorDomain" }
     public var errorCode: Int { Int(code.rawValue) }
     public var errorUserInfo: [String : Any] { userInfo }
 }
 
 
-/// IOReturn.h error codes
-public enum IOKitErrorCode {
-    /// OK
-    case success
-
-    /// general error
-    case error
-
-    /// can't allocate memory
-    case noMemory
-
-    /// resource shortage
-    case noResources
-
-    /// error during IPC
-    case ipcError
-
-    /// no such device
-    case noDevice
-
-    /// privilege violation
-    case notPrivileged
-
-    /// invalid argument
-    case badArgument
-
-    /// device read locked
-    case lockedRead
-
-    /// device write locked
-    case lockedWrite
-
-    /// exclusive access and device already open
-    case exclusiveAccess
-
-    /// sent/received messages had different msg_id
-    case badMessageID
-
-    /// unsupported function
-    case unsupported
-
-    /// misc. VM failure
-    case vmError
-
-    /// internal error
-    case internalError
-
-    /// General I/O error
-    case ioError
-
-    /// can't acquire lock
-    case cannotLock
-
-    /// device not open
-    case notOpen
-
-    /// read not supported
-    case notReadable
-
-    /// write not supported
-    case notWritable
-
-    /// alignment error
-    case notAligned
-
-    /// Media Error
-    case badMedia
-
-    /// device(s) still open
-    case stillOpen
-
-    /// rld failure
-    case rldError
-
-    /// DMA failure
-    case dmaError
-
-    /// Device Busy
-    case busy
-
-    /// I/O Timeout
-    case timeout
-
-    /// device offline
-    case offline
-
-    /// not ready
-    case notReady
-
-    /// device not attached
-    case notAttached
-
-    /// no DMA channels left
-    case noChannels
-
-    /// no space for data
-    case noSpace
-
-    /// port already exists
-    case portExists
-
-    /// can't wire down physical memory
-    case cannotWire
-
-    /// no interrupt attached
-    case noInterrupt
-
-    /// no DMA frames enqueued
-    case noFrames
-
-    /// oversized msg received on interrupt port
-    case messageTooLarge
-
-    /// not permitted
-    case notPermitted
-
-    /// no power to device
-    case noPower
-
-    /// media not present
-    case noMedia
-
-    // media not formatted
-    case unformattedMedia
-
-    /// no such mode
-    case unsupportedMode
-
-    /// data underrun
-    case underrun
-
-    /// data overrun
-    case overrun
-
-    /// the device is not working properly!
-    case deviceError
-
-    /// a completion routine is required
-    case noCompletion
-
-    /// operation aborted
-    case aborted
-
-    /// bus bandwidth would be exceeded
-    case noBandwidth
-
-    /// device not responding
-    case notResponding
-
-    /// isochronous I/O request for distant past!
-    case isoTooOld
-
-    /// isochronous I/O request for distant future
-    case isoTooNew
-
-    /// data was not found
-    case notFound
-
-    /// should never be seen
-    case invalid
+public extension IOKitError {
+    /// IOReturn.h error codes
+    enum Code {
+        /// OK
+        case success
+        
+        /// general error
+        case error
+        
+        /// can't allocate memory
+        case noMemory
+        
+        /// resource shortage
+        case noResources
+        
+        /// error during IPC
+        case ipcError
+        
+        /// no such device
+        case noDevice
+        
+        /// privilege violation
+        case notPrivileged
+        
+        /// invalid argument
+        case badArgument
+        
+        /// device read locked
+        case lockedRead
+        
+        /// device write locked
+        case lockedWrite
+        
+        /// exclusive access and device already open
+        case exclusiveAccess
+        
+        /// sent/received messages had different msg_id
+        case badMessageID
+        
+        /// unsupported function
+        case unsupported
+        
+        /// misc. VM failure
+        case vmError
+        
+        /// internal error
+        case internalError
+        
+        /// General I/O error
+        case ioError
+        
+        /// can't acquire lock
+        case cannotLock
+        
+        /// device not open
+        case notOpen
+        
+        /// read not supported
+        case notReadable
+        
+        /// write not supported
+        case notWritable
+        
+        /// alignment error
+        case notAligned
+        
+        /// Media Error
+        case badMedia
+        
+        /// device(s) still open
+        case stillOpen
+        
+        /// rld failure
+        case rldError
+        
+        /// DMA failure
+        case dmaError
+        
+        /// Device Busy
+        case busy
+        
+        /// I/O Timeout
+        case timeout
+        
+        /// device offline
+        case offline
+        
+        /// not ready
+        case notReady
+        
+        /// device not attached
+        case notAttached
+        
+        /// no DMA channels left
+        case noChannels
+        
+        /// no space for data
+        case noSpace
+        
+        /// port already exists
+        case portExists
+        
+        /// can't wire down physical memory
+        case cannotWire
+        
+        /// no interrupt attached
+        case noInterrupt
+        
+        /// no DMA frames enqueued
+        case noFrames
+        
+        /// oversized msg received on interrupt port
+        case messageTooLarge
+        
+        /// not permitted
+        case notPermitted
+        
+        /// no power to device
+        case noPower
+        
+        /// media not present
+        case noMedia
+        
+        // media not formatted
+        case unformattedMedia
+        
+        /// no such mode
+        case unsupportedMode
+        
+        /// data underrun
+        case underrun
+        
+        /// data overrun
+        case overrun
+        
+        /// the device is not working properly!
+        case deviceError
+        
+        /// a completion routine is required
+        case noCompletion
+        
+        /// operation aborted
+        case aborted
+        
+        /// bus bandwidth would be exceeded
+        case noBandwidth
+        
+        /// device not responding
+        case notResponding
+        
+        /// isochronous I/O request for distant past!
+        case isoTooOld
+        
+        /// isochronous I/O request for distant future
+        case isoTooNew
+        
+        /// data was not found
+        case notFound
+        
+        /// should never be seen
+        case invalid
+    }
 }
 
-extension IOKitErrorCode: RawRepresentable {
+extension IOKitError.Code: RawRepresentable {
     public typealias RawValue = IOReturn
     public init?(rawValue: IOReturn) {
         switch rawValue {
@@ -418,7 +418,7 @@ extension IOKitErrorCode: RawRepresentable {
     }
 }
 
-extension IOKitErrorCode: CustomStringConvertible {
+extension IOKitError.Code: CustomStringConvertible {
     public var description: String {
         switch self {
         case .success:
