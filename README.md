@@ -14,11 +14,12 @@ Once I've decided stop to copy-paste code from project to project and make singl
 #### Low level
 - audit_token_t
 - POSIX stat
+- IOKit error
 #### Utility types
 - CommonError
 - ValueView
 - KeyValue struct
-- DeinitAction
+- Resource (RAII wrapper, smart pointer analog)
 #### Filesystem
 - FileEnumerator (Swift approach for deep enumeration of the file system) 
 #### Multithreading
