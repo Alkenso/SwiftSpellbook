@@ -23,10 +23,77 @@
 import Foundation
 
 
+/// Checks if memory of instances is equal. Generic version of memcmp.
 public func unsafeMemoryEquals<T>(_ lhs: T, _ rhs: T) -> Bool {
     withUnsafePointer(to: lhs) { lhsPtr in
         withUnsafePointer(to: rhs) { rhsPtr in
             0 == memcmp(lhsPtr, rhsPtr, MemoryLayout<T>.size)
         }
+    }
+}
+
+
+public protocol CPointer {
+    /// Returns true is pointer is 0x0, false otherwise.
+    var isNull: Bool { get }
+}
+
+public extension CPointer {
+    /// Returns nil instead self if pointer is null.
+    var nullable: Self? { isNull ? nil : self }
+}
+
+extension UnsafePointer: CPointer {
+    public var isNull: Bool { self == Self(bitPattern: 0) }
+}
+
+extension UnsafeRawPointer: CPointer {
+    public var isNull: Bool { self == Self(bitPattern: 0) }
+}
+
+extension UnsafeBufferPointer: CPointer {
+    public var isNull: Bool { self.baseAddress == nil }
+}
+
+extension UnsafeRawBufferPointer: CPointer {
+    public var isNull: Bool { self.baseAddress == nil }
+}
+
+extension UnsafeMutablePointer: CPointer {
+    public var isNull: Bool { self == Self(bitPattern: 0) }
+}
+
+extension UnsafeMutableRawPointer: CPointer {
+    public var isNull: Bool { self == Self(bitPattern: 0) }
+}
+
+extension UnsafeMutableBufferPointer: CPointer {
+    public var isNull: Bool { self.baseAddress == nil }
+}
+
+extension UnsafeMutableRawBufferPointer: CPointer {
+    public var isNull: Bool { self.baseAddress == nil }
+}
+
+extension AutoreleasingUnsafeMutablePointer: CPointer {
+    public var isNull: Bool { self == Self(bitPattern: 0) }
+}
+
+
+public extension UnsafeMutablePointer {
+    func bzero() {
+        Darwin.bzero(self, MemoryLayout<Pointee>.stride)
+    }
+}
+
+public extension UnsafeMutableBufferPointer {
+    func bzero() {
+        Darwin.bzero(baseAddress, count * MemoryLayout<Element>.stride)
+    }
+}
+
+public extension AutoreleasingUnsafeMutablePointer {
+    func bzero() {
+        Darwin.bzero(UnsafeMutableRawPointer(self), MemoryLayout<Pointee>.stride)
     }
 }
