@@ -24,29 +24,29 @@ import Foundation
 
 
 public protocol BinaryReaderInput {
-    func readBytes(to: UnsafeMutableRawBufferPointer, at range: Range<Int>) throws
-    func count() -> Int
+    func readBytes(to: UnsafeMutableBufferPointer<UInt8>, offset: Int) throws
+    func size() throws -> Int
 }
 
 public struct AnyBinaryReaderInput: BinaryReaderInput {
-    private var _readBytes: (_ to: UnsafeMutableRawBufferPointer, _ range: Range<Int>) throws -> Void
-    private var _count: () -> Int
+    private var _readBytes: (_ to: UnsafeMutableBufferPointer<UInt8>, _ offset: Int) throws -> Void
+    private var _size: () -> Int
     
     
     public init(
-        readBytes: @escaping (UnsafeMutableRawBufferPointer, Range<Int>) throws -> Void,
-        count: @escaping () -> Int
+        readBytes: @escaping (UnsafeMutableBufferPointer<UInt8>, Int) throws -> Void,
+        size: @escaping () -> Int
     ) {
         _readBytes = readBytes
-        _count = count
+        _size = size
     }
     
-    public func readBytes(to: UnsafeMutableRawBufferPointer, at range: Range<Int>) throws {
-        try _readBytes(to, range)
+    public func readBytes(to: UnsafeMutableBufferPointer<UInt8>, offset: Int) throws {
+        try _readBytes(to, offset)
     }
     
-    public func count() -> Int {
-        _count()
+    public func size() throws -> Int {
+        _size()
     }
 }
 
@@ -54,12 +54,13 @@ public extension BinaryReader {
     init(data: Data) {
         self.init(
             AnyBinaryReaderInput(
-                readBytes: { dstPtr, range in
-                    if range.count != data.copyBytes(to: dstPtr, from: range) {
-                        throw BinaryWriterError.outOfRange
+                readBytes: { dstPtr, offset in
+                    let range = Range(offset: offset, length: dstPtr.count)
+                    if dstPtr.count != data.copyBytes(to: dstPtr, from: range) {
+                        throw BinaryReaderError.outOfRange
                     }
                 },
-                count: { data.count }
+                size: { data.count }
             )
         )
     }

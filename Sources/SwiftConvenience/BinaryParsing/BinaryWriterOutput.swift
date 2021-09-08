@@ -24,33 +24,33 @@ import Foundation
 
 
 public protocol BinaryWriterOutput: AnyObject {
-    func writeBytes(from: UnsafeRawBufferPointer, at offset: Int) throws
-    func count() -> Int
+    func writeBytes(from: UnsafeBufferPointer<UInt8>, at offset: Int) throws
+    func size() throws -> Int
 }
 
 public class AnyBinaryWriterOutput: BinaryWriterOutput {
-    private var _writeBytes: (_ from: UnsafeRawBufferPointer, _ offset: Int) throws -> Void
-    private var _count: () -> Int
+    private var _writeBytes: (_ from: UnsafeBufferPointer<UInt8>, _ offset: Int) throws -> Void
+    private var _size: () throws -> Int
     
     
     public init(
-        writeBytes: @escaping (UnsafeRawBufferPointer, Int) throws -> Void,
-        count: @escaping () -> Int
+        writeBytes: @escaping (UnsafeBufferPointer<UInt8>, Int) throws -> Void,
+        size: @escaping () -> Int
     ) {
         _writeBytes = writeBytes
-        _count = count
+        _size = size
     }
     
-    public func writeBytes(from: UnsafeRawBufferPointer, at offset: Int) throws {
+    public func writeBytes(from: UnsafeBufferPointer<UInt8>, at offset: Int) throws {
         try _writeBytes(from, offset)
     }
     
-    public func count() -> Int {
-        _count()
+    public func size() throws -> Int {
+        try _size()
     }
 }
 
-public class DataOutput: BinaryWriterOutput {
+public class DataBinaryWriterOutput: BinaryWriterOutput {
     public var data: Data
     
     
@@ -58,11 +58,15 @@ public class DataOutput: BinaryWriterOutput {
         self.data = data
     }
     
-    public func writeBytes(from: UnsafeRawBufferPointer, at offset: Int) throws {
-        data.insert(contentsOf: from, at: offset)
+    public func writeBytes(from: UnsafeBufferPointer<UInt8>, at offset: Int) throws {
+        let appendCount = offset + from.count - data.count
+        if appendCount > 0 {
+            data += Data(repeating: 0, count: appendCount)
+        }
+        data.replaceSubrange(Range(offset: offset, length: from.count), with: from)
     }
     
-    public func count() -> Int {
+    public func size() -> Int {
         data.count
     }
 }

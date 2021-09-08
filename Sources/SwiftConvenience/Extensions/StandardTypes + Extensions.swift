@@ -167,3 +167,12 @@ public extension Result {
         }
     }
 }
+
+
+// MARK: - Range
+
+public extension Range {
+    init(offset: Bound, length: Bound) where Bound: SignedNumeric {
+        self.init(uncheckedBounds: (offset, offset + length))
+    }
+}
