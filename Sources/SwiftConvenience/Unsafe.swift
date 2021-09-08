@@ -82,18 +82,30 @@ extension AutoreleasingUnsafeMutablePointer: CPointer {
 
 public extension UnsafeMutablePointer {
     func bzero() {
-        Darwin.bzero(self, MemoryLayout<Pointee>.stride)
+        UnsafeMutableRawPointer(self).bzero(MemoryLayout<Pointee>.stride)
+    }
+}
+
+public extension UnsafeMutableRawPointer {
+    func bzero(_ size: Int) {
+        Darwin.bzero(self, size)
     }
 }
 
 public extension UnsafeMutableBufferPointer {
     func bzero() {
-        Darwin.bzero(baseAddress, count * MemoryLayout<Element>.stride)
+        baseAddress?.bzero()
+    }
+}
+
+public extension UnsafeMutableRawBufferPointer {
+    func bzero() {
+        baseAddress?.bzero(count)
     }
 }
 
 public extension AutoreleasingUnsafeMutablePointer {
     func bzero() {
-        Darwin.bzero(UnsafeMutableRawPointer(self), MemoryLayout<Pointee>.stride)
+        UnsafeMutablePointer(mutating: self).bzero()
     }
 }
