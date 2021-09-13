@@ -75,6 +75,16 @@ public final class Synchronized<Value> {
 }
 
 public extension Synchronized {
+    convenience init(_ synchronization: SynchronizationType) where Value: ExpressibleByArrayLiteral {
+        self.init([], synchronization: synchronization)
+    }
+    
+    convenience init(_ synchronization: SynchronizationType) where Value: ExpressibleByDictionaryLiteral {
+        self.init([:], synchronization: synchronization)
+    }
+}
+
+public extension Synchronized {
     func read() -> Value {
         read(\.self)
     }
