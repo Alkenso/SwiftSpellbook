@@ -22,7 +22,8 @@ let package = Package(
     targets: [
         .target(
             name: "SwiftConvenience",
-            dependencies: ["SwiftConvenienceObjcBridge"]
+            dependencies: ["SwiftConvenienceObjcBridge"],
+            linkerSettings: [LinkerSetting.linkedLibrary("bsm", .when(platforms: [.macOS]))]
         ),
         .target(
             name: "SwiftConvenienceObjcBridge",
@@ -35,13 +36,11 @@ let package = Package(
         ),
         .testTarget(
             name: "SwiftConvenienceTests",
-            dependencies: ["SwiftConvenience", "SwiftConvenienceTestUtils"],
-            linkerSettings: [LinkerSetting.linkedLibrary("bsm", .when(platforms: [.macOS]))]
+            dependencies: ["SwiftConvenience", "SwiftConvenienceTestUtils"]
         ),
         .testTarget(
             name: "SwiftConvenienceTestUtilsTests",
-            dependencies: ["SwiftConvenience", "SwiftConvenienceTestUtils"],
-            linkerSettings: [LinkerSetting.linkedLibrary("bsm", .when(platforms: [.macOS]))]
+            dependencies: ["SwiftConvenience", "SwiftConvenienceTestUtils"]
         ),
     ]
 )
