@@ -10,7 +10,7 @@ let package = Package(
         // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(
             name: "SwiftConvenience",
-            targets: ["SwiftConvenience"]
+            targets: ["SwiftConvenience", "SwiftConvenienceObjcBridge"]
         ),
         .library(
             name: "SwiftConvenienceTestUtils",
@@ -22,15 +22,16 @@ let package = Package(
     targets: [
         .target(
             name: "SwiftConvenience",
-            dependencies: []
+            dependencies: ["SwiftConvenienceObjcBridge"]
         ),
         .target(
             name: "SwiftConvenienceObjcBridge",
-            dependencies: []
+            dependencies: [],
+            publicHeadersPath: "."
         ),
         .target(
             name: "SwiftConvenienceTestUtils",
-            dependencies: []
+            dependencies: ["SwiftConvenience"]
         ),
         .testTarget(
             name: "SwiftConvenienceTests",
