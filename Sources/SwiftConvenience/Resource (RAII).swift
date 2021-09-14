@@ -25,30 +25,51 @@ import Foundation
 
 /// Resource wrapper that follows the RAII rule: 'Resource acquisition is initialization'.
 /// It is a resource wrapper that performs cleanup when resource is not used anymore.
+@dynamicMemberLookup
 public class Resource<T> {
-    public var value: T
+    /// In most cases prefer use of 'withValue' method.
+    /// Note:
+    /// Be careful copying the value or storing it in the separate variable.
+    /// Swift optimizations may free Resource (and perform cleanup)
+    /// in the place of last use of Resource, not the Resource.value place
+    public var unsafeValue: T { _value }
     
-    private init(_ value: T, cleanup: @escaping (T) -> Void) {
-        self.value = value
+    
+    public init(_ value: T, cleanup: @escaping (T) -> Void) {
+        _value = value
         _cleanup = cleanup
     }
     
     /// Immediately perform cleanup action.
-    func forceCleanup() {
+    public func cleanup() {
         let cleanup = __cleanup.exchange { _ in }
-        cleanup(value)
+        cleanup(_value)
     }
     
     /// Disables cleanup action when Resource is freed.
-    func cancelCleanup() {
+    @discardableResult
+    public func release() -> T {
         _cleanup = { _ in }
+        return _value
     }
     
     deinit {
-        _cleanup(value)
+        _cleanup(_value)
     }
     
+    private var _value: T
     @Atomic private var _cleanup: (T) -> Void
+}
+
+public extension Resource {
+    /// Safe way accessing the value
+    func withValue<R>(_ body: (T) throws -> R) rethrows -> R {
+        try body(unsafeValue)
+    }
+    
+    subscript<Local>(dynamicMember keyPath: KeyPath<T, Local>) -> Local {
+        unsafeValue[keyPath: keyPath]
+    }
 }
 
 public extension Resource {
@@ -63,16 +84,69 @@ public extension Resource {
     }
 }
 
+public extension Resource {
+    /// Create Resource wrapping pointer. Deinitializes and deallocates it on cleanup.
+    static func pointer<P>(_ ptr: T) -> Resource where T == UnsafeMutablePointer<P> {
+        Resource(
+            ptr,
+            cleanup: {
+                $0.deinitialize(count: 1)
+                $0.deallocate()
+            }
+        )
+    }
+    
+    /// Create Resource wrapping pointer.
+    /// Allocated and initializes pointer on create,
+    /// deinitializes and deallocates it on cleanup.
+    static func pointer<P>(value: P) -> Resource where T == UnsafeMutablePointer<P> {
+        let ptr = T.allocate(capacity: 1)
+        ptr.initialize(to: value)
+        return .pointer(ptr)
+    }
+    
+    /// Create Resource wrapping pointer. Deinitializes and deallocates it on cleanup.
+    static func pointer<P>(_ buffer: T) -> Resource where T == UnsafeMutableBufferPointer<P> {
+        Resource(
+            buffer,
+            cleanup: {
+                $0.baseAddress?.deinitialize(count: $0.count)
+                $0.deallocate()
+            }
+        )
+    }
+    
+    /// Create Resource wrapping pointer.
+    /// Allocated and initializes pointer on create,
+    /// deinitializes and deallocates it on cleanup.
+    static func pointer<P, C: Collection>(values: C) -> Resource where T == UnsafeMutableBufferPointer<P>, C.Element == P {
+        let ptr = T.allocate(capacity: values.count)
+        _ = ptr.initialize(from: values)
+        return .pointer(ptr)
+    }
+    
+    /// Create Resource wrapping pointer. Deallocates it on cleanup.
+    static func pointer(_ ptr: T) -> Resource where T == UnsafeMutableRawPointer {
+        Resource(ptr, cleanup: { $0.deallocate() })
+    }
+    
+    /// Create Resource wrapping pointer. Deallocates it on cleanup.
+    static func pointer(_ buffer: T) -> Resource where T == UnsafeMutableRawBufferPointer {
+        Resource(buffer, cleanup: { $0.deallocate() })
+    }
+}
+
 /// Performs action on deinit.
 public typealias DeinitAction = Resource<Void>
 public extension Resource where T == Void {
-    convenience init(_ onDeinit: @escaping () -> Void) {
+    /// Perform the action when the instance is freed.
+    convenience init(onDeinit: @escaping () -> Void) {
         self.init((), cleanup: onDeinit)
     }
     
     /// Perform the action when the instance is freed.
     static func onDeinit(_ action: @escaping () -> Void) -> DeinitAction {
-        Resource(action)
+        DeinitAction(onDeinit: action)
     }
 }
 
@@ -94,17 +168,17 @@ public extension Resource where T == URL {
 
 extension Resource: Equatable where T: Equatable {
     public static func == (lhs: Resource<T>, rhs: Resource<T>) -> Bool {
-        lhs.value == rhs.value
+        lhs._value == rhs._value
     }
 }
 
 extension Resource: Comparable where T: Comparable {
     public static func < (lhs: Resource<T>, rhs: Resource<T>) -> Bool {
-        lhs.value < rhs.value
+        lhs._value < rhs._value
     }
 }
 
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension Resource: Identifiable where T: Identifiable {
-    public var id: T.ID { value.id }
+    public var id: T.ID { _value.id }
 }
