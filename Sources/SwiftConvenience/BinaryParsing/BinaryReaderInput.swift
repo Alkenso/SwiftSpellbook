@@ -57,7 +57,7 @@ public extension BinaryReader {
                 readBytes: { dstPtr, offset in
                     let range = Range(offset: offset, length: dstPtr.count)
                     if dstPtr.count != data.copyBytes(to: dstPtr, from: range) {
-                        throw BinaryReaderError.outOfRange
+                        throw BinaryParsingError.outOfRange
                     }
                 },
                 size: { data.count }

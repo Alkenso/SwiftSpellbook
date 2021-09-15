@@ -61,7 +61,7 @@ public struct BinaryReader {
     
     private func ensureSize(_ count: Int) throws {
         if try size() < count {
-            throw BinaryReaderError.outOfRange
+            throw BinaryParsingError.outOfRange
         }
     }
 }
@@ -104,6 +104,8 @@ public extension BinaryReader {
     }
     
     func peek<T>(offset: Int) throws -> T {
+        try ensureTrivial(T.self)
+        
         let range = Range(offset: offset, length: MemoryLayout<T>.stride)
         let data = try peek(at: range)
         return data.pod(adopting: T.self)
@@ -168,6 +170,8 @@ public extension BinaryReader {
     }
     
     mutating func read<T>() throws -> T {
+        try ensureTrivial(T.self)
+        
         let data = try read(count: MemoryLayout<T>.stride)
         return data.pod(adopting: T.self)
     }
@@ -211,8 +215,4 @@ public extension BinaryReader {
     mutating func readDefaultInt() throws -> Int {
         try read()
     }
-}
-
-public enum BinaryReaderError: Error {
-    case outOfRange
 }

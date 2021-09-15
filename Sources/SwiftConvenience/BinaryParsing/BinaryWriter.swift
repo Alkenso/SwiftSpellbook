@@ -59,49 +59,51 @@ public extension BinaryWriter {
         }
     }
     
-    func writeTrivial<T>(_ value: T, at offset: Int) throws {
+    func write<T>(_ value: T, at offset: Int) throws {
+        try ensureTrivial(T.self)
+        
         let data = Data(pod: value)
         try write(data, at: offset)
     }
     
     func writeUInt8(_ value: UInt8, at offset: Int) throws {
-        try writeTrivial(value, at: offset)
+        try write(value, at: offset)
     }
     
     func writeUInt16(_ value: UInt16, at offset: Int) throws {
-        try writeTrivial(value, at: offset)
+        try write(value, at: offset)
     }
     
     func writeUInt32(_ value: UInt32, at offset: Int) throws {
-        try writeTrivial(value, at: offset)
+        try write(value, at: offset)
     }
     
     func writeUInt64(_ value: UInt64, at offset: Int) throws {
-        try writeTrivial(value, at: offset)
+        try write(value, at: offset)
     }
     
     func writeDefaultUInt(_ value: UInt, at offset: Int) throws {
-        try writeTrivial(value, at: offset)
+        try write(value, at: offset)
     }
     
     func writeInt8(_ value: Int8, at offset: Int) throws {
-        try writeTrivial(value, at: offset)
+        try write(value, at: offset)
     }
     
     func writeInt16(_ value: Int16, at offset: Int) throws {
-        try writeTrivial(value, at: offset)
+        try write(value, at: offset)
     }
     
     func writeInt32(_ value: Int32, at offset: Int) throws {
-        try writeTrivial(value, at: offset)
+        try write(value, at: offset)
     }
     
     func writeInt64(_ value: Int64, at offset: Int) throws {
-        try writeTrivial(value, at: offset)
+        try write(value, at: offset)
     }
     
     func writeDefaultInt(_ value: Int, at offset: Int) throws {
-        try writeTrivial(value, at: offset)
+        try write(value, at: offset)
     }
     
     func writeZeroes(in range: Range<Int>) throws {
@@ -117,49 +119,51 @@ public extension BinaryWriter {
         }
     }
     
-    mutating func appendTrivial<T>(_ value: T) throws {
+    mutating func append<T>(_ value: T) throws {
+        try ensureTrivial(T.self)
+        
         let data = Data(pod: value)
         try append(data)
     }
     
     mutating func appendUInt8(_ value: UInt8) throws {
-        try appendTrivial(value)
+        try append(value)
     }
     
     mutating func appendUInt8(_ value: UInt16) throws {
-        try appendTrivial(value)
+        try append(value)
     }
     
     mutating func appendUInt32(_ value: UInt32) throws {
-        try appendTrivial(value)
+        try append(value)
     }
     
     mutating func appendUInt64(_ value: UInt64) throws {
-        try appendTrivial(value)
+        try append(value)
     }
     
     mutating func appendDefaultUInt(_ value: UInt) throws {
-        try appendTrivial(value)
+        try append(value)
     }
     
     mutating func appendInt8(_ value: Int8) throws {
-        try appendTrivial(value)
+        try append(value)
     }
     
     mutating func appendInt16(_ value: Int16) throws {
-        try appendTrivial(value)
+        try append(value)
     }
     
     mutating func appendInt32(_ value: Int32) throws {
-        try appendTrivial(value)
+        try append(value)
     }
     
     mutating func appendInt64(_ value: Int64) throws {
-        try appendTrivial(value)
+        try append(value)
     }
     
     mutating func appendDefaultInt(_ value: Int) throws {
-        try appendTrivial(value)
+        try append(value)
     }
     
     mutating func appendZeroes(_ count: Int) throws {
@@ -178,8 +182,4 @@ public extension BinaryWriter {
         copy.reset()
         return copy
     }
-}
-
-public enum BinaryWriterError: Error {
-    case outOfRange
 }
