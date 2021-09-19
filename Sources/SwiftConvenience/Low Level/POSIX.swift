@@ -25,9 +25,29 @@ import Foundation
 
 public extension stat {
     /// Stat the file at given URL path.
-    init?(_ url: URL) {
+    init(url: URL) throws {
         var st = stat()
-        guard url.withUnsafeFileSystemRepresentation({ stat($0, &st) }) == 0 else { return nil }
+        try Self.throwIfError(path: url.path) { url.withUnsafeFileSystemRepresentation { stat($0, &st) } }
         self = st
+    }
+    
+    /// Stat the file at given path.
+    init(path: String) throws {
+        var st = stat()
+        try Self.throwIfError(path: path) { path.withCString { stat($0, &st) } }
+        self = st
+    }
+    
+    private static func throwIfError(path: String, _ body: () -> Int32) throws {
+        let ret = body()
+        if ret != 0 {
+            throw NSError(
+                domain: NSPOSIXErrorDomain,
+                code: Int(ret),
+                userInfo: [
+                    NSDebugDescriptionErrorKey: "stat failed. code = \(ret), path = \(path)"
+                ]
+            )
+        }
     }
 }

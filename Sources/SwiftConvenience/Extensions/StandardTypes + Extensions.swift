@@ -110,22 +110,26 @@ public extension URL {
     /// - returns: file type or nil if URL is not a file URL or file can't be stat'ed.
     var fileType: FileType? {
         guard isFileURL else { return nil }
-        return stat(self)
+        return (try? stat())
             .map(\.st_mode)
             .flatMap(FileType.init)
     }
+    
+    func stat() throws -> stat {
+        try Darwin.stat(url: self)
+    }
 }
 
-extension URL.FileType {
+public extension URL.FileType {
     init?(_ mode: mode_t) {
-        if let fileType = Self.allCases.first(where: { $0.stMode == mode & $0.stMode }) {
+        if let fileType = Self.allCases.first(where: { $0.mode == mode & $0.mode }) {
             self = fileType
         } else {
             return nil
         }
     }
     
-    private var stMode: mode_t {
+    var mode: mode_t {
         switch self {
         case .blockSpecial: return S_IFBLK
         case .characterSpecial: return S_IFCHR
