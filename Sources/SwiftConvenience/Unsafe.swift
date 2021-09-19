@@ -25,9 +25,9 @@ import Foundation
 
 /// Checks if memory of instances is equal. Generic version of memcmp.
 public func unsafeMemoryEquals<T>(_ lhs: T, _ rhs: T) -> Bool {
-    withUnsafePointer(to: lhs) { lhsPtr in
-        withUnsafePointer(to: rhs) { rhsPtr in
-            0 == memcmp(lhsPtr, rhsPtr, MemoryLayout<T>.size)
+    withUnsafeBytes(of: lhs) { lhsBuffer in
+        withUnsafeBytes(of: rhs) { rhsBuffer in
+            lhsBuffer.elementsEqual(rhsBuffer)
         }
     }
 }
