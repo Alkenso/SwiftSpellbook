@@ -5,11 +5,9 @@ import XCTest
 
 
 class AuditTokenTests: XCTestCase {
-    func test_currentTaskAuditToken() {
-        guard let token = audit_token_t.current else {
-            XCTFail("Audit token of the current task is nil.")
-            return
-        }
+    func test_currentTaskAuditToken() throws {
+        let token = try audit_token_t.current()
+        
         XCTAssertEqual(audit_token_to_ruid(token), getuid())
         XCTAssertEqual(audit_token_to_rgid(token), getgid())
         XCTAssertEqual(audit_token_to_euid(token), geteuid())
@@ -37,4 +35,5 @@ class AuditTokenTests: XCTestCase {
         XCTAssertEqual(decodedToken, token)
     }
 }
+
 #endif
