@@ -57,10 +57,6 @@ public class EvaluationChain<T, R> {
         return DeinitAction { [weak self] in self?.unregister(id) }
     }
     
-    public func register(on queue: DispatchQueue = .global(), participant: @escaping (T) -> R) -> AnyObject {
-        register(on: queue) { event, nestedHandler in nestedHandler(participant(event)) }
-    }
-    
     public func unregister(_ subscription: AnyObject) {
         unregister(ObjectIdentifier(subscription))
     }
@@ -72,9 +68,16 @@ public class EvaluationChain<T, R> {
     }
 }
 
+public extension EvaluationChain {
+    func register(on queue: DispatchQueue = .global(), participant: @escaping (T) -> R) -> AnyObject {
+        register(on: queue) { event, nestedHandler in nestedHandler(participant(event)) }
+    }
+}
+
+
 public typealias NotificationChain<T> = EvaluationChain<T, Void>
 
-public extension NotificationChain {
+public extension NotificationChain where R == Void {
     func notify(_ value: T) {
         for entry in _participants.read(\.values) {
             entry.queue.async { entry.participant(value) { _ in} }
