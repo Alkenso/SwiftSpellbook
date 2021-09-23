@@ -78,29 +78,30 @@ public extension TimeInterval {
     /// Converts mach_time into TimeInterval using mach_timebase_info.
     /// Returns nil if mach_timebase_info fails.
     init?(machTime: UInt64) {
-        guard let timeInfo = mach_timebase_info.system.value else { return nil }
-        
-        let nanos = TimeInterval(machTime * UInt64(timeInfo.numer)) / TimeInterval(timeInfo.denom)
+        guard let timebase = try? mach_timebase_info.system() else { return nil }
+        self.init(machTime: machTime, timebase: timebase)
+    }
+    
+    init(machTime: UInt64, timebase: mach_timebase_info) {
+        let nanos = TimeInterval(machTime * UInt64(timebase.numer)) / TimeInterval(timebase.denom)
         self = nanos / TimeInterval(NSEC_PER_SEC)
     }
 }
 
 public extension mach_timebase_info {
-    static let system: Result<mach_timebase_info, Error> = {
+    static func system() throws -> mach_timebase_info {
         var info = mach_timebase_info()
         let kernReturn = mach_timebase_info(&info)
         if kernReturn == KERN_SUCCESS {
-            return .success(info)
+            return info
         } else {
-            return .failure(
-                NSError(
-                    domain: NSMachErrorDomain,
-                    code: Int(kernReturn),
-                    userInfo: [
-                        NSDebugDescriptionErrorKey: "mach_timebase_info fails with result \(kernReturn)"
-                    ]
-                )
+            throw NSError(
+                domain: NSMachErrorDomain,
+                code: Int(kernReturn),
+                userInfo: [
+                    NSDebugDescriptionErrorKey: "mach_timebase_info fails with result \(kernReturn)"
+                ]
             )
         }
-    }()
+    }
 }
