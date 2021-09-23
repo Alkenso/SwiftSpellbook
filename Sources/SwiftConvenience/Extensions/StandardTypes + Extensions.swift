@@ -180,3 +180,12 @@ public extension Range {
         self.init(uncheckedBounds: (offset, offset + length))
     }
 }
+
+
+// MARK: - Comparable
+
+public extension Comparable {
+    func clamped(to limits: ClosedRange<Self>) -> Self {
+        return min(max(self, limits.lowerBound), limits.upperBound)
+    }
+}

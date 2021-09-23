@@ -85,4 +85,20 @@ class StandardTypesExtensionsTests: XCTestCase {
             ""
         )
     }
+    
+    func test_Comparable_clamped() {
+        XCTAssertEqual(5.clamped(to: 0...10), 5)
+        XCTAssertEqual(5.clamped(to: 5...10), 5)
+        XCTAssertEqual(5.clamped(to: 0...5), 5)
+        XCTAssertEqual(5.clamped(to: 5...5), 5)
+        
+        XCTAssertEqual(5.clamped(to: 6...10), 6)
+        XCTAssertEqual(5.clamped(to: 0...4), 4)
+        
+        XCTAssertEqual(5.clamped(to: -10...0), 0)
+        
+        XCTAssertEqual(0.5.clamped(to: 0...1.0), 0.5)
+        XCTAssertEqual((-0.1).clamped(to: 0...1.0), 0)
+        XCTAssertEqual(1.1.clamped(to: 0...1.0), 1)
+    }
 }
