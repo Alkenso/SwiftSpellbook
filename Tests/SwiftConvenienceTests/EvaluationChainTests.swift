@@ -34,6 +34,8 @@ final class EvaluationChainTests: XCTestCase {
             exp.fulfill()
         }
         
-        waitForExpectations()
+        withExtendedLifetime(disposables) {
+            _ = waitForExpectations()
+        }
     }
 }
