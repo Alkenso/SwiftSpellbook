@@ -20,6 +20,7 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+import Combine
 import Foundation
 
 
@@ -77,10 +78,35 @@ public extension EvaluationChain {
 
 public typealias NotificationChain<T> = EvaluationChain<T, Void>
 
-public extension NotificationChain where R == Void {
+public extension EvaluationChain where R == Void {
     func notify(_ value: T) {
         for entry in _participants.read(\.values) {
             entry.queue.async { entry.participant(value) { _ in} }
+        }
+    }
+}
+
+
+// MARK: - Combine support
+
+@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
+public extension EvaluationChain where R == Void {
+    var publisher: AnyPublisher<T, Never> {
+        let subject = PassthroughSubject<T, Never>()
+        var proxy = NotificationChainSubject(proxy: subject.eraseToAnyPublisher())
+        proxy.chainSubscription = self.register(participant: subject.send)
+        return proxy.eraseToAnyPublisher()
+    }
+    
+    private struct NotificationChainSubject: Publisher {
+        typealias Output = T
+        typealias Failure = Never
+        
+        let proxy: AnyPublisher<Output, Failure>
+        var chainSubscription: AnyObject?
+        
+        func receive<S>(subscriber: S) where S : Subscriber, Never == S.Failure, T == S.Input {
+            proxy.receive(subscriber: subscriber)
         }
     }
 }
