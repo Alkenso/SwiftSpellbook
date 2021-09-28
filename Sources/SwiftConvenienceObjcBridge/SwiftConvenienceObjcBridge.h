@@ -31,9 +31,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-@interface ObjcBridge : NSObject
 
-+ (void)foo;
+@interface NSXPCConnection (SwiftConvenience)
+
+@property (nonatomic, readonly) audit_token_t auditToken;
 
 @end
 

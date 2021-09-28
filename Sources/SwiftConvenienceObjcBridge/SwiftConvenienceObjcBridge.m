@@ -39,12 +39,3 @@
 }
 
 @end
-
-@implementation ObjcBridge : NSObject
-
-+ (void)foo
-{
-    
-}
-
-@end
