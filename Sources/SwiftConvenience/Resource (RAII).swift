@@ -53,6 +53,7 @@ public class Resource<T> {
         return _value
     }
     
+    @discardableResult
     public func replaceCleanup(_ newCleanup: @escaping (T) -> Void) -> (T) -> Void {
         __cleanup.exchange(newCleanup)
     }

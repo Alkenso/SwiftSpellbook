@@ -26,11 +26,11 @@ import Darwin
 
 // MARK: - Data
 
-public extension Data {
+extension Data {
     /// Initializes Data with hex string.
     /// - Parameters:
     ///     - hexString: string in form "00FAB1C0". May be prefixed with "0x".
-    init?(hexString string: String) {
+    public init?(hexString string: String) {
         let hexString = string.dropFirst(string.hasPrefix("0x") ? 2 : 0)
         guard hexString.count.isMultiple(of: 2) else { return nil }
         
@@ -47,15 +47,15 @@ public extension Data {
     
     /// Returns data representation as hex string.
     /// - returns: string in form "00FAB1C0".
-    var hexString: String {
+    public var hexString: String {
         map { String(format: "%02x", $0) }.joined()
     }
 }
 
 
-public extension Data {
+extension Data {
     /// Initializes Data with binary representation of POD (Plain Old Data) value.
-    init<PODType>(pod: PODType) {
+    public init<PODType>(pod: PODType) {
         self = Swift.withUnsafeBytes(of: pod) {
             guard let address = $0.baseAddress else { return Data() }
             return Data(bytes: address, count: MemoryLayout<PODType>.size)
@@ -63,7 +63,7 @@ public extension Data {
     }
     
     /// Converts data to POD (Plain Old Data) value.
-    func pod<PODType>(exactly type: PODType.Type) -> PODType? {
+    public func pod<PODType>(exactly type: PODType.Type) -> PODType? {
         guard MemoryLayout<PODType>.size == count else { return nil }
         return withUnsafeBytes { $0.load(fromByteOffset: 0, as: type) }
     }
@@ -71,7 +71,7 @@ public extension Data {
     /// Converts data to POD (Plain Old Data) value.
     /// If count > PODType size, only 'size' bytes are taken.
     /// If count < PODType size, the data are appended with zeroes to match the size.
-    func pod<PODType>(adopting type: PODType.Type) -> PODType {
+    public func pod<PODType>(adopting type: PODType.Type) -> PODType {
         var adopted = self
         let advanceSize = MemoryLayout<PODType>.size - adopted.count
         if advanceSize > 0 {
@@ -85,9 +85,9 @@ public extension Data {
 
 // MARK: - URL
 
-public extension URL {
+extension URL {
     /// Initialized URL with string that is guaranteed to be valid URL string.
-    init(staticString: StaticString) {
+    public init(staticString: StaticString) {
         guard let url = Self(string: "\(staticString)") else {
             preconditionFailure("Invalid static URL string: \(staticString)")
         }
@@ -96,8 +96,8 @@ public extension URL {
     }
 }
 
-public extension URL {
-    enum FileType: CaseIterable {
+extension URL {
+    public enum FileType: CaseIterable {
         case blockSpecial
         case characterSpecial
         case fifo
@@ -108,20 +108,20 @@ public extension URL {
     
     /// Determines file type of given URL.
     /// - returns: file type or nil if URL is not a file URL or file can't be stat'ed.
-    var fileType: FileType? {
+    public var fileType: FileType? {
         guard isFileURL else { return nil }
         return (try? stat())
             .map(\.st_mode)
             .flatMap(FileType.init)
     }
     
-    func stat() throws -> stat {
+    public func stat() throws -> stat {
         try Darwin.stat(url: self)
     }
 }
 
-public extension URL.FileType {
-    init?(_ mode: mode_t) {
+extension URL.FileType {
+    public init?(_ mode: mode_t) {
         if let fileType = Self.allCases.first(where: { $0.mode == mode & $0.mode }) {
             self = fileType
         } else {
@@ -129,7 +129,7 @@ public extension URL.FileType {
         }
     }
     
-    var mode: mode_t {
+    public var mode: mode_t {
         switch self {
         case .blockSpecial: return S_IFBLK
         case .characterSpecial: return S_IFCHR
@@ -144,9 +144,9 @@ public extension URL.FileType {
 
 // MARK: - UUID
 
-public extension UUID {
+extension UUID {
     /// Initialized UUID with string that is guaranteed to be valid UUID string.
-    init(staticString: StaticString) {
+    public init(staticString: StaticString) {
         guard let value = Self(uuidString: "\(staticString)") else {
             preconditionFailure("Invalid static UUID string: \(staticString)")
         }
@@ -157,12 +157,12 @@ public extension UUID {
 
 // MARK: - Result
 
-public extension Result {
+extension Result {
     /// Returns Success value if Result if .success, nil otherwise.
-    var value: Success? { try? get() }
+    public var value: Success? { try? get() }
     
     /// Returns Failure value if Result if .failure, nil otherwise.
-    var error: Failure? {
+    public var error: Failure? {
         switch self {
         case .success:
             return nil
@@ -175,17 +175,8 @@ public extension Result {
 
 // MARK: - Range
 
-public extension Range {
-    init(offset: Bound, length: Bound) where Bound: SignedNumeric {
+extension Range {
+    public init(offset: Bound, length: Bound) where Bound: SignedNumeric {
         self.init(uncheckedBounds: (offset, offset + length))
-    }
-}
-
-
-// MARK: - Comparable
-
-public extension Comparable {
-    func clamped(to limits: ClosedRange<Self>) -> Self {
-        return min(max(self, limits.lowerBound), limits.upperBound)
     }
 }
