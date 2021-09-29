@@ -24,15 +24,45 @@ import Combine
 import Foundation
 
 
-public struct CancellationToken {
-    private let _cancel: () -> Void
+public class CancellationToken {
+    private let _queue: DispatchQueue
+    private let _onCancel: () -> Void
     
-    public init(cancel: @escaping () -> Void) {
-        _cancel = cancel
+    @Atomic private var _cancelled = false
+    private var _children = Synchronized<[CancellationToken]>(.serial)
+    
+    public var isCancelled: Bool { _cancelled }
+    
+    
+    public init(on queue: DispatchQueue = .global(), cancel: @escaping () -> Void) {
+        _queue = queue
+        _onCancel = cancel
     }
     
     public func cancel() {
-        _cancel()
+        guard !__cancelled.exchange(true) else { return }
+        _queue.async(execute: _onCancel)
+        _children.read().forEach { $0._queue.async(execute: $0.cancel) }
+    }
+    
+    public func addChild(_ token: CancellationToken) {
+        _children.writeAsync {
+            if !self.isCancelled {
+                $0.append(token)
+            } else {
+                token._queue.async(execute: token.cancel)
+            }
+        }
+    }
+}
+
+extension CancellationToken {
+    public convenience init() {
+        self.init {}
+    }
+    
+    public func addChild(on queue: DispatchQueue = .global(), cancel: @escaping () -> Void) {
+        addChild(.init(on: queue, cancel: cancel))
     }
 }
 
