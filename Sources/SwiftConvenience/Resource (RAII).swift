@@ -20,6 +20,7 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+import Combine
 import Foundation
 
 
@@ -186,4 +187,9 @@ extension Resource: Comparable where T: Comparable {
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension Resource: Identifiable where T: Identifiable {
     public var id: T.ID { _value.id }
+}
+
+@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
+extension Resource: Cancellable {
+    public func cancel() { cleanup() }
 }

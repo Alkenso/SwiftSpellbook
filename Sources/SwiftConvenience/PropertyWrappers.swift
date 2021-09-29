@@ -24,10 +24,37 @@ import Foundation
 
 
 @propertyWrapper
-public final class Box<Value> {
-    public var wrappedValue: Value
+public final class Atomic<Value> {
+    private let _value: Synchronized<Value>
     
-    public init(wrappedValue: Value) {
-        self.wrappedValue = wrappedValue
+    
+    public init(wrappedValue: Value, synchronization: SynchronizationType = .serial) {
+        _value = .init(wrappedValue, synchronization: synchronization)
+    }
+    
+    public var wrappedValue: Value {
+        get { _value.read { $0 } }
+        set { _value.write { $0 = newValue } }
+    }
+    
+    public func exchange(_ value: Value) -> Value {
+        _value.exchange(value)
+    }
+}
+
+
+@propertyWrapper
+public struct Clamping<Value: Comparable> {
+    var value: Value
+    let range: ClosedRange<Value>
+    
+    public init(initialValue value: Value, _ range: ClosedRange<Value>) {
+        self.value = value.clamped(to: range)
+        self.range = range
+    }
+    
+    public var wrappedValue: Value {
+        get { value }
+        set { value = newValue.clamped(to: range) }
     }
 }

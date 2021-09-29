@@ -32,14 +32,24 @@ public final class ValueView<T> {
         _accessor = accessor
     }
     
-    public var value: T { _accessor() }
+    public func get() -> T { _accessor() }
     
     public subscript<Property>(dynamicMember keyPath: KeyPath<T, Property>) -> Property {
-        value[keyPath: keyPath]
+        (get())[keyPath: keyPath]
     }
     
     // MARK: Private
     private let _accessor: () -> T
+}
+
+extension ValueView {
+    public static func `weak`<U: AnyObject>(_ value: U) -> ValueView<U?> {
+        .init { [weak value] in value }
+    }
+    
+    public subscript<U, Property>(dynamicMember keyPath: KeyPath<U, Property>) -> Property? where T == Optional<U> {
+        (get())?[keyPath: keyPath]
+    }
 }
 
 

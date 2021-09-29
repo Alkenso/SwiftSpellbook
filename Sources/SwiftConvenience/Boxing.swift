@@ -23,21 +23,50 @@
 import Foundation
 
 
+@dynamicMemberLookup
+public struct Weak<Value: AnyObject> {
+    public weak var value: Value?
+    
+    public init(_ value: Value?) {
+        self.value = value
+    }
+    
+    public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property? {
+        value?[keyPath: keyPath]
+    }
+}
+
+
 @propertyWrapper
-public final class Atomic<Value> {
-    private let _value: Synchronized<Value>
+@dynamicMemberLookup
+public final class Box<Value> {
+    public var wrappedValue: Value
     
-    
-    public init(wrappedValue: Value, synchronization: SynchronizationType = .serial) {
-        _value = .init(wrappedValue, synchronization: synchronization)
+    public init(wrappedValue: Value) {
+        self.wrappedValue = wrappedValue
     }
     
-    public var wrappedValue: Value {
-        get { _value.read { $0 } }
-        set { _value.write { $0 = newValue } }
+    public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
+        wrappedValue[keyPath: keyPath]
+    }
+}
+
+
+@propertyWrapper
+@dynamicMemberLookup
+public final class WeakBox<Value: AnyObject> {
+    private weak var _value: Value?
+    
+    public var wrappedValue: Value? {
+        get { _value }
+        set { _value = newValue }
     }
     
-    public func exchange(_ value: Value) -> Value {
-        _value.exchange(value)
+    public init(wrappedValue: Value?) {
+        self.wrappedValue = wrappedValue
+    }
+    
+    public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property? {
+        wrappedValue?[keyPath: keyPath]
     }
 }
