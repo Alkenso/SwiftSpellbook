@@ -24,6 +24,8 @@ import Combine
 import Foundation
 
 
+public typealias TransformerSubscription = DeinitAction
+
 public typealias TransformerOneToOne<Input, Output> = Transformer<Input, Output, Output>
 public typealias TransformerOneToMany<Input, Output> = Transformer<Input, Output, [Output]>
 
@@ -84,20 +86,21 @@ public class Transformer<Input, Transformed, Output> {
     
     // MARK: Register
     
-    public func register(on queue: DispatchQueue = .global(), transform: @escaping AsyncTransform) -> CancellationToken {
-        let id = UUID()
+    public func register(on queue: DispatchQueue = .global(), transform: @escaping AsyncTransform) -> TransformerSubscription {
+        let subscription = DeinitAction {}
+        let id = ObjectIdentifier(subscription)
         _transforms.writeAsync {
             $0[id] = (transform, queue)
         }
-        let cleanup = DeinitAction { [weak self] in self?.unregister(id) }
-        return .init { cleanup.cleanup() }
+        subscription.replaceCleanup { [weak self] in self?.unregister(id) }
+        return subscription
     }
     
-    public func register(on queue: DispatchQueue = .global(), transform: @escaping SyncTransform) -> CancellationToken {
+    public func register(on queue: DispatchQueue = .global(), transform: @escaping SyncTransform) -> TransformerSubscription {
         register(on: queue) { $1(transform($0)) }
     }
     
-    private func unregister(_ id: UUID) {
+    private func unregister(_ id: ObjectIdentifier) {
         _transforms.writeAsync {
             $0.removeValue(forKey: id)
         }
@@ -106,7 +109,7 @@ public class Transformer<Input, Transformed, Output> {
     
     // MARK: Private
     private typealias Entry<T> = (transform: AsyncTransform, queue: DispatchQueue)
-    private let _transforms = Synchronized<[UUID: Entry<AsyncTransform>]>([:], synchronization: .concurrent)
+    private let _transforms = Synchronized<[ObjectIdentifier: Entry<AsyncTransform>]>(.concurrent)
     private let _combine: ([Transformed]) -> Output
 }
 
@@ -124,9 +127,6 @@ extension Transformer where Transformed == Void, Output == Void {
         async(value) { _ in }
     }
 }
-
-
-// MARK: Combine support
 
 @available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension Notifier where Transformed == Void, Output == Void {
