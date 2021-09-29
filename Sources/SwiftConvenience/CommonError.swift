@@ -34,12 +34,13 @@ public struct CommonError: Error {
     public let userInfo: [String: Any]
 }
 
-public extension CommonError {
-    enum Code: Int {
+extension CommonError {
+    public enum Code: Int {
         case fatal
         case unexpected
         case unwrapNil
         case invalidArgument
+        case cast
     }
 }
 
@@ -49,8 +50,8 @@ extension CommonError: CustomNSError {
     public var errorUserInfo: [String : Any] { userInfo }
 }
 
-public extension CommonError {
-    init(_ code: Code, _ description: String? = nil) {
+extension CommonError {
+    public init(_ code: Code, _ description: String? = nil) {
         var userInfo: [String: Any] = [:]
         if let description = description {
             userInfo[NSDebugDescriptionErrorKey] = description
@@ -58,31 +59,50 @@ public extension CommonError {
         self = .init(code, userInfo: userInfo)
     }
     
-    static func fatal(_ description: String) -> Self {
+    public static func fatal(_ description: String) -> Self {
         .init(.fatal, description)
     }
     
-    static func unexpected(_ description: String) -> Self {
+    public static func unexpected(_ description: String) -> Self {
         .init(.unexpected, description)
     }
     
-    static func unwrapNil(_ name: String) -> Self {
-        .init(.unwrapNil, "Unexpected nil when unwrapping \(name)")
+    public static func unwrapNil(_ name: String, description: Any? = nil) -> Self {
+        let additional = description.flatMap { ". \($0)" } ?? ""
+        return .init(.unwrapNil, "Unexpected nil when unwrapping \(name)" + additional)
     }
     
-    static func invalidArgument(arg: String, invalidValue: Any) -> Self {
-        .init(.invalidArgument, "Invalid value \(invalidValue) for argument \(arg)")
+    public static func invalidArgument(arg: String, invalidValue: Any?, description: Any? = nil) -> Self {
+        let value = invalidValue.flatMap { "\($0)" } ?? "nil"
+        let additional = description.flatMap { ". \($0)" } ?? ""
+        return .init(.invalidArgument, "Invalid value \(value) for argument \(arg)" + additional)
     }
     
+    public static func cast<From, To>(_ from: From, to: To.Type, description: Any? = nil) -> Self {
+        let additional = description.flatMap { ". \($0)" } ?? ""
+        return .init(.unwrapNil, "Failed to cast \(from) to \(to)" + additional)
+    }
 }
 
 
 // MARK: Optional extension
 
-public extension Optional where Wrapped == Error {
+extension Optional {
     /// Unwraps Error that is expected to be not nil, but syntactically is optional.
     /// Often happens when bridge ObjC <-> Swift API.
-    func unwrapSafely(unexpected: Error? = nil) -> Error {
+    public func get(ifNil: Error? = nil) throws -> Wrapped {
+        if let value = self {
+            return value
+        } else {
+            throw CommonError.unwrapNil("Nil found when unwrapping \(Self.self)")
+        }
+    }
+}
+
+extension Optional where Wrapped == Error {
+    /// Unwraps Error that is expected to be not nil, but syntactically is optional.
+    /// Often happens when bridge ObjC <-> Swift API.
+    public func unwrapSafely(unexpected: Error? = nil) -> Error {
         self ?? unexpected ?? CommonError.unexpected("Unexpected nil error.")
     }
 }
