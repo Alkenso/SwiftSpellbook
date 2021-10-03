@@ -41,6 +41,7 @@ extension CommonError {
         case unwrapNil
         case invalidArgument
         case cast
+        case notFound
     }
 }
 
@@ -81,6 +82,13 @@ extension CommonError {
     public static func cast<From, To>(_ from: From, to: To.Type, description: Any? = nil) -> Self {
         let additional = description.flatMap { ". \($0)" } ?? ""
         return .init(.unwrapNil, "Failed to cast \(from) to \(to)" + additional)
+    }
+    
+    public static func notFound(what: String, value: Any? = nil, where: String? = nil, description: Any? = nil) -> Self {
+        let valueString = value.flatMap { " = \($0)" } ?? ""
+        let whereString = `where`.flatMap { " in \($0)" } ?? ""
+        let additional = description.flatMap { ". \($0)" } ?? ""
+        return .init(.notFound, "\(what)\(valueString) not found \(whereString)" + additional)
     }
 }
 

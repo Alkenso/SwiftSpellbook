@@ -20,22 +20,41 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-#import <Foundation/Foundation.h>
+import Foundation
 
 
-NS_ASSUME_NONNULL_BEGIN
+@dynamicMemberLookup
+public struct Weak<Value: AnyObject> {
+    public weak var value: Value?
+    
+    public init(_ value: Value?) {
+        self.value = value
+    }
+    
+    public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property? {
+        value?[keyPath: keyPath]
+    }
+}
 
-@interface NSException (SwiftConvenience)
 
-+ (nullable instancetype)catching:(void(NS_NOESCAPE ^)(void))block;
+@propertyWrapper
+@dynamicMemberLookup
+public final class Box<Value> {
+    public var wrappedValue: Value
+    
+    public init(wrappedValue: Value) {
+        self.wrappedValue = wrappedValue
+    }
+    
+    public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
+        wrappedValue[keyPath: keyPath]
+    }
+}
 
-@end
+public typealias WeakBox<Value: AnyObject> = Box<Weak<Value>>
 
-
-@interface NSXPCConnection (SwiftConvenience)
-
-@property (nonatomic, readonly) audit_token_t auditToken;
-
-@end
-
-NS_ASSUME_NONNULL_END
+extension Box {
+    public convenience init<T>(wrappedValue: T?) where Value == Weak<T> {
+        self.init(wrappedValue: Weak(wrappedValue))
+    }
+}

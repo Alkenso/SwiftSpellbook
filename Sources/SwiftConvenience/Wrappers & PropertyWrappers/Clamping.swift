@@ -23,50 +23,24 @@
 import Foundation
 
 
-@dynamicMemberLookup
-public struct Weak<Value: AnyObject> {
-    public weak var value: Value?
+@propertyWrapper
+public struct Clamping<Value: Comparable> {
+    var value: Value
+    let range: ClosedRange<Value>
     
-    public init(_ value: Value?) {
-        self.value = value
+    public init(initialValue value: Value, _ range: ClosedRange<Value>) {
+        self.value = value.clamped(to: range)
+        self.range = range
     }
     
-    public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property? {
-        value?[keyPath: keyPath]
+    public var wrappedValue: Value {
+        get { value }
+        set { value = newValue.clamped(to: range) }
     }
 }
 
-
-@propertyWrapper
-@dynamicMemberLookup
-public final class Box<Value> {
-    public var wrappedValue: Value
-    
-    public init(wrappedValue: Value) {
-        self.wrappedValue = wrappedValue
-    }
-    
-    public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
-        wrappedValue[keyPath: keyPath]
-    }
-}
-
-
-@propertyWrapper
-@dynamicMemberLookup
-public final class WeakBox<Value: AnyObject> {
-    private weak var _value: Value?
-    
-    public var wrappedValue: Value? {
-        get { _value }
-        set { _value = newValue }
-    }
-    
-    public init(wrappedValue: Value?) {
-        self.wrappedValue = wrappedValue
-    }
-    
-    public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property? {
-        wrappedValue?[keyPath: keyPath]
+extension Comparable {
+    public func clamped(to limits: ClosedRange<Self>) -> Self {
+        return min(max(self, limits.lowerBound), limits.upperBound)
     }
 }

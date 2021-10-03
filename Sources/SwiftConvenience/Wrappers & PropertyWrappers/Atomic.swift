@@ -23,9 +23,12 @@
 import Foundation
 
 
+/// Atomic property wrapper is designed to simple & safe operations of
+/// getting / setting particular value.
+/// For reacher thread-safe functionality consider using 'Synchronized' class.
 @propertyWrapper
 public final class Atomic<Value> {
-    private let _value: Synchronized<Value>
+    private var _value: Synchronized<Value>
     
     
     public init(wrappedValue: Value, synchronization: SynchronizationType = .serial) {
@@ -39,22 +42,5 @@ public final class Atomic<Value> {
     
     public func exchange(_ value: Value) -> Value {
         _value.exchange(value)
-    }
-}
-
-
-@propertyWrapper
-public struct Clamping<Value: Comparable> {
-    var value: Value
-    let range: ClosedRange<Value>
-    
-    public init(initialValue value: Value, _ range: ClosedRange<Value>) {
-        self.value = value.clamped(to: range)
-        self.range = range
-    }
-    
-    public var wrappedValue: Value {
-        get { value }
-        set { value = newValue.clamped(to: range) }
     }
 }

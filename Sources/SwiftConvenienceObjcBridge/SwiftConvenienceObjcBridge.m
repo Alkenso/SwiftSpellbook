@@ -25,7 +25,7 @@
 
 @implementation NSException (SwiftConvenience)
 
-+ (nullable instancetype)catching:(void(NS_NOESCAPE ^)())block
++ (nullable instancetype)catching:(void(NS_NOESCAPE ^)(void))block
 {
     @try
     {
