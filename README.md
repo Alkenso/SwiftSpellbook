@@ -6,28 +6,41 @@ While participating in many projects (mostly macOS) I use the same tools and sta
 Once I've decided stop to copy-paste code from project to project and make single library that covers lots of developer needs in utility code.
 
 ### Content
-#### Extensions
-- Bundle
-- FileManager
-- Process
-- Standard Types (URL, Data, UUID, Result, ...)
+#### Common
+- CancellationToken: track cancelled state of the tasks
+- CommonError: most common error types in developers' practice
+- Environment: runtime access to build environment: if debug, if testing, etc.
+- Some standard types extensions
+- Some utility types
+#### Filesystem & Bundle
+- Bundle: convenience extensions
+- FileManager: recursive setAttributes and the same
+- FileEnumerator: Swift approach for deep enumeration of the filesystem
+- Temporary Directory: simple working with temporary files and directories
 #### Low level
-- audit_token_t
-- POSIX stat
-- IOKit error
-#### Utility types
-- CommonError
-- ValueView
-- KeyValue struct
+- IOKitError: swift error wrapping IOKit statuses
+- Mach: mach utilities
+- POD: conformance popular C structs to Swift Equatable / Codable / etc 
+- Unsafe: a bit more UnsafePointer... utilities
+#### System & Hardware
+- DeviceInfo: platform-dependent information about device (model, serial, etc)
+- Process: convenience extensions
+#### Wrappers & PropertyWrappers
+- Atomic
+- Box / Weak / WeakBox
+- Clamping: restrict value type to some bounds
+- Synchronized: object wrapper around value to provide thread-safety
 - Resource (RAII wrapper, smart pointer analog)
-#### Filesystem
-- FileEnumerator (Swift approach for deep enumeration of the file system) 
-#### Multithreading
-- Synchronized (thread-safe wrapper around T)
-- Atomic (property wrapper to safely read/assign values from different threads)
-#### Working with String
-- WildcardExpression
-
+#### BinaryParsing
+- Utilities to serialize / deserialize things in binary format
+#### Misc
+- WildcardExpression: same as RegularExpression, but for wildcards (?, *)
+- Transfromer: generic approach of transforming one value to another using multiple 'reducers'
+#### Objective-C
+- NSXPCConnection: audit_token_t property
+- NSException: catching Obj-C exceptions from Swift code
+#### Testing
+- convenient utilities used in XCTests
 
 ### Other
 You can also find Swift libraries for macOS / *OS development
