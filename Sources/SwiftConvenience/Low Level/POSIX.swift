@@ -23,16 +23,16 @@
 import Foundation
 
 
-public extension stat {
+extension stat {
     /// Stat the file at given URL path.
-    init(url: URL) throws {
+    public init(url: URL) throws {
         var st = stat()
         try Self.throwIfError(path: url.path) { url.withUnsafeFileSystemRepresentation { stat($0, &st) } }
         self = st
     }
     
     /// Stat the file at given path.
-    init(path: String) throws {
+    public init(path: String) throws {
         var st = stat()
         try Self.throwIfError(path: path) { path.withCString { stat($0, &st) } }
         self = st

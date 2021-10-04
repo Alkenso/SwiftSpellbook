@@ -159,10 +159,10 @@ extension UUID {
 
 extension Result {
     /// Returns Success value if Result if .success, nil otherwise.
-    public var value: Success? { try? get() }
+    public var success: Success? { try? get() }
     
     /// Returns Failure value if Result if .failure, nil otherwise.
-    public var error: Failure? {
+    public var failure: Failure? {
         switch self {
         case .success:
             return nil

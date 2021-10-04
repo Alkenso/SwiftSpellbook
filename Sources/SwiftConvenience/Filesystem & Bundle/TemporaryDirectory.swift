@@ -23,20 +23,16 @@
 import Foundation
 
 
-public struct TemporaryFile {
-    public let url: URL
-    
-    public func createDirectoryTree() throws {
-        let directory = url.deletingLastPathComponent()
-        if !FileManager.default.directoryExists(at: directory) {
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
-        }
-    }
-}
-
 public struct TemporaryDirectory {
     public let url: URL
     
+    public static var `default`: TemporaryDirectory {
+        .init(url: URL(fileURLWithPath: NSTemporaryDirectory()))
+    }
+    
+    public init(url tempDir: URL) {
+        url = tempDir
+    }
     
     public func createDirectoryTree(includingLastPathComponent: Bool = true) throws {
         var createURL = url
@@ -56,12 +52,8 @@ public struct TemporaryDirectory {
         )
     }
     
-    public func file(_ name: String) -> TemporaryFile {
-        TemporaryFile(
-            url: url
-                .appendingPathComponent(name, isDirectory: false)
-                .standardizedFileURL
-        )
+    public func file(_ name: String) -> URL {
+        url.appendingPathComponent(name, isDirectory: false).standardizedFileURL
     }
     
     /// Creates unique location at system temporary directory.
@@ -75,31 +67,18 @@ public struct TemporaryDirectory {
         )
     }
     
-    /// Creates unique location at system temporary directory by adding unique extension to the name.
+    /// Creates unique location at system temporary directory by adding unique extension to the basename.
     /// Does NOT create anything at that location.
-    public func uniqueFile(name: String) -> TemporaryFile {
-        return TemporaryFile(
-            url: url
-                .appendingPathComponent(name)
-                .appendingPathExtension(UUID().uuidString)
-                .standardizedFileURL
-        )
+    public func uniqueFile(basename: String) -> URL {
+        url.appendingPathComponent(basename)
+            .appendingPathExtension(UUID().uuidString)
+            .standardizedFileURL
     }
     
     /// Creates unique location at system temporary directory.
     /// Does NOT create anything at that location.
-    public func uniqueFile(prefix: String? = nil) -> TemporaryFile {
+    public func uniqueFile(prefix: String? = nil) -> URL {
         let name = (prefix.flatMap { "\($0)-" } ?? "") + UUID().uuidString
-        return TemporaryFile(
-            url: url
-                .appendingPathComponent(name)
-                .standardizedFileURL
-        )
-    }
-}
-
-public extension TemporaryDirectory {
-    init() {
-        url = URL(fileURLWithPath: NSTemporaryDirectory())
+        return url.appendingPathComponent(name).standardizedFileURL
     }
 }

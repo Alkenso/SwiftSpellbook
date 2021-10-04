@@ -31,7 +31,7 @@ public class TestTemporaryDirectory {
     
 
     public init(prefix: String? = nil) {
-        _temp = TemporaryDirectory().uniqueSubdir(prefix: prefix)
+        _temp = TemporaryDirectory.default.uniqueSubdir(prefix: prefix)
     }
     
     public func setUp() throws {

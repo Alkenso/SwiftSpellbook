@@ -41,8 +41,8 @@ public final class FileEnumerator {
     }
 }
 
-public extension FileEnumerator {
-    enum Filter {
+extension FileEnumerator {
+    public enum Filter {
         case function(_ isIncluded: (URL) -> Bool)
         case types(Set<URL.FileType>)
     }

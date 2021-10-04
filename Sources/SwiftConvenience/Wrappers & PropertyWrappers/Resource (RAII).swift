@@ -165,10 +165,10 @@ public extension Resource where T == URL {
     /// Create Resource wrapping URL and removing it when the wrapper if freed.
     /// The item will be moved into temporary location first.
     static func raii(moving url: URL) throws -> Resource {
-        let owned = TemporaryDirectory().uniqueFile(name: url.lastPathComponent)
-        try owned.createDirectoryTree()
-        try FileManager.default.moveItem(at: url, to: owned.url)
-        return raii(location: owned.url)
+        let owned = TemporaryDirectory.default.uniqueFile(basename: url.lastPathComponent)
+        try FileManager.default.createDirectoryTree(for: owned)
+        try FileManager.default.moveItem(at: url, to: owned)
+        return raii(location: owned)
     }
 }
 

@@ -15,17 +15,15 @@ class StandardTypesExtensionsTests: XCTestCase {
         XCTAssertNotNil(unwrappedNil as? CommonError)
     }
     
-    func test_Result_value_error() {
+    func test_Result_success_failure() {
         let resultWithValue: Result<Bool, Error> = .success(true)
-        
-        XCTAssertTrue((resultWithValue.value != nil))
-        XCTAssertNil(resultWithValue.error)
+        XCTAssertEqual(resultWithValue.success, true)
+        XCTAssertNil(resultWithValue.failure)
         
         
         let resultWithError: Result<Bool, Error> = .failure(TestError())
-        
-        XCTAssertNil(resultWithError.value)
-        XCTAssertNotNil(resultWithError.error)
+        XCTAssertNil(resultWithError.success)
+        XCTAssertNotNil(resultWithError.failure)
     }
     
     func test_Data_PODTypes_toData() {

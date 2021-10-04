@@ -25,14 +25,14 @@ import Foundation
 
 // MARK: - audit_token_t
 
-public extension audit_token_t {
+extension audit_token_t {
     /// Returns current task audit token.
-    static func current() throws -> audit_token_t {
+    public static func current() throws -> audit_token_t {
         try withTask(mach_task_self_)
     }
     
     /// Returns task audit token.
-    static func withTask(_ task: task_name_t) throws -> audit_token_t {
+    public static func withTask(_ task: task_name_t) throws -> audit_token_t {
         var token = audit_token_t()
         
         var size = mach_msg_type_number_t(MemoryLayout<audit_token_t>.size / MemoryLayout<natural_t>.size)
@@ -58,15 +58,15 @@ public extension audit_token_t {
 
 #if os(macOS)
 
-public extension audit_token_t {
-    var auid: uid_t { audit_token_to_auid(self) }
-    var euid: uid_t { audit_token_to_euid(self) }
-    var egid: gid_t { audit_token_to_egid(self) }
-    var ruid: uid_t { audit_token_to_ruid(self) }
-    var rgid: gid_t { audit_token_to_rgid(self) }
-    var pid: pid_t { audit_token_to_pid(self) }
-    var asid: au_asid_t { audit_token_to_asid(self) }
-    var pidversion: Int32 { audit_token_to_pidversion(self) }
+extension audit_token_t {
+    public var auid: uid_t { audit_token_to_auid(self) }
+    public var euid: uid_t { audit_token_to_euid(self) }
+    public var egid: gid_t { audit_token_to_egid(self) }
+    public var ruid: uid_t { audit_token_to_ruid(self) }
+    public var rgid: gid_t { audit_token_to_rgid(self) }
+    public var pid: pid_t { audit_token_to_pid(self) }
+    public var asid: au_asid_t { audit_token_to_asid(self) }
+    public var pidversion: Int32 { audit_token_to_pidversion(self) }
 }
 
 #endif
@@ -74,22 +74,22 @@ public extension audit_token_t {
 
 // MARK: - Mach Time
 
-public extension TimeInterval {
+extension TimeInterval {
     /// Converts mach_time into TimeInterval using mach_timebase_info.
     /// Returns nil if mach_timebase_info fails.
-    init?(machTime: UInt64) {
+    public init?(machTime: UInt64) {
         guard let timebase = try? mach_timebase_info.system() else { return nil }
         self.init(machTime: machTime, timebase: timebase)
     }
     
-    init(machTime: UInt64, timebase: mach_timebase_info) {
+    public init(machTime: UInt64, timebase: mach_timebase_info) {
         let nanos = TimeInterval(machTime * UInt64(timebase.numer)) / TimeInterval(timebase.denom)
         self = nanos / TimeInterval(NSEC_PER_SEC)
     }
 }
 
-public extension mach_timebase_info {
-    static func system() throws -> mach_timebase_info {
+extension mach_timebase_info {
+    public static func system() throws -> mach_timebase_info {
         var info = mach_timebase_info()
         let kernReturn = mach_timebase_info(&info)
         if kernReturn == KERN_SUCCESS {

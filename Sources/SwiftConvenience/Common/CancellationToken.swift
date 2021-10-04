@@ -26,6 +26,7 @@ import Foundation
 
 public class CancellationToken {
     private let _queue: DispatchQueue
+    private let _onDeinit: Bool
     private let _onCancel: () -> Void
     
     @Atomic private var _cancelled = false
@@ -34,9 +35,16 @@ public class CancellationToken {
     public var isCancelled: Bool { _cancelled }
     
     
-    public init(on queue: DispatchQueue = .global(), cancel: @escaping () -> Void) {
+    public init(on queue: DispatchQueue = .global(), onDeinit: Bool = false, cancel: @escaping () -> Void) {
         _queue = queue
+        _onDeinit = onDeinit
         _onCancel = cancel
+    }
+    
+    deinit {
+        if _onDeinit {
+            cancel()
+        }
     }
     
     public func cancel() {

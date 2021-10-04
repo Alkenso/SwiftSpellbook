@@ -23,27 +23,35 @@
 import Foundation
 
 
-public extension FileManager {
+extension FileManager {
     /// Sets the attributes of the specified file or directory recursively.
-    func setAttributes(_ attributes: [FileAttributeKey: Any], recursivelyOfItemAt url: URL) throws {
+    public func setAttributes(_ attributes: [FileAttributeKey: Any], recursivelyOfItemAt url: URL) throws {
         try FileEnumerator(locations: [url])
             .forEach { try setAttributes(attributes, ofItemAtPath: $0.path) }
     }
     
     /// Returns a Boolean value that indicates whether a url is directory and it exists.
-    func directoryExists(at url: URL) -> Bool {
+    public func directoryExists(at url: URL) -> Bool {
         var isDirectory = false
         return fileExists(at: url, isDirectory: &isDirectory) && isDirectory
     }
     
+    /// Creates all missing intermediate directories for a given file.
+    public func createDirectoryTree(for file: URL, attributes: [FileAttributeKey: Any]? = nil) throws {
+        let directory = file.deletingLastPathComponent()
+        if !FileManager.default.directoryExists(at: directory) {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: attributes)
+        }
+    }
+    
     /// Returns a Boolean value that indicates whether filesystem item at url exists.
-    func fileExists(at url: URL) -> Bool {
+    public func fileExists(at url: URL) -> Bool {
         var isDirectory = false
         return fileExists(at: url, isDirectory: &isDirectory)
     }
     
     /// Returns a Boolean value that indicates whether a file or directory exists at a specified url.
-    func fileExists(at url: URL, isDirectory: inout Bool) -> Bool {
+    public func fileExists(at url: URL, isDirectory: inout Bool) -> Bool {
         var isDirectoryObjc = ObjCBool(false)
         let exists = fileExists(atPath: url.path, isDirectory: &isDirectoryObjc)
         isDirectory = isDirectoryObjc.boolValue
@@ -51,7 +59,7 @@ public extension FileManager {
     }
     
     /// Copies contents of given directory to other directory.
-    func copyContents(ofDirectory src: URL, to target: URL, createTarget: Bool = false) throws {
+    public func copyContents(ofDirectory src: URL, to target: URL, createTarget: Bool = false) throws {
         if !fileExists(at: target) && createTarget {
             try createDirectory(at: target, withIntermediateDirectories: true, attributes: nil)
         }
