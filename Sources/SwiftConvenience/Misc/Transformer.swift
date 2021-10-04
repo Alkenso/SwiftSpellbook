@@ -84,23 +84,23 @@ public class Transformer<Input, Transformed, Output> {
     }
     
     
-    // MARK: Register
+    // MARK: Subscription
     
-    public func register(on queue: DispatchQueue = .global(), transform: @escaping AsyncTransform) -> TransformerSubscription {
+    public func subscribe(on queue: DispatchQueue = .global(), transform: @escaping AsyncTransform) -> TransformerSubscription {
         let subscription = DeinitAction {}
         let id = ObjectIdentifier(subscription)
         _transforms.writeAsync {
             $0[id] = (transform, queue)
         }
-        subscription.replaceCleanup { [weak self] in self?.unregister(id) }
+        subscription.replaceCleanup { [weak self] in self?.unsubscribe(id) }
         return subscription
     }
     
-    public func register(on queue: DispatchQueue = .global(), transform: @escaping SyncTransform) -> TransformerSubscription {
-        register(on: queue) { $1(transform($0)) }
+    public func subscribe(on queue: DispatchQueue = .global(), transform: @escaping SyncTransform) -> TransformerSubscription {
+        subscribe(on: queue) { $1(transform($0)) }
     }
     
-    private func unregister(_ id: ObjectIdentifier) {
+    private func unsubscribe(_ id: ObjectIdentifier) {
         _transforms.writeAsync {
             $0.removeValue(forKey: id)
         }
@@ -133,7 +133,7 @@ extension Notifier where Transformed == Void, Output == Void {
     public var publisher: AnyPublisher<Input, Never> {
         let subject = PassthroughSubject<Input, Never>()
         var proxy = NotificationChainSubject(proxy: subject.eraseToAnyPublisher())
-        proxy.chainSubscription = register(on: .global(), transform: subject.send)
+        proxy.chainSubscription = subscribe(on: .global(), transform: subject.send)
         return proxy.eraseToAnyPublisher()
     }
     

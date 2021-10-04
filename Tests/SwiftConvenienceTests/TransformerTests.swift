@@ -18,11 +18,11 @@ final class TransformerTests: XCTestCase {
         var disposables: [Any] = []
         let postedEvent = "some event"
         let transformer = TransformerOneToMany<String, Int>()
-        disposables.append(transformer.register { event in
+        disposables.append(transformer.subscribe { event in
             XCTAssertEqual(event, postedEvent)
             return 1
         })
-        disposables.append(transformer.register { event, completion in
+        disposables.append(transformer.subscribe { event, completion in
             XCTAssertEqual(event, postedEvent)
             completion(2)
         })
