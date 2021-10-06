@@ -24,9 +24,12 @@ import Foundation
 
 
 public enum SynchronizationType {
-    case serial
-    case concurrent
+    case serial(DispatchQoS)
+    case concurrent(DispatchQoS)
     case custom(DispatchQueue)
+    
+    public static var serial: SynchronizationType { .serial(.default) }
+    public static var concurrent: SynchronizationType { .serial(.default) }
 }
 
 /// Wrapper around DispatchQueue for convenient and safe multithreaded access to any value.
@@ -39,12 +42,12 @@ public final class Synchronized<Value> {
         set { write(newValue) }
     }
     
-    public static func serial(_ value: Value) -> Synchronized {
-        Synchronized(value, synchronization: .serial)
+    public static func serial(_ value: Value, qos: DispatchQoS = .default) -> Synchronized {
+        Synchronized(value, synchronization: .serial(qos))
     }
     
-    public static func concurrent(_ value: Value) -> Synchronized {
-        Synchronized(value, synchronization: .concurrent)
+    public static func concurrent(_ value: Value, qos: DispatchQoS = .default) -> Synchronized {
+        Synchronized(value, synchronization: .concurrent(qos))
     }
     
     public init(_ value: Value, synchronization: SynchronizationType) {
@@ -52,21 +55,21 @@ public final class Synchronized<Value> {
         
         let queueLabel = String(describing: Self.self)
         switch synchronization {
-        case .serial:
-            _queue = DispatchQueue(label: queueLabel)
-        case .concurrent:
-            _queue = DispatchQueue(label: queueLabel, attributes: .concurrent)
+        case .serial(let qos):
+            _queue = DispatchQueue(label: queueLabel, qos: qos)
+        case .concurrent(let qos):
+            _queue = DispatchQueue(label: queueLabel, qos: qos, attributes: .concurrent)
         case .custom(let queue):
             _queue = queue
         }
     }
     
     public func read<R>(_ reader: (Value) throws -> R) rethrows -> R {
-        try _queue.sync { return try reader(_value) }
+        try _queue.sync { try reader(_value) }
     }
     
     public func write<R>(_ writer: (inout Value) throws -> R) rethrows -> R {
-        try _queue.sync(flags: .barrier) { return try writer(&_value) }
+        try _queue.sync(flags: .barrier) { try writer(&_value) }
     }
     
     public func writeAsync(_ writer: @escaping (inout Value) -> Void) {
@@ -86,7 +89,7 @@ public extension Synchronized {
 
 public extension Synchronized {
     func read() -> Value {
-        read(\.self)
+        read { $0 }
     }
     
     func read<R>(_ keyPath: KeyPath<Value, R>) -> R {
@@ -94,7 +97,7 @@ public extension Synchronized {
     }
     
     func write(_ value: Value) {
-        write(value, at: \.self)
+        write { $0 = value }
     }
     
     func write<S>(_ subValue: S, at keyPath: WritableKeyPath<Value, S>) {

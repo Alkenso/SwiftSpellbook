@@ -56,7 +56,7 @@ public class Transformer<Input, Transformed, Output> {
     }
     
     private func transform(_ value: Input, queue: DispatchQueue?, completion: @escaping (Output) -> Void) {
-        let transforms = _transforms.read(\.values)
+        let transforms = _transforms.read { $0.values }
         var transformedValues: [Transformed?] = .init(repeating: nil, count: transforms.count)
         
         let group = DispatchGroup()
