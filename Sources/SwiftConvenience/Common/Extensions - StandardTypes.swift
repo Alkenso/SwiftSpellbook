@@ -142,6 +142,25 @@ extension URL.FileType {
 }
 
 
+// MARK: - String
+
+extension String {
+    public var pathComponents: [String] { (self as NSString).pathComponents }
+    public var lastPathComponent: String { (self as NSString).lastPathComponent }
+    public func appendingPathComponent(_ str: String) -> String {
+        (self as NSString).appendingPathComponent(str)
+    }
+    public var deletingLastPathComponent: String { (self as NSString).deletingLastPathComponent }
+    
+    public var pathExtension: String { (self as NSString).pathExtension }
+    public func appendingPathExtension(_ str: String) -> String {
+        let result = (self as NSString).appendingPathExtension(str)
+        return result ?? (self + "." + str)
+    }
+    public var deletingPathExtension: String { (self as NSString).deletingPathExtension }
+}
+
+
 // MARK: - UUID
 
 extension UUID {
