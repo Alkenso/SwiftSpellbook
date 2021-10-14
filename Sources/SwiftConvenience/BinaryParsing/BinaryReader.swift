@@ -160,11 +160,11 @@ public extension BinaryReader {
     }
     
     mutating func read(maxCount: Int) throws -> Data {
-        let remainingSize = try remainingSize()
-        if maxCount <= remainingSize {
+        let size = try remainingSize()
+        if maxCount <= size {
             return try read(count: maxCount)
         } else {
-            let count = min(maxCount, remainingSize)
+            let count = min(maxCount, size)
             return try read(count: count)
         }
     }
