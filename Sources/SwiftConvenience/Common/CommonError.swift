@@ -107,10 +107,10 @@ extension Optional {
     }
 }
 
-extension Optional where Wrapped == Error {
+extension Optional where Wrapped: Error {
     /// Unwraps Error that is expected to be not nil, but syntactically is optional.
     /// Often happens when bridge ObjC <-> Swift API.
-    public func unwrapSafely(unexpected: Error? = nil) -> Error {
-        self ?? unexpected ?? CommonError.unexpected("Unexpected nil error.")
-    }
+        public var unwrapSafely: Error {
+            self ?? CommonError.unexpected("Unexpected nil error.")
+        }
 }

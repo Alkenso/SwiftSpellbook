@@ -7,11 +7,11 @@ import XCTest
 class StandardTypesExtensionsTests: XCTestCase {
     func test_Error_unwrapSafely() {
         let error: Error? = TestError()
-        let unwrapped = error.unwrapSafely()
+        let unwrapped = error.unwrapSafely
         XCTAssertNotNil(unwrapped as? TestError)
         
         let nilError: Error? = nil
-        let unwrappedNil = nilError.unwrapSafely()
+        let unwrappedNil = nilError.unwrapSafely
         XCTAssertNotNil(unwrappedNil as? CommonError)
     }
     
@@ -82,6 +82,19 @@ class StandardTypesExtensionsTests: XCTestCase {
             Data().hexString,
             ""
         )
+    }
+    
+    func test_Result_initSuccessFailure() {
+        XCTAssertEqual(Result<Int, Error>(success: 10, failure: nil).success, 10)
+        XCTAssertNotNil(Result<Int, Error>(success: nil, failure: TestError()).failure)
+        XCTAssertNotNil(Result<Int, Error>(success: nil, failure: nil).failure)
+        
+        XCTAssertEqual(Result<Int, Error>(success: 10, failure: TestError()).success, 10)
+        
+        //  Special case when Success == Optional
+        XCTAssertEqual(Result<Int?, Error>(success: nil, failure: nil).success, nil)
+        XCTAssertEqual(Result<Int?, Error>(success: nil, failure: TestError()).success, nil)
+        XCTAssertNotNil(Result<Int?, Error>(success: nil as Int??, failure: TestError()).failure)
     }
     
     func test_Comparable_clamped() {

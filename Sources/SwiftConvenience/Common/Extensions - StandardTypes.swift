@@ -191,6 +191,19 @@ extension Result {
     }
 }
 
+extension Result where Failure == Error {
+    /// Convenient conversion ObjC-API completion result into Result instance.
+    /// If prefers success: if success is present, creates Result.success case,
+    /// otherwise creates Result.failure with provided failure.
+    public init(success: Success?, failure: Failure?) {
+        if let success = success {
+            self = .success(success)
+        } else {
+            self = .failure(failure.unwrapSafely)
+        }
+    }
+}
+
 
 // MARK: - Range
 
