@@ -72,6 +72,10 @@ extension CancellationToken {
     public func addChild(on queue: DispatchQueue = .global(), cancel: @escaping () -> Void) {
         addChild(.init(on: queue, cancel: cancel))
     }
+    
+    public func attach(to parent: CancellationToken) {
+        parent.addChild(self)
+    }
 }
 
 
