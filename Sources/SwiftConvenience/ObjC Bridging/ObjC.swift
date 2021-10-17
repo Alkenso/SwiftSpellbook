@@ -20,22 +20,19 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-#import <Foundation/Foundation.h>
+import Foundation
+@_implementationOnly import SwiftConvenienceObjC
 
 
-NS_ASSUME_NONNULL_BEGIN
-
-@interface NSException (SwiftConvenience)
-
-+ (nullable instancetype)catching:(void(NS_NOESCAPE ^)(void))block;
-
-@end
+extension NSException {
+    public static func catching(_ body: () -> Void) -> NSException? {
+        scbridge_catching(body)
+    }
+}
 
 
-@interface NSXPCConnection (SwiftConvenience)
-
-@property (nonatomic, readonly) audit_token_t auditToken;
-
-@end
-
-NS_ASSUME_NONNULL_END
+extension NSXPCConnection {
+    public var auditToken: audit_token_t {
+        scbridge_auditToken
+    }
+}

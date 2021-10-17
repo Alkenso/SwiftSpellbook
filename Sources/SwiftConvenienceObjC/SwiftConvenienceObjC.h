@@ -20,4 +20,22 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-@_exported import SwiftConvenienceObjcBridge
+#import <Foundation/Foundation.h>
+
+
+NS_ASSUME_NONNULL_BEGIN
+
+@interface NSException (SwiftConvenience)
+
++ (nullable instancetype)scbridge_catching:(void(NS_NOESCAPE ^)(void))block;
+
+@end
+
+
+@interface NSXPCConnection (SwiftConvenience)
+
+@property (nonatomic, readonly) audit_token_t scbridge_auditToken;
+
+@end
+
+NS_ASSUME_NONNULL_END

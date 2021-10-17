@@ -20,12 +20,12 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-#import "SwiftConvenienceObjcBridge.h"
+#import "SwiftConvenienceObjC.h"
 
 
 @implementation NSException (SwiftConvenience)
 
-+ (nullable instancetype)catching:(void(NS_NOESCAPE ^)(void))block
++ (nullable instancetype)sc_catching:(void(NS_NOESCAPE ^)(void))block
 {
     @try
     {
@@ -36,6 +36,20 @@
     {
         return exception;
     }
+}
+
+@end
+
+
+@interface NSXPCConnection (SwiftConveniencePrivate)
+@property (nonatomic, readonly) audit_token_t auditToken;
+@end
+
+@implementation NSXPCConnection (SwiftConvenience)
+
+- (audit_token_t)scbridge_auditToken
+{
+    self.auditToken;
 }
 
 @end

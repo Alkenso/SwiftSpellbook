@@ -7,10 +7,9 @@ let package = Package(
     name: "SwiftConvenience",
     platforms: [.macOS(.v10_10), .iOS(.v9), .tvOS(.v9), .watchOS(.v2)],
     products: [
-        // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(
             name: "SwiftConvenience",
-            targets: ["SwiftConvenience", "SwiftConvenienceObjcBridge"]
+            targets: ["SwiftConvenience"]
         ),
         .library(
             name: "SwiftConvenienceTestUtils",
@@ -22,12 +21,11 @@ let package = Package(
     targets: [
         .target(
             name: "SwiftConvenience",
-            dependencies: ["SwiftConvenienceObjcBridge"],
+            dependencies: ["SwiftConvenienceObjC"],
             linkerSettings: [LinkerSetting.linkedLibrary("bsm", .when(platforms: [.macOS]))]
         ),
         .target(
-            name: "SwiftConvenienceObjcBridge",
-            dependencies: [],
+            name: "SwiftConvenienceObjC",
             publicHeadersPath: "."
         ),
         .target(
