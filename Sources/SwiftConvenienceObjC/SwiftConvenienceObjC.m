@@ -25,7 +25,7 @@
 
 @implementation NSException (SwiftConvenience)
 
-+ (nullable instancetype)sc_catching:(void(NS_NOESCAPE ^)(void))block
++ (nullable instancetype)scbridge_catching:(void(NS_NOESCAPE ^)(void))block
 {
     @try
     {
@@ -49,7 +49,7 @@
 
 - (audit_token_t)scbridge_auditToken
 {
-    self.auditToken;
+    return self.auditToken;
 }
 
 @end
