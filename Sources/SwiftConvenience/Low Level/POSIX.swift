@@ -25,29 +25,22 @@ import Foundation
 
 extension stat {
     /// Stat the file at given URL path.
-    public init(url: URL) throws {
+    public init(url: URL, isLstat: Bool = false) throws {
         var st = stat()
-        try Self.throwIfError(path: url.path) { url.withUnsafeFileSystemRepresentation { stat($0, &st) } }
+        let (statFn, name) = Self.functionAndName(isLstat: isLstat)
+        try NSError.posixTry(debug: "\(name) failed", url.withUnsafeFileSystemRepresentation { statFn($0, &st) } == 0)
         self = st
     }
     
     /// Stat the file at given path.
-    public init(path: String) throws {
+    public init(path: String, isLstat: Bool = false) throws {
         var st = stat()
-        try Self.throwIfError(path: path) { path.withCString { stat($0, &st) } }
+        let (statFn, name) = Self.functionAndName(isLstat: isLstat)
+        try NSError.posixTry(debug: "\(name) failed", path.withCString { statFn($0, &st) } == 0)
         self = st
     }
     
-    private static func throwIfError(path: String, _ body: () -> Int32) throws {
-        let ret = body()
-        if ret != 0 {
-            throw NSError(
-                domain: NSPOSIXErrorDomain,
-                code: Int(ret),
-                userInfo: [
-                    NSDebugDescriptionErrorKey: "stat failed. code = \(ret), path = \(path)"
-                ]
-            )
-        }
+    private static func functionAndName(isLstat: Bool) -> ((UnsafePointer<CChar>?, UnsafeMutablePointer<stat>?) -> Int32, String) {
+        isLstat ? (lstat, "lstat") : (stat, "stat")
     }
 }

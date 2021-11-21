@@ -107,16 +107,21 @@ extension URL {
     }
     
     /// Determines file type of given URL.
+    /// Does NOT resolve symlinks.
     /// - returns: file type or nil if URL is not a file URL or file can't be stat'ed.
     public var fileType: FileType? {
         guard isFileURL else { return nil }
-        return (try? stat())
+        return (try? lstat())
             .map(\.st_mode)
             .flatMap(FileType.init)
     }
     
     public func stat() throws -> stat {
-        try Darwin.stat(url: self)
+        try Darwin.stat(url: self, isLstat: false)
+    }
+    
+    public func lstat() throws -> stat {
+        try Darwin.stat(url: self, isLstat: true)
     }
 }
 
