@@ -49,13 +49,13 @@ extension NSError {
         _ type: T.Type,
         body: (UnsafeMutablePointer<T?>, UnsafeMutablePointer<Unmanaged<CFError>?>) -> OSStatus
     ) throws -> T {
-        var result: T!
+        var result: T?
         var error: Unmanaged<CFError>?
         let status = body(&result, &error)
         if let nsError = NSError(os: status, underlyingError: error?.takeRetainedValue(), debugDescription: debugDescription) {
             throw nsError
         } else {
-            return result
+            return try result.get()
         }
     }
     
@@ -69,9 +69,24 @@ extension NSError {
     
     public static func osTry(
         debug debugDescription: String? = nil,
+        body: () -> OSStatus
+    ) throws {
+        do {
+            try osTry(debug: debugDescription, Void.self) { _, _ in body() }
+        } catch let error as CommonError where error.code == .unwrapNil {
+            //  do nothing
+        }
+    }
+    
+    public static func osTry(
+        debug debugDescription: String? = nil,
         body: (UnsafeMutablePointer<Unmanaged<CFError>?>) -> OSStatus
     ) throws {
-        try osTry(debug: debugDescription, Void.self) { _, errorPtr in body(errorPtr) }
+        do {
+            try osTry(debug: debugDescription, Void.self) { _, errorPtr in body(errorPtr) }
+        } catch let error as CommonError where error.code == .unwrapNil {
+            //  do nothing
+        }
     }
     
     
