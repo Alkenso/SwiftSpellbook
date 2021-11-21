@@ -97,13 +97,14 @@ extension URL {
 }
 
 extension URL {
-    public enum FileType: CaseIterable {
+    public enum FileType {
         case blockSpecial
         case characterSpecial
         case fifo
         case regular
         case directory
         case symbolicLink
+        case socket
     }
     
     /// Determines file type of given URL.
@@ -127,21 +128,15 @@ extension URL {
 
 extension URL.FileType {
     public init?(_ mode: mode_t) {
-        if let fileType = Self.allCases.first(where: { $0.mode == mode & $0.mode }) {
-            self = fileType
-        } else {
-            return nil
-        }
-    }
-    
-    public var mode: mode_t {
-        switch self {
-        case .blockSpecial: return S_IFBLK
-        case .characterSpecial: return S_IFCHR
-        case .fifo: return S_IFIFO
-        case .regular: return S_IFREG
-        case .directory: return S_IFDIR
-        case .symbolicLink: return S_IFLNK
+        switch mode & S_IFMT {
+        case S_IFBLK: self = .blockSpecial
+        case S_IFCHR: self = .characterSpecial
+        case S_IFDIR: self = .directory
+        case S_IFIFO: self = .fifo
+        case S_IFLNK: self = .symbolicLink
+        case S_IFREG: self = .regular
+        case S_IFSOCK: self = .socket
+        default: return nil
         }
     }
 }
