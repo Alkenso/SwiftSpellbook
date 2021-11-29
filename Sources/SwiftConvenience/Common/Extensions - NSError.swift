@@ -44,7 +44,7 @@ extension NSError {
         self.init(domain: NSOSStatusErrorDomain, code: Int(os), underlyingError: underlyingError, debugDescription: debugDescription)
     }
     
-    public static func osTry<T>(
+    public static func osTryReturn<T>(
         debug debugDescription: String? = nil,
         body: (UnsafeMutablePointer<T?>, UnsafeMutablePointer<Unmanaged<CFError>?>) -> OSStatus
     ) throws -> T {
@@ -58,7 +58,7 @@ extension NSError {
         }
     }
     
-    public static func osTry<T>(
+    public static func osTryReturn<T>(
         debug debugDescription: String? = nil,
         body: (UnsafeMutablePointer<T?>, UnsafeMutablePointer<CFError?>) -> OSStatus
     ) throws -> T {
@@ -66,6 +66,19 @@ extension NSError {
         var error: CFError?
         let status = body(&result, &error)
         if let nsError = NSError(os: status, underlyingError: error, debugDescription: debugDescription) {
+            throw nsError
+        } else {
+            return try result.get()
+        }
+    }
+    
+    public static func osTryReturn<T>(
+        debug debugDescription: String? = nil,
+        body: (UnsafeMutablePointer<T?>) -> OSStatus
+    ) throws -> T {
+        var result: T?
+        let status = body(&result)
+        if let nsError = NSError(os: status, debugDescription: debugDescription) {
             throw nsError
         } else {
             return try result.get()
