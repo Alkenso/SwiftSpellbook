@@ -46,7 +46,6 @@ extension NSError {
     
     public static func osTry<T>(
         debug debugDescription: String? = nil,
-        _ type: T.Type,
         body: (UnsafeMutablePointer<T?>, UnsafeMutablePointer<Unmanaged<CFError>?>) -> OSStatus
     ) throws -> T {
         var result: T?
@@ -61,20 +60,38 @@ extension NSError {
     
     public static func osTry<T>(
         debug debugDescription: String? = nil,
-        _ type: T.Type,
+        body: (UnsafeMutablePointer<T?>, UnsafeMutablePointer<CFError?>) -> OSStatus
+    ) throws -> T {
+        var result: T?
+        var error: CFError?
+        let status = body(&result, &error)
+        if let nsError = NSError(os: status, underlyingError: error, debugDescription: debugDescription) {
+            throw nsError
+        } else {
+            return try result.get()
+        }
+    }
+    
+    public static func osTry<T>(
+        debug debugDescription: String? = nil,
         body: (UnsafeMutablePointer<T?>) -> OSStatus
     ) throws -> T {
-        try osTry(debug: debugDescription, T.self) { resultPtr, _ in body(resultPtr) }
+        var result: T?
+        let status = body(&result)
+        if let nsError = NSError(os: status, debugDescription: debugDescription) {
+            throw nsError
+        } else {
+            return try result.get()
+        }
     }
     
     public static func osTry(
         debug debugDescription: String? = nil,
         body: () -> OSStatus
     ) throws {
-        do {
-            try osTry(debug: debugDescription, Void.self) { _, _ in body() }
-        } catch let error as CommonError where error.code == .unwrapNil {
-            //  do nothing
+        let status = body()
+        if let nsError = NSError(os: status, debugDescription: debugDescription) {
+            throw nsError
         }
     }
     
@@ -82,10 +99,21 @@ extension NSError {
         debug debugDescription: String? = nil,
         body: (UnsafeMutablePointer<Unmanaged<CFError>?>) -> OSStatus
     ) throws {
-        do {
-            try osTry(debug: debugDescription, Void.self) { _, errorPtr in body(errorPtr) }
-        } catch let error as CommonError where error.code == .unwrapNil {
-            //  do nothing
+        var error: Unmanaged<CFError>?
+        let status = body(&error)
+        if let nsError = NSError(os: status, underlyingError: error?.takeRetainedValue(), debugDescription: debugDescription) {
+            throw nsError
+        }
+    }
+    
+    public static func osTry(
+        debug debugDescription: String? = nil,
+        body: (UnsafeMutablePointer<CFError?>) -> OSStatus
+    ) throws {
+        var error: CFError?
+        let status = body(&error)
+        if let nsError = NSError(os: status, underlyingError: error, debugDescription: debugDescription) {
+            throw nsError
         }
     }
     
@@ -113,7 +141,7 @@ extension NSError {
         if let instance = body() {
             return instance
         } else {
-            throws NSError(domain: NSPOSIXErrorDomain, code: Int(errno), debugDescription: debugDescription)
+            throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno), debugDescription: debugDescription)
         }
     }
 }
