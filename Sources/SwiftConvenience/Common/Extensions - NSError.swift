@@ -105,4 +105,15 @@ extension NSError {
             throw nsError
         }
     }
+    
+    public static func posixTry<T>(
+        debug debugDescription: String? = nil,
+        _ body: () -> T?
+    ) throws -> T {
+        if let instance = body() {
+            return instance
+        } else {
+            throws NSError(domain: NSPOSIXErrorDomain, code: Int(errno), debugDescription: debugDescription)
+        }
+    }
 }
