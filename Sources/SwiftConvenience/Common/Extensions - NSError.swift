@@ -72,19 +72,6 @@ extension NSError {
         }
     }
     
-    public static func osTry<T>(
-        debug debugDescription: String? = nil,
-        body: (UnsafeMutablePointer<T?>) -> OSStatus
-    ) throws -> T {
-        var result: T?
-        let status = body(&result)
-        if let nsError = NSError(os: status, debugDescription: debugDescription) {
-            throw nsError
-        } else {
-            return try result.get()
-        }
-    }
-    
     public static func osTry(
         debug debugDescription: String? = nil,
         body: () -> OSStatus
