@@ -40,20 +40,26 @@ public extension Process {
         proc.standardOutput = standardOutPipe.fileHandleForWriting
         proc.standardError = standardErrPipe.fileHandleForWriting
         
-        proc.launch()
+        if let exception = NSException.catching({ proc.launch() }) {
+            return (
+                ENOENT,
+                "",
+                "Exception \(exception.name) ocurred. Reason: \(exception.reason ?? "<unknown>"). UserInfo: \(exception.userInfo?.description ?? "{}")"
+            )
+        }
         
         // We have to close our reference to the write side of the pipe so that the
         // termination of the child process triggers EOF on the read side.
         standardOutPipe.fileHandleForWriting.closeFile()
         standardErrPipe.fileHandleForWriting.closeFile()
         
-        proc.waitUntilExit()
-        
         let standardOutData = standardOutPipe.fileHandleForReading.readDataToEndOfFile()
         standardOutPipe.fileHandleForReading.closeFile()
         
         let standardErrData = standardErrPipe.fileHandleForReading.readDataToEndOfFile()
         standardErrPipe.fileHandleForReading.closeFile()
+        
+        proc.waitUntilExit()
         
         return (
             proc.terminationStatus,
