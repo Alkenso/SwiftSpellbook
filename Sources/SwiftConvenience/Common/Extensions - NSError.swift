@@ -23,125 +23,178 @@
 import Foundation
 
 
+// MARK: - NSError predefined domains
+
 extension NSError {
-    public convenience init(domain: String, code: Int, underlyingError: Error? = nil, debugDescription: String? = nil) {
-        var userInfo: [String: Any] = [:]
-        underlyingError.flatMap { userInfo[NSUnderlyingErrorKey] = $0 }
-        debugDescription.flatMap { userInfo[NSDebugDescriptionErrorKey] = $0 }
-        
+    public convenience init(posix code: Int32) {
+        self.init(domain: NSPOSIXErrorDomain, code: Int(code))
+    }
+    
+    public convenience init(osStatus code: OSStatus) {
+        self.init(domain: NSOSStatusErrorDomain, code: Int(code))
+    }
+    
+    public convenience init(mach code: kern_return_t) {
+        self.init(domain: NSMachErrorDomain, code: Int(code))
+    }
+}
+
+
+// MARK: - NSError Builder
+
+extension NSError {
+    public convenience init<Code: BinaryInteger>(domain: String, code: Code) {
         self.init(
             domain: domain,
-            code: code,
-            userInfo: !userInfo.isEmpty ? userInfo : nil
+            code: Int(code),
+            userInfo: nil
         )
     }
     
-    
-    //  MARK: OSStatus
-    
-    public convenience init?(os: OSStatus, underlyingError: CFError? = nil, debugDescription: String? = nil) {
-        guard os != noErr else { return nil }
-        self.init(domain: NSOSStatusErrorDomain, code: Int(os), underlyingError: underlyingError, debugDescription: debugDescription)
+    public func underlyingError(_ error: Error?) -> NSError {
+        guard let error = error else { return self }
+        
+        var userInfo = self.userInfo
+        if userInfo[NSUnderlyingErrorKey] != nil, #available(macOS 11.3, iOS 14.5, tvOS 14.5, watchOS 7.4, *) {
+            var errors = userInfo[NSMultipleUnderlyingErrorsKey] as? [Error] ?? []
+            errors.append(error)
+            userInfo[NSMultipleUnderlyingErrorsKey] = errors
+        } else {
+            userInfo[NSUnderlyingErrorKey] = error
+        }
+        
+        return self.userInfo(userInfo)
     }
     
-    public static func osTryReturn<T>(
-        debug debugDescription: String? = nil,
-        body: (UnsafeMutablePointer<T?>, UnsafeMutablePointer<Unmanaged<CFError>?>) -> OSStatus
+    public func debugDescription(_ debugDescription: String?) -> NSError {
+        guard let debugDescription = debugDescription else { return self }
+        
+        var userInfo = self.userInfo
+        userInfo[NSDebugDescriptionErrorKey] = debugDescription
+        
+        return self.userInfo(userInfo)
+    }
+    
+    public func userInfo(_ value: Any, for key: String) -> NSError {
+        var userInfo = self.userInfo
+        userInfo[key] = value
+        
+        return self.userInfo(userInfo)
+    }
+    
+    public func userInfo(_ userInfo: [String: Any]) -> NSError {
+        NSError(domain: domain, code: code, userInfo: userInfo)
+    }
+}
+
+
+// MARK: - NSError Try
+
+extension NSError {
+    public static var osstatus: TryBuilder<OSStatusTryTag> { .init() }
+    public static var posix: TryBuilder<POSIXTryTag> { .init() }
+    
+    
+    public struct OSStatusTryTag {}
+    public struct POSIXTryTag {}
+    
+    public struct TryBuilder<Tag> {
+        private var debugDescription: String?
+        
+        public func debugDescription(_ debugDescription: String) -> Self {
+            var copy = self
+            copy.debugDescription = debugDescription
+            return copy
+        }
+    }
+}
+
+extension NSError.TryBuilder where Tag == NSError.OSStatusTryTag {
+    public func `try`<T>(
+        body: (UnsafeMutablePointer<T?>, UnsafeMutablePointer<Unmanaged<CFError>?>?) -> OSStatus
     ) throws -> T {
         var result: T?
         var error: Unmanaged<CFError>?
         let status = body(&result, &error)
-        if let nsError = NSError(os: status, underlyingError: error?.takeRetainedValue(), debugDescription: debugDescription) {
-            throw nsError
-        } else {
-            return try result.get()
-        }
+        
+        try osError(status, underlying: error?.takeRetainedValue())?.throw()
+        
+        return try result.get()
     }
     
-    public static func osTryReturn<T>(
-        debug debugDescription: String? = nil,
-        body: (UnsafeMutablePointer<T?>, UnsafeMutablePointer<CFError?>) -> OSStatus
+    public func `try`<T>(
+        body: (UnsafeMutablePointer<T?>, UnsafeMutablePointer<CFError?>?) -> OSStatus
     ) throws -> T {
         var result: T?
         var error: CFError?
         let status = body(&result, &error)
-        if let nsError = NSError(os: status, underlyingError: error, debugDescription: debugDescription) {
-            throw nsError
-        } else {
-            return try result.get()
-        }
+        
+        try osError(status, underlying: error)?.throw()
+        
+        return try result.get()
     }
     
-    public static func osTryReturn<T>(
-        debug debugDescription: String? = nil,
+    public func `try`<T>(
         body: (UnsafeMutablePointer<T?>) -> OSStatus
     ) throws -> T {
         var result: T?
         let status = body(&result)
-        if let nsError = NSError(os: status, debugDescription: debugDescription) {
-            throw nsError
-        } else {
-            return try result.get()
-        }
+        
+        try osError(status)?.throw()
+        
+        return try result.get()
     }
     
-    public static func osTry(
-        debug debugDescription: String? = nil,
+    public func `try`(
         body: () -> OSStatus
     ) throws {
         let status = body()
-        if let nsError = NSError(os: status, debugDescription: debugDescription) {
-            throw nsError
-        }
+        try osError(status)?.throw()
     }
     
-    public static func osTry(
-        debug debugDescription: String? = nil,
-        body: (UnsafeMutablePointer<Unmanaged<CFError>?>) -> OSStatus
+    public func `try`(
+        body: (UnsafeMutablePointer<Unmanaged<CFError>?>?) -> OSStatus
     ) throws {
         var error: Unmanaged<CFError>?
         let status = body(&error)
-        if let nsError = NSError(os: status, underlyingError: error?.takeRetainedValue(), debugDescription: debugDescription) {
-            throw nsError
-        }
+        
+        try osError(status, underlying: error?.takeRetainedValue())?.throw()
     }
     
-    public static func osTry(
-        debug debugDescription: String? = nil,
-        body: (UnsafeMutablePointer<CFError?>) -> OSStatus
+    public func `try`(
+        body: (UnsafeMutablePointer<CFError?>?) -> OSStatus
     ) throws {
         var error: CFError?
         let status = body(&error)
-        if let nsError = NSError(os: status, underlyingError: error, debugDescription: debugDescription) {
-            throw nsError
+        
+        try osError(status, underlying: error)?.throw()
+    }
+    
+    private func osError(_ status: OSStatus, underlying: Error? = nil) -> NSError? {
+        guard status != noErr else { return nil }
+        return NSError(osStatus: status)
+            .underlyingError(underlying)
+            .debugDescription(debugDescription)
+    }
+}
+
+extension NSError.TryBuilder where Tag == NSError.POSIXTryTag {
+    public func `try`(_ success: Bool) throws {
+        if !success {
+            throw posixError()
         }
     }
     
-    
-    //  MARK: POSIX
-    
-    public convenience init?(posixSuccess: Bool, debugDescription: String? = nil) {
-        guard !posixSuccess && errno != 0 else { return nil }
-        self.init(domain: NSPOSIXErrorDomain, code: Int(errno), debugDescription: debugDescription)
-    }
-    
-    public static func posixTry(
-        debug debugDescription: String? = nil,
-        _ success: Bool
-    ) throws {
-        if let nsError = NSError(posixSuccess: success, debugDescription: debugDescription) {
-            throw nsError
-        }
-    }
-    
-    public static func posixTry<T>(
-        debug debugDescription: String? = nil,
-        _ body: () -> T?
-    ) throws -> T {
+    public func `try`<T>(body: () -> T?) throws -> T {
         if let instance = body() {
             return instance
         } else {
-            throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno), debugDescription: debugDescription)
+            throw posixError()
         }
+    }
+    
+    private func posixError() -> NSError {
+        NSError(posix: errno)
+            .debugDescription(debugDescription)
     }
 }

@@ -28,7 +28,9 @@ extension stat {
     public init(url: URL, isLstat: Bool = false) throws {
         var st = stat()
         let (statFn, name) = Self.functionAndName(isLstat: isLstat)
-        try NSError.posixTry(debug: "\(name) failed", url.withUnsafeFileSystemRepresentation { statFn($0, &st) } == 0)
+        try NSError.posix
+            .debugDescription("\(name) failed")
+            .try(url.withUnsafeFileSystemRepresentation { statFn($0, &st) } == 0)
         self = st
     }
     
@@ -36,7 +38,9 @@ extension stat {
     public init(path: String, isLstat: Bool = false) throws {
         var st = stat()
         let (statFn, name) = Self.functionAndName(isLstat: isLstat)
-        try NSError.posixTry(debug: "\(name) failed", path.withCString { statFn($0, &st) } == 0)
+        try NSError.posix
+            .debugDescription("\(name) failed")
+            .try(path.withCString { statFn($0, &st) } == 0)
         self = st
     }
     

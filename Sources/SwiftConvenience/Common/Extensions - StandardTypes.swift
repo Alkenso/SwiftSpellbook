@@ -205,6 +205,14 @@ extension Result where Failure == Error {
 }
 
 
+// MARK: - Error
+
+extension Error {
+    public func `throw`() throws -> Never {
+        throw self
+    }
+}
+
 // MARK: - Range
 
 extension Range {
