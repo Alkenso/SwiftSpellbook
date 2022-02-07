@@ -23,21 +23,21 @@
 import Foundation
 
 
-/// Performs convenient enumeration of filesystem items at given locations.
+/// Performs convenient enumeration of filesystem items at given location(s).
 public final class FileEnumerator {
     private var locations: [URL]
     private var enumerator: NSEnumerator?
     
-    public var filter: Filter?
+    public var filters: [Filter] = []
+    public var options: FileManager.DirectoryEnumerationOptions = []
     
     
-    public init(locations: [URL], filter: Filter? = nil) {
+    public init(locations: [URL]) {
         self.locations = locations.reversed()
-        self.filter = filter
     }
     
-    public convenience init(_ location: URL, filter: Filter? = nil) {
-        self.init(locations: [location], filter: filter)
+    public convenience init(_ location: URL) {
+        self.init(locations: [location])
     }
 }
 
@@ -51,8 +51,9 @@ extension FileEnumerator {
 extension FileEnumerator: Sequence, IteratorProtocol {
     public func next() -> URL? {
         while let next = nextUnfiltered() {
-            guard let filter = filter else { return next }
-            if filter(isIncluded: next) {
+            guard !filters.isEmpty else { return next }
+            let included = filters.contains(where: { $0(isIncluded: next) })
+            if included {
                 return next
             }
         }
@@ -79,7 +80,7 @@ extension FileEnumerator: Sequence, IteratorProtocol {
         
         //  If location is directory, update enumerator.
         if isDirectory {
-            enumerator = FileManager.default.enumerator(at: nextLocation, includingPropertiesForKeys: nil)
+            enumerator = FileManager.default.enumerator(at: nextLocation, includingPropertiesForKeys: nil, options: options)
         }
         
         return nextLocation
