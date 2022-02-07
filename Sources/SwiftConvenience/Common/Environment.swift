@@ -33,4 +33,13 @@ public enum BuildEnvironment {
     }()
     
     public static let isXCTesting: Bool = NSClassFromString("XCTestProbe") != nil
+    
+    public static let isXcodePreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"]?.isEmpty == false
+    public static let isSimulator: Bool = {
+        #if targetEnvironment(simulator)
+        return true
+        #else
+        return false
+        #endif
+    }()
 }
