@@ -22,78 +22,123 @@
 
 import Foundation
 
-
 /// Wrapper around the closure that allows extending.
 /// Design follows 'Decorator' pattern.
-public struct Handler<T, R>: HandlerProtocol {
+public struct Closure<T, R> {
     private let action: (T) -> R
-    
-    
+
     public init(_ action: @escaping (T) -> R) {
         self.action = action
     }
-    
+
     public func callAsFunction(_ value: T) -> R {
         action(value)
     }
 }
 
-
-public protocol HandlerProtocol {
-    associatedtype T
-    associatedtype R
-    
-    init(_ handler: @escaping (T) -> R)
-    
-    func callAsFunction(_ value: T) -> R
-}
-
-extension HandlerProtocol {
-    /// Converts handler into usual closure, keeping all wraps
+extension Closure {
+    /// Converts into usual closure, keeping all wraps
     public var asClosure: (T) -> R { callAsFunction }
-    
-    ///
-    public func sync(on queue: DispatchQueue) -> Self {
-        Self { result in queue.sync { self(result) } }
-    }
 }
 
-extension HandlerProtocol where R == Void {
-    public var oneShot: Self {
+extension Closure {
+    public func oneShot() -> Self where R == Void {
         var once = atomic_flag()
         return Self { result in
             once.callOnce { self(result) }
         }
     }
-    
-    public func async(on queue: DispatchQueue) -> Self {
+
+    public func sync(on queue: DispatchQueue) -> Self {
+        Self { result in queue.sync { self(result) } }
+    }
+
+    public func async(on queue: DispatchQueue) -> Self where R == Void {
         Self { result in queue.async { self(result) } }
     }
 }
 
-extension HandlerProtocol where T == Void {
-    public func execute() -> R { self(()) }
+extension Closure where T == Void {
+    public func callAsFunction() -> R { self(()) }
 }
 
-extension HandlerProtocol {
+extension Closure {
     public func callAsFunction<T1, T2>(_ arg1: T1, _ arg2: T2) -> R where T == (T1, T2) {
         callAsFunction((arg1, arg2))
     }
-    
+
     public func callAsFunction<T1, T2, T3>(_ arg1: T1, _ arg2: T2, _ arg3: T3) -> R where T == (T1, T2, T3) {
         callAsFunction((arg1, arg2, arg3))
     }
-    
+
     public func callAsFunction<T1, T2, T3, T4>(_ arg1: T1, _ arg2: T2, _ arg3: T3, _ arg4: T4) -> R where T == (T1, T2, T3, T4) {
         callAsFunction((arg1, arg2, arg3, arg4))
     }
-    
+
     public func callAsFunction<T1, T2, T3, T4, T5>(_ arg1: T1, _ arg2: T2, _ arg3: T3, _ arg4: T4, _ arg5: T5) -> R where T == (T1, T2, T3, T4, T5) {
         callAsFunction((arg1, arg2, arg3, arg4, arg5))
     }
-    
+
     public func callAsFunction<T1, T2, T3, T4, T5, T6>(_ arg1: T1, _ arg2: T2, _ arg3: T3, _ arg4: T4, _ arg5: T5, _ arg6: T6) -> R where T == (T1, T2, T3, T4, T5, T6) {
         callAsFunction((arg1, arg2, arg3, arg4, arg5, arg6))
     }
 }
 
+/// Throwing version of `Closure`
+public struct ClosureT<T, R> {
+    private let action: (T) throws -> R
+    
+    public init(_ action: @escaping (T) throws -> R) {
+        self.action = action
+    }
+    
+    public func callAsFunction(_ value: T) throws -> R {
+        try action(value)
+    }
+}
+
+extension ClosureT {
+    /// Converts into usual closure, keeping all wraps
+    public var asClosure: (T) throws -> R { callAsFunction }
+}
+
+extension ClosureT {
+    public func oneShot() -> Self where R == Void {
+        var once = atomic_flag()
+        return Self { value in
+            var result: Result<R, Error>?
+            once.callOnce { result = Result { try self(value) } }
+            try result?.get()
+        }
+    }
+    
+    public func sync(on queue: DispatchQueue) -> Self {
+        Self { value in try queue.sync { try self(value) } }
+    }
+}
+
+extension ClosureT where T == Void {
+    public func callAsFunction() throws -> R { try self(()) }
+}
+
+extension ClosureT {
+    public func callAsFunction<T1, T2>(_ arg1: T1, _ arg2: T2) throws -> R where T == (T1, T2) {
+        try callAsFunction((arg1, arg2))
+    }
+    
+    public func callAsFunction<T1, T2, T3>(_ arg1: T1, _ arg2: T2, _ arg3: T3) throws -> R where T == (T1, T2, T3) {
+        try callAsFunction((arg1, arg2, arg3))
+    }
+    
+    public func callAsFunction<T1, T2, T3, T4>(_ arg1: T1, _ arg2: T2, _ arg3: T3, _ arg4: T4) throws -> R where T == (T1, T2, T3, T4) {
+        try callAsFunction((arg1, arg2, arg3, arg4))
+    }
+    
+    public func callAsFunction<T1, T2, T3, T4, T5>(_ arg1: T1, _ arg2: T2, _ arg3: T3, _ arg4: T4, _ arg5: T5) throws -> R where T == (T1, T2, T3, T4, T5) {
+        try callAsFunction((arg1, arg2, arg3, arg4, arg5))
+    }
+    
+    public func callAsFunction<T1, T2, T3, T4, T5, T6>(_ arg1: T1, _ arg2: T2, _ arg3: T3, _ arg4: T4, _ arg5: T5, _ arg6: T6) throws -> R where T == (T1, T2, T3, T4, T5, T6) {
+        try callAsFunction((arg1, arg2, arg3, arg4, arg5, arg6))
+    }
+}
