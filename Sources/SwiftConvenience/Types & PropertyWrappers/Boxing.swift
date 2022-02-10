@@ -22,7 +22,6 @@
 
 import Foundation
 
-
 @dynamicMemberLookup
 public struct Weak<Value: AnyObject> {
     public weak var value: Value?
@@ -56,5 +55,54 @@ public typealias WeakBox<Value: AnyObject> = Box<Weak<Value>>
 extension Box {
     public convenience init<T>(wrappedValue: T?) where Value == Weak<T> {
         self.init(wrappedValue: Weak(wrappedValue))
+    }
+}
+
+
+@propertyWrapper
+@dynamicMemberLookup
+public struct GetSet<Value> {
+    public var get: () -> Value
+    public var set: (Value) -> Void
+    
+    public var wrappedValue: Value {
+        get { get() }
+        set { set(newValue) }
+    }
+    
+    public init(get: @escaping () -> Value, set: @escaping (Value) -> Void) {
+        self.get = get
+        self.set = set
+    }
+    
+    public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
+        wrappedValue[keyPath: keyPath]
+    }
+}
+
+
+/// Wrapper that provides access to value. Useful when value is a struct that may be changed over time.
+@dynamicMemberLookup
+public final class ValueView<Value> {
+    private let accessor: () -> Value
+    
+    public init(_ accessor: @escaping () -> Value) {
+        self.accessor = accessor
+    }
+    
+    public func get() -> Value { accessor() }
+    
+    public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
+        (get())[keyPath: keyPath]
+    }
+}
+
+extension ValueView {
+    public static func `weak`<U: AnyObject>(_ value: U) -> ValueView<U?> {
+        .init { [weak value] in value }
+    }
+    
+    public subscript<U, Property>(dynamicMember keyPath: KeyPath<U, Property>) -> Property? where Value == Optional<U> {
+        (get())?[keyPath: keyPath]
     }
 }
