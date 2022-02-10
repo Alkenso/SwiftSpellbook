@@ -48,6 +48,11 @@ public final class Box<Value> {
     public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
         wrappedValue[keyPath: keyPath]
     }
+    
+    public subscript<Property>(dynamicMember keyPath: WritableKeyPath<Value, Property>) -> Property {
+        get { wrappedValue[keyPath: keyPath] }
+        set { wrappedValue[keyPath: keyPath] = newValue }
+    }
 }
 
 public typealias WeakBox<Value: AnyObject> = Box<Weak<Value>>
@@ -60,7 +65,6 @@ extension Box {
 
 
 @propertyWrapper
-@dynamicMemberLookup
 public struct GetSet<Value> {
     public var get: () -> Value
     public var set: (Value) -> Void
@@ -74,9 +78,22 @@ public struct GetSet<Value> {
         self.get = get
         self.set = set
     }
+}
+
+
+@propertyWrapper
+public struct GetUpdate<Value> {
+    public var get: () -> Value
+    public var update: (@escaping (inout Value) -> Void) -> Void
     
-    public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
-        wrappedValue[keyPath: keyPath]
+    public var wrappedValue: Value {
+        get { get() }
+        set { update { $0 = newValue } }
+    }
+    
+    public init(get: @escaping () -> Value, update: @escaping (@escaping (inout Value) -> Void) -> Void) {
+        self.get = get
+        self.update = update
     }
 }
 
