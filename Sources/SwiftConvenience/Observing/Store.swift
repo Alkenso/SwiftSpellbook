@@ -22,16 +22,14 @@
 
 import Foundation
 
-public typealias StoreSubscription = DeinitAction
-
 @dynamicMemberLookup
-public final class Store<T: Equatable> {
-    public init(initialValue: T) {
-        _value = .value(value: .serial(initialValue), subscriptions: .serial([:]))
+public final class Store<Value: Equatable>: ChangeObserving {
+    public init(initialValue: Value) {
+        _storage = .value(value: .serial(initialValue), subscriptions: .init())
     }
     
-    public var value: T {
-        switch _value {
+    public var value: Value {
+        switch _storage {
         case .value(let value, _):
             return value.read()
         case .nested(let nested, _):
@@ -39,82 +37,65 @@ public final class Store<T: Equatable> {
         }
     }
     
-    public func update1(_ value: T) {
+    public func update(_ value: Value) {
         update { $0 = value }
     }
     
-    public func update1<Property>(_ value: Property, at keyPath: WritableKeyPath<T, Property>) {
+    public func update<Property>(_ value: Property, at keyPath: WritableKeyPath<Value, Property>) {
         update { $0[keyPath: keyPath] = value }
     }
     
-    private func update(body: @escaping (inout T) -> Void) {
-        switch _value {
-        case .value(let value, let subscriptions):
-            value.writeAsync {
-                let oldValue = $0
-                body(&$0)
-                guard let change = Change.ifChanged(old: oldValue, new: $0) else { return }
-                
-                let subscriptionEntries = subscriptions.read(\.values)
-                subscriptionEntries.forEach { entry in
-                    entry.queue.async { entry.action(change) }
-                }
-            }
-        case .nested(let nested, _):
-            nested.update(body)
-        }
-    }
-    
-    public subscript<Property>(dynamicMember keyPath: KeyPath<T, Property>) -> Property {
+    public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
         value[keyPath: keyPath]
     }
     
-    public subscript<Property>(dynamicMember keyPath: WritableKeyPath<T, Property>) -> Property {
+    public subscript<Property>(dynamicMember keyPath: WritableKeyPath<Value, Property>) -> Property {
         get { value[keyPath: keyPath] }
-        set { self.update1(newValue, at: keyPath) }
+        set { self.update(newValue, at: keyPath) }
     }
     
-    public func subscribe(
-        queue: DispatchQueue = .global(),
-        action: @escaping (Change<T>) -> Void
-    ) -> StoreSubscription {
-        switch _value {
+    public func subscribe(on queue: DispatchQueue, action: @escaping (Change<Value>) -> Void) -> SubscriptionToken {
+        switch _storage {
         case .value(_, let subscriptions):
-            let id = UUID()
-            subscriptions.writeAsync { $0[id] = .init(action: action, queue: queue) }
-            return DeinitAction { subscriptions.writeAsync { $0.removeValue(forKey: id) } }
+            return subscriptions.subscribe(on: queue, action: action)
         case .nested(_, let subscribe):
             return subscribe(action)
         }
     }
     
     // MARK: Private
-    private let _value: Value
+    private let _storage: Storage
     
-    private init(access: GetUpdate<T>, subscribe: @escaping (@escaping (Change<T>) -> Void) -> StoreSubscription) {
-        _value = .nested(access: access, subscribe: subscribe)
+    private init(access: GetUpdate<Value>, subscribe: @escaping (@escaping (Change<Value>) -> Void) -> SubscriptionToken) {
+        _storage = .nested(access: access, subscribe: subscribe)
     }
     
-    private struct SubscriptionEntry {
-        var action: (Change<T>) -> Void
-        var queue: DispatchQueue
+    private func update(body: @escaping (inout Value) -> Void) {
+        switch _storage {
+        case .value(let value, let subscriptions):
+            value.writeAsync {
+                let oldValue = $0
+                body(&$0)
+                guard let change = Change.ifChanged(old: oldValue, new: $0) else { return }
+                subscriptions.notify(change)
+            }
+        case .nested(let nested, _):
+            nested.update(body)
+        }
     }
     
-    private enum Value {
-        case value(value: Synchronized<T>, subscriptions: Synchronized<[UUID: SubscriptionEntry]>)
-        case nested(access: GetUpdate<T>, subscribe: (@escaping (Change<T>) -> Void) -> StoreSubscription)
+    private enum Storage {
+        case value(value: Synchronized<Value>, subscriptions: SubscriptionMap<Change<Value>>)
+        case nested(access: GetUpdate<Value>, subscribe: (@escaping (Change<Value>) -> Void) -> SubscriptionToken)
     }
 }
 
 extension Store {
-    public func scope<U>(_ keyPath: WritableKeyPath<T, U>) -> Store<U> {
-        map(
-            transform: { $0[keyPath: keyPath] },
-            merge: { $0[keyPath: keyPath] = $1 }
-        )
+    public func map<U>(_ keyPath: WritableKeyPath<Value, U>) -> Store<U> {
+        map(transform: { $0[keyPath: keyPath] }, merge: { $0[keyPath: keyPath] = $1 })
     }
 
-    public func map<U>(transform: @escaping (T) -> U, merge: @escaping (inout T, U) -> Void) -> Store<U> {
+    public func map<U>(transform: @escaping (Value) -> U, merge: @escaping (inout Value, U) -> Void) -> Store<U> {
         Store<U>(
             access: GetUpdate<U>(
                 get: { transform(self.value) },
@@ -133,6 +114,19 @@ extension Store {
                     if let localChange = Change.ifChanged(old: old, new: new) {
                         localOnChange(localChange)
                     }
+                }
+            }
+        )
+    }
+}
+
+extension Store {
+    public func asObservable() -> Observable<Value> {
+        Observable(
+            valueRef: .init { self.value },
+            subscribe: { localNotify in
+                self.subscribe { change in
+                    localNotify(change)
                 }
             }
         )

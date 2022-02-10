@@ -24,12 +24,12 @@ import Foundation
 
 public typealias SubscriptionToken = DeinitAction
 
-public final class SubscriptionMap<T> {
+public final class SubscriptionMap<T>: ValueObserving {
     private let subscriptions = Synchronized<[UUID: Closure<T, Void>]>(.serial)
     
     public init() {}
     
-    public func subscribe(queue: DispatchQueue = .global(), action: @escaping (T) -> Void) -> SubscriptionToken {
+    public func subscribe(on queue: DispatchQueue, action: @escaping (T) -> Void) -> SubscriptionToken {
         let id = UUID()
         subscriptions.writeAsync { $0[id] = Closure(action).async(on: queue) }
         return DeinitAction { [weak subscriptions] in subscriptions?.writeAsync { $0.removeValue(forKey: id) } }

@@ -22,38 +22,45 @@
 
 import Foundation
 
-public final class Observable<T> {
-    private let subscriptions = SubscriptionMap<Change<T>>()
-    private let valueRef: ValueView<T>
+@dynamicMemberLookup
+public final class Observable<Value>: ChangeObserving {
+    private let subscriptions = SubscriptionMap<Change<Value>>()
+    private let valueRef: ValueView<Value>
+    private var parentSubscription: SubscriptionToken?
     
-    public init(valueRef: ValueView<T>) {
+    public init(valueRef: ValueView<Value>, subscribe: (@escaping (Change<Value>) -> Void) -> SubscriptionToken) {
         self.valueRef = valueRef
+        self.parentSubscription = subscribe { [weak self] in self?.notify($0) }
     }
     
-    public var value: T { valueRef.get() }
-    public var userInfo: Any?
+    public var value: Value { valueRef.get() }
     
-    public subscript<Property>(dynamicMember keyPath: KeyPath<T, Property>) -> Property {
+    public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
         value[keyPath: keyPath]
     }
     
-    public func subscribe(
-        queue: DispatchQueue = .global(),
-        action: @escaping (Change<T>) -> Void
-    ) -> SubscriptionToken {
-        subscriptions.subscribe(queue: queue, action: action)
+    public func subscribe(on queue: DispatchQueue, action: @escaping (Change<Value>) -> Void) -> SubscriptionToken {
+        subscriptions.subscribe(on: queue, action: action)
     }
     
-    public func notify(_ change: Change<T>) {
+    private func notify(_ change: Change<Value>) {
         subscriptions.notify(change)
     }
 }
 
 extension Observable {
-    public func map<U>(_ transform: @escaping (T) -> U) -> Observable<U> {
-        let mapped = Observable<U>(valueRef: .init { transform(self.value) })
-        mapped.userInfo = subscribe { mapped.notify($0.map(transform)) }
-        
-        return mapped
+    public func map<U>(_ keyPath: KeyPath<Value, U>) -> Observable<U> {
+        map { $0[keyPath: keyPath] }
+    }
+    
+    public func map<U>(_ transform: @escaping (Value) -> U) -> Observable<U> {
+        Observable<U>(
+            valueRef: .init { transform(self.value) },
+            subscribe: { localNotify in
+                self.subscribe { change in
+                    localNotify(change.map(transform))
+                }
+            }
+        )
     }
 }

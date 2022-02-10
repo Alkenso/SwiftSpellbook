@@ -32,6 +32,12 @@ public struct Change<T> {
     }
 }
 
+extension Change {
+    public func map<U>(_ transform: (T) throws -> U) rethrows -> Change<U> {
+        try .init(old: transform(old), new: transform(new))
+    }
+}
+
 extension Change where T: Equatable {
     public static func ifChanged(old: T, new: T) -> Self? {
         old != new ? .init(old: old, new: new) : nil
@@ -53,6 +59,16 @@ public struct Pair<First, Second> {
     }
 }
 
+extension Pair {
+    public func mapFirst<U>(_ transform: (First) throws -> U) rethrows -> Pair<U, Second> {
+        try .init(transform(first), second)
+    }
+    
+    public func mapSecond<U>(_ transform: (Second) throws -> U) rethrows -> Pair<First, U> {
+        try .init(first, transform(second))
+    }
+}
+
 extension Pair: Hashable where First: Hashable, Second: Hashable {}
 extension Pair: Equatable where First: Equatable, Second: Equatable {}
 extension Pair: Codable where First: Codable, Second: Codable {}
@@ -65,6 +81,16 @@ public struct KeyValue<Key, Value> {
     public init(_ key: Key, _ value: Value) {
         self.key = key
         self.value = value
+    }
+}
+
+extension KeyValue {
+    public func mapKey<U>(_ transform: (Key) throws -> U) rethrows -> KeyValue<U, Value> {
+        try .init(transform(key), value)
+    }
+    
+    public func mapValue<U>(_ transform: (Value) throws -> U) rethrows -> KeyValue<Key, U> {
+        try .init(key, transform(value))
     }
 }
 
