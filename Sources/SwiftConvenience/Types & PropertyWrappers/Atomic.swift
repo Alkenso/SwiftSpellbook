@@ -28,19 +28,30 @@ import Foundation
 /// For reacher thread-safe functionality consider using 'Synchronized' class.
 @propertyWrapper
 public final class Atomic<Value> {
-    private var _value: Synchronized<Value>
-    
+    private var storage: Synchronized<Value>
     
     public init(wrappedValue: Value, synchronization: SynchronizationType = .serial) {
-        _value = .init(wrappedValue, synchronization: synchronization)
+        storage = .init(wrappedValue, synchronization: synchronization)
     }
     
     public var wrappedValue: Value {
-        get { _value.read { $0 } }
-        set { _value.write { $0 = newValue } }
+        get { storage.read { $0 } }
+        set { storage.write { $0 = newValue } }
     }
     
     public func exchange(_ value: Value) -> Value {
-        _value.exchange(value)
+        storage.exchange(value)
+    }
+    
+    public func initialize<T>(_ initialize: @autoclosure () -> T) -> T where Value == Optional<T> {
+        storage.write {
+            if let value = $0 {
+                return value
+            } else {
+                let newValue = initialize()
+                $0 = newValue
+                return newValue
+            }
+        }
     }
 }

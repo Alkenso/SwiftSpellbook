@@ -26,21 +26,30 @@ public struct Change<T> {
     public var old: T
     public var new: T
     
-    public init(old: T, new: T) {
+    private init(_ old: T, _ new: T) {
         self.old = old
         self.new = new
     }
 }
 
-extension Change {
-    public func map<U>(_ transform: (T) throws -> U) rethrows -> Change<U> {
+extension Change where T: Equatable {
+    public init?(old: T, new: T) {
+        guard old != new else { return nil }
+        self.init(old, new)
+    }
+    
+    public func map<U: Equatable>(_ transform: (T) throws -> U) rethrows -> Change<U>? {
         try .init(old: transform(old), new: transform(new))
     }
 }
 
-extension Change where T: Equatable {
-    public static func ifChanged(old: T, new: T) -> Self? {
-        old != new ? .init(old: old, new: new) : nil
+extension Change {
+    public static func unchecked(old: T, new: T) -> Self {
+        .init(old, new)
+    }
+    
+    public func mapUnchecked<U>(_ transform: (T) throws -> U) rethrows -> Change<U> {
+        try .unchecked(old: transform(old), new: transform(new))
     }
 }
 

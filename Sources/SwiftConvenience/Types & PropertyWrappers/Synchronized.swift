@@ -37,11 +37,6 @@ public final class Synchronized<Value> {
     private let _queue: DispatchQueue
     private var _value: Value
     
-    public var wrappedValue: Value {
-        get { read() }
-        set { write(newValue) }
-    }
-    
     public static func serial(_ value: Value, qos: DispatchQoS = .default) -> Synchronized {
         Synchronized(value, synchronization: .serial(qos))
     }
