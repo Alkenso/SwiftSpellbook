@@ -24,8 +24,10 @@ import Foundation
 
 
 extension atomic_flag {
-    public mutating func callOnce(_ body: () -> Void) {
-        guard !atomic_flag_test_and_set(&self) else { return }
+    @discardableResult
+    public mutating func callOnce(_ body: () -> Void) -> Bool {
+        guard !atomic_flag_test_and_set(&self) else { return false }
         body()
+        return true
     }
 }
