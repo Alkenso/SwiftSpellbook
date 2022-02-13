@@ -43,4 +43,12 @@ public extension Builder {
         body(&copy)
         return copy
     }
+    
+    func ifLet<T>(_ value: T?, body: (inout Self, T) -> Void) -> Self {
+        guard let value = value else { return self }
+        
+        var copy = self
+        body(&copy, value)
+        return copy
+    }
 }
