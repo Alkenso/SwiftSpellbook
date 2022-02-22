@@ -32,8 +32,8 @@ public struct FileStore<T> {
     public func write(_ value: T, to location: URL) throws { try write(value, location) }
 }
 
-extension FileStore {
-    public static var standard: FileStore<Data> {
+extension FileStore where T == Data {
+    public static var standard: FileStore {
         FileStore<Data>(
             read: { try Data(contentsOf: $0) },
             write: { try $0.write(to: $1) }
@@ -68,7 +68,7 @@ extension FileStore {
 // MARK: - Codable
 
 extension FileStore {
-    public func codable<U: Codable>(using coder: FileStoreCoder<U, T>) -> FileStore<U> {
+    public func codable<U: Codable>(_ type: U.Type, using coder: FileStoreCoder<U, T>) -> FileStore<U> {
         .init(
             read: { try decode(U.self, from: $0, using: coder.decoder) },
             write: { try encode($0, to: $1, using: coder.encoder) }
