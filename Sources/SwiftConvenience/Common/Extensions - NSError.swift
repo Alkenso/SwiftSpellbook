@@ -93,10 +93,12 @@ extension NSError {
 extension NSError {
     public static var osstatus: TryBuilder<OSStatusTryTag> { .init() }
     public static var posix: TryBuilder<POSIXTryTag> { .init() }
+    public static var mach: TryBuilder<MachTryTag> { .init() }
     
     
     public struct OSStatusTryTag {}
     public struct POSIXTryTag {}
+    public struct MachTryTag {}
     
     public struct TryBuilder<Tag> {
         private var debugDescription: String?
@@ -196,5 +198,27 @@ extension NSError.TryBuilder where Tag == NSError.POSIXTryTag {
     private func posixError() -> NSError {
         NSError(posix: errno)
             .debugDescription(debugDescription)
+    }
+}
+
+extension NSError.TryBuilder where Tag == NSError.MachTryTag {
+    public func `try`<T>(
+        body: (UnsafeMutablePointer<T>) -> kern_return_t
+    ) throws -> T {
+        let result = UnsafeMutablePointer<T>.allocate(capacity: 1)
+        defer { result.deallocate() }
+        
+        try machError(body(result))?.throw()
+        
+        return result.pointee
+    }
+    
+    public func `try`(body: () -> kern_return_t) throws {
+        try machError(body())?.throw()
+    }
+    
+    private func machError(_ status: kern_return_t) -> NSError? {
+        guard status != KERN_SUCCESS else { return nil }
+        return NSError(mach: status)
     }
 }
