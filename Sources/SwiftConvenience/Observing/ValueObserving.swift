@@ -82,19 +82,3 @@ extension ValueObservingPublisher {
         subscriber.receive(subscription: subscription)
     }
 }
-
-@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
-extension ValueObservingPublisher where Output: Equatable {
-    public var changePublisher: AnyPublisher<Change<Output>, Never> {
-        let oldValue = Atomic<Output?>(wrappedValue: nil)
-        
-        let subject = PassthroughSubject<Change<Output>, Never>()
-        var proxy = ProxyPublisher(subject)
-        proxy.context = sink {
-            if let oldValue = oldValue.exchange($0), let change = Change(old: oldValue, new: $0) {
-                subject.send(change)
-            }
-        }
-        return proxy.eraseToAnyPublisher()
-    }
-}
