@@ -25,49 +25,76 @@ import Foundation
 
 public protocol ValueObserving {
     associatedtype T
+    func subscribeReceiveValue(receiveValue: @escaping (T) -> Void) -> SubscriptionToken
+}
+
+public struct AnyValueObserving<T>: ValueObserving {
+    public init<VO: ValueObserving>(observing: VO) where VO.T == T {
+        self.subscribe = observing.subscribeReceiveValue
+    }
     
-    func subscribe(on queue: DispatchQueue, action: @escaping (T) -> Void) -> SubscriptionToken
+    public init(subscribe: @escaping (@escaping (T) -> Void) -> SubscriptionToken) {
+        self.subscribe = subscribe
+    }
+    
+    private let subscribe: (@escaping (T) -> Void) -> SubscriptionToken
+    
+    public func subscribeReceiveValue(receiveValue: @escaping (T) -> Void) -> SubscriptionToken {
+        subscribe(receiveValue)
+    }
 }
 
 extension ValueObserving {
-    public func subscribe(action: @escaping (T) -> Void) -> SubscriptionToken {
-        subscribe(on: .global(), action: action)
+    func receive(on queue: DispatchQueue) -> AnyValueObserving<T> {
+        .init { receiveValue in
+            self.subscribeReceiveValue { value in
+                queue.async { receiveValue(value) }
+            }
+        }
     }
 }
 
-
-protocol ChangeObserving: ValueObserving where T == Change<Value> {
-    associatedtype Value
-    
-    var value: Value { get }
-}
-
-@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
-extension ChangeObserving {
-    public var valuePublisher: AnyPublisher<Value, Never> {
-        let subject = CurrentValueSubject<Value, Never>(value)
-        var proxy = NotificationChainSubject(proxy: subject.eraseToAnyPublisher())
-        proxy.chainSubscription = subscribe { subject.value = $0.new }
-        subject.value = value
-        return proxy.eraseToAnyPublisher()
-    }
-    
-    public var changePublisher: AnyPublisher<Change<Value>, Never> {
-        let subject = PassthroughSubject<Change<Value>, Never>()
-        var proxy = NotificationChainSubject(proxy: subject.eraseToAnyPublisher())
-        proxy.chainSubscription = subscribe { subject.send($0) }
-        return proxy.eraseToAnyPublisher()
+extension ValueObserving {
+    /// Publishes value changes in order it receives the values
+    /// - Warning: When using `subscribeReceiveChange`, be sure it receives the input in right order.
+    /// Avoid use `receive(on:)` with concurrent queues in upstream `ValueObserving`.
+    public func subscribeReceiveChange(receiveChange: @escaping (Change<T>) -> Void) -> SubscriptionToken where T: Equatable {
+        let oldValue = Atomic<T?>(wrappedValue: nil)
+        return subscribeReceiveValue {
+            if let oldValue = oldValue.exchange($0), let change = Change(old: oldValue, new: $0) {
+                receiveChange(change)
+            }
+        }
     }
 }
 
 @available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
-private struct NotificationChainSubject<Output>: Publisher {
-    typealias Failure = Never
-    
-    let proxy: AnyPublisher<Output, Failure>
-    var chainSubscription: Cancellable?
-    
-    func receive<S>(subscriber: S) where S : Subscriber, Never == S.Failure, Output == S.Input {
-        proxy.receive(subscriber: subscriber)
+public protocol ValueObservingPublisher: ValueObserving, Publisher where Failure == Never, Output == T {}
+
+@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
+extension ValueObservingPublisher {
+    public func receive<S>(subscriber: S) where S : Subscriber, Failure == S.Failure, Output == S.Input {
+        let subscription = ProxySubscription<T>()
+        subscription.onCancel = { [weak subscription] in subscription?.context = nil }
+        subscription.context = subscribeReceiveValue { value in
+            _ = subscriber.receive(value)
+        }
+        subscriber.receive(subscription: subscription)
+    }
+}
+
+@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
+extension ValueObservingPublisher where Output: Equatable {
+    public var changePublisher: AnyPublisher<Change<Output>, Never> {
+        let oldValue = Atomic<Output?>(wrappedValue: nil)
+        
+        let subject = PassthroughSubject<Change<Output>, Never>()
+        var proxy = ProxyPublisher(subject)
+        proxy.context = sink {
+            if let oldValue = oldValue.exchange($0), let change = Change(old: oldValue, new: $0) {
+                subject.send(change)
+            }
+        }
+        return proxy.eraseToAnyPublisher()
     }
 }

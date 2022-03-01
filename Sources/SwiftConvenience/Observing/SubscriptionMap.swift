@@ -24,18 +24,41 @@ import Foundation
 
 public typealias SubscriptionToken = DeinitAction
 
-public final class SubscriptionMap<T>: ValueObserving {
-    private let subscriptions = Synchronized<[UUID: Closure<T, Void>]>(.serial)
+public final class SubscriptionMap<T> {
+    private let subscriptions = Synchronized<[UUID: (T) -> Void]>(.serial)
+    public var notifyQueue: DispatchQueue?
     
     public init() {}
     
-    public func subscribe(on queue: DispatchQueue, action: @escaping (T) -> Void) -> SubscriptionToken {
+    public func subscribe(action: @escaping (T) -> Void) -> SubscriptionToken {
         let id = UUID()
-        subscriptions.writeAsync { $0[id] = Closure(action).async(on: queue) }
+        subscriptions.writeAsync { $0[id] = action }
         return DeinitAction { [weak subscriptions] in subscriptions?.writeAsync { $0.removeValue(forKey: id) } }
     }
     
     public func notify(_ value: T) {
-        subscriptions.read().values.forEach { $0(value) }
+        subscriptions.read().values.forEach { notifyOne(value, action: $0) }
+    }
+    
+    private func notifyOne(_ value: T, action: @escaping (T) -> Void) {
+        if let notifyQueue = notifyQueue {
+            notifyQueue.async { action(value) }
+        } else {
+            action(value)
+        }
     }
 }
+
+extension SubscriptionMap {
+    public func subscribe(notifyImmediately currentValue: T, action: @escaping (T) -> Void) -> SubscriptionToken {
+        var once = atomic_flag()
+        let token = subscribe {
+            once.callOnce {}
+            action($0)
+        }
+        once.callOnce { notifyOne(currentValue, action: action) }
+        return token
+    }
+}
+
+extension SubscriptionMap: Builder {}

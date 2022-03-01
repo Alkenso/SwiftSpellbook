@@ -20,7 +20,17 @@ class StoreTests: XCTestCase {
         let store = Store(initialValue: TestStru())
         XCTAssertEqual(store.value, TestStru())
         
-        store.subscribe(on: .main) { change in
+        var initial = true
+        store.subscribeReceiveValue { val in
+            if initial {
+                XCTAssertEqual(val, store.value)
+            } else {
+                XCTAssertNotEqual(val, store.value)
+            }
+            initial = false
+        }.store(in: &cancellables)
+        
+        store.subscribeReceiveChange { change in
             XCTAssertEqual(change.old, TestStru())
             XCTAssertEqual(change.new, TestStru(val: "", nested: .init(val1: 11, val2: true)))
         }.store(in: &cancellables)
@@ -29,10 +39,10 @@ class StoreTests: XCTestCase {
         XCTAssertEqual(store.value.nested.val1, 11)
     }
     
-    func test_map() {
+    func test_scope() {
         let store = Store(initialValue: TestStru())
-        let nestedStore = store.map(\.nested)
-        let valStore = store.map(\.val)
+        let nestedStore = store.scope(\.nested)
+        let valStore = store.scope(\.val)
         
         nestedStore.update(.init(val1: 30, val2: false))
         XCTAssertEqual(nestedStore.value, .init(val1: 30, val2: false))

@@ -23,14 +23,13 @@
 import Foundation
 
 @dynamicMemberLookup
-public final class Observable<Value>: ChangeObserving {
-    private let subscriptions = SubscriptionMap<Change<Value>>()
+public final class Observable<Value>: ValueObserving {
     private let valueRef: ValueView<Value>
-    private var parentSubscription: SubscriptionToken?
+    private let subscribeReceive: (@escaping (Value) -> Void) -> SubscriptionToken
     
-    public init(valueRef: ValueView<Value>, subscribe: (@escaping (Change<Value>) -> Void) -> SubscriptionToken) {
+    public init(valueRef: ValueView<Value>, subscribeReceiveValue: @escaping (@escaping (Value) -> Void) -> SubscriptionToken) {
         self.valueRef = valueRef
-        self.parentSubscription = subscribe { [weak self] in self?.notify($0) }
+        self.subscribeReceive = subscribeReceiveValue
     }
     
     public var value: Value { valueRef.get() }
@@ -39,28 +38,30 @@ public final class Observable<Value>: ChangeObserving {
         value[keyPath: keyPath]
     }
     
-    public func subscribe(on queue: DispatchQueue, action: @escaping (Change<Value>) -> Void) -> SubscriptionToken {
-        subscriptions.subscribe(on: queue, action: action)
-    }
-    
-    private func notify(_ change: Change<Value>) {
-        subscriptions.notify(change)
+    public func subscribeReceiveValue(receiveValue: @escaping (Value) -> Void) -> SubscriptionToken {
+        subscribeReceive(receiveValue)
     }
 }
 
 extension Observable {
-    public func map<U>(_ keyPath: KeyPath<Value, U>) -> Observable<U> {
-        map { $0[keyPath: keyPath] }
+    public func scope<U>(_ keyPath: KeyPath<Value, U>) -> Observable<U> {
+        scope { $0[keyPath: keyPath] }
     }
     
-    public func map<U>(_ transform: @escaping (Value) -> U) -> Observable<U> {
+    public func scope<U>(_ transform: @escaping (Value) -> U) -> Observable<U> {
         Observable<U>(
             valueRef: .init { transform(self.value) },
-            subscribe: { localNotify in
-                self.subscribe { change in
-                    localNotify(change.map(transform))
+            subscribeReceiveValue: { localNotify in
+                self.subscribeReceiveValue { globalValue in
+                    localNotify(transform(globalValue))
                 }
             }
         )
     }
+}
+
+@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
+extension Observable: ValueObservingPublisher {
+    public typealias Output = Value
+    public typealias Failure = Never
 }

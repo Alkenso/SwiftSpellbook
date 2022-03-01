@@ -20,20 +20,21 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+import Combine
 import Foundation
 
 @dynamicMemberLookup
-public final class Store<Value: Equatable>: ChangeObserving {
-    public init(initialValue: Value) {
-        _storage = .value(value: .serial(initialValue), subscriptions: .init())
+public final class Store<Value>: ValueObserving {
+    public convenience init(initialValue: Value) {
+        self.init(.storage(valueView: Atomic(wrappedValue: initialValue), valueStorage: .serial(initialValue), subscriptions: .init()))
     }
     
     public var value: Value {
-        switch _storage {
-        case .value(let value, _):
-            return value.read()
-        case .nested(let nested, _):
-            return nested.get()
+        switch impl {
+        case .storage(let valueView, _, _):
+            return valueView.wrappedValue
+        case .reference(let access, _):
+            return access.get()
         }
     }
     
@@ -45,57 +46,76 @@ public final class Store<Value: Equatable>: ChangeObserving {
         update { $0[keyPath: keyPath] = value }
     }
     
+    public func updateAsync(_ value: Value) {
+        update(async: true) { $0 = value }
+    }
+    
+    public func updateAsync<Property>(_ value: Property, at keyPath: WritableKeyPath<Value, Property>) {
+        update(async: true) { $0[keyPath: keyPath] = value }
+    }
+    
     public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
         value[keyPath: keyPath]
     }
     
     public subscript<Property>(dynamicMember keyPath: WritableKeyPath<Value, Property>) -> Property {
         get { value[keyPath: keyPath] }
-        set { self.update(newValue, at: keyPath) }
+        set { update(newValue, at: keyPath) }
     }
     
-    public func subscribe(on queue: DispatchQueue, action: @escaping (Change<Value>) -> Void) -> SubscriptionToken {
-        switch _storage {
-        case .value(_, let subscriptions):
-            return subscriptions.subscribe(on: queue, action: action)
-        case .nested(_, let subscribe):
-            return subscribe(action)
+    public func subscribeReceiveValue(receiveValue: @escaping (Value) -> Void) -> SubscriptionToken {
+        switch impl {
+        case .storage(let valueView, _, let subscriptions):
+            return subscriptions.subscribe(notifyImmediately: valueView.wrappedValue, action: receiveValue)
+        case .reference(_, let subscribeReveice):
+            return subscribeReveice(receiveValue)
+        }
+    }
+    
+    /// This is designated implementation of value update.
+    /// Prefer to avoid use of this method.
+    /// 'body' closure is invoked under internal lock. Careless use may lead to performance problems or deadlock
+    public func update(async: Bool = false, body: @escaping (inout Value) -> Void) {
+        switch impl {
+        case .storage(let valueView, let valueStorage, let subscriptions):
+            let updateFn = { (storedValue: inout Value) in
+                body(&storedValue)
+                subscriptions.notify(storedValue)
+                valueView.wrappedValue = storedValue
+            }
+            if async {
+                valueStorage.writeAsync(updateFn)
+            } else {
+                valueStorage.write(updateFn)
+            }
+        case .reference(let access, _):
+            access.update(body)
         }
     }
     
     // MARK: Private
-    private let _storage: Storage
-    
-    private init(access: GetUpdate<Value>, subscribe: @escaping (@escaping (Change<Value>) -> Void) -> SubscriptionToken) {
-        _storage = .nested(access: access, subscribe: subscribe)
+    enum Impl {
+        case storage(valueView: Atomic<Value>, valueStorage: Synchronized<Value>, subscriptions: SubscriptionMap<Value>)
+        case reference(access: GetUpdate<Value>, subscribeReveice: (@escaping (Value) -> Void) -> SubscriptionToken)
     }
     
-    private func update(body: @escaping (inout Value) -> Void) {
-        switch _storage {
-        case .value(let value, let subscriptions):
-            value.writeAsync {
-                let oldValue = $0
-                body(&$0)
-                guard let change = Change.ifChanged(old: oldValue, new: $0) else { return }
-                subscriptions.notify(change)
-            }
-        case .nested(let nested, _):
-            nested.update(body)
-        }
+    private let impl: Impl
+    
+    private init(_ impl: Impl) {
+        self.impl = impl
     }
     
-    private enum Storage {
-        case value(value: Synchronized<Value>, subscriptions: SubscriptionMap<Change<Value>>)
-        case nested(access: GetUpdate<Value>, subscribe: (@escaping (Change<Value>) -> Void) -> SubscriptionToken)
+    private convenience init(access: GetUpdate<Value>, subscribeReceiveValue: @escaping (@escaping (Value) -> Void) -> SubscriptionToken) {
+        self.init(.reference(access: access, subscribeReveice: subscribeReceiveValue))
     }
 }
 
 extension Store {
-    public func map<U>(_ keyPath: WritableKeyPath<Value, U>) -> Store<U> {
-        map(transform: { $0[keyPath: keyPath] }, merge: { $0[keyPath: keyPath] = $1 })
+    public func scope<U>(_ keyPath: WritableKeyPath<Value, U>) -> Store<U> {
+        scope(transform: { $0[keyPath: keyPath] }, merge: { $0[keyPath: keyPath] = $1 })
     }
 
-    public func map<U>(transform: @escaping (Value) -> U, merge: @escaping (inout Value, U) -> Void) -> Store<U> {
+    public func scope<U>(transform: @escaping (Value) -> U, merge: @escaping (inout Value, U) -> Void) -> Store<U> {
         Store<U>(
             access: GetUpdate<U>(
                 get: { transform(self.value) },
@@ -107,28 +127,26 @@ extension Store {
                     }
                 }
             ),
-            subscribe: { localOnChange in
-                self.subscribe { change in
-                    let old = transform(change.old)
-                    let new = transform(change.new)
-                    if let localChange = Change.ifChanged(old: old, new: new) {
-                        localOnChange(localChange)
-                    }
+            subscribeReceiveValue: { localOnChange in
+                self.subscribeReceiveValue { change in
+                    localOnChange(transform(change))
                 }
             }
         )
     }
 }
 
+@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
+extension Store: ValueObservingPublisher {
+    public typealias Output = Value
+    public typealias Failure = Never
+}
+
 extension Store {
-    public func asObservable() -> Observable<Value> {
+    public var asObservable: Observable<Value> {
         Observable(
             valueRef: .init { self.value },
-            subscribe: { localNotify in
-                self.subscribe { change in
-                    localNotify(change)
-                }
-            }
+            subscribeReceiveValue: subscribeReceiveValue
         )
     }
 }
