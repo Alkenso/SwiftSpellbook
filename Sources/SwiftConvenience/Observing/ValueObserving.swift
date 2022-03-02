@@ -45,7 +45,7 @@ public struct AnyValueObserving<T>: ValueObserving {
 }
 
 extension ValueObserving {
-    func receive(on queue: DispatchQueue) -> AnyValueObserving<T> {
+    public func receive(onQueue queue: DispatchQueue) -> AnyValueObserving<T> {
         .init { receiveValue in
             self.subscribeReceiveValue { value in
                 queue.async { receiveValue(value) }
