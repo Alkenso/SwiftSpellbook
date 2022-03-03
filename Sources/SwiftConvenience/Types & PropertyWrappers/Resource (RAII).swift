@@ -184,6 +184,12 @@ extension Resource: Comparable where T: Comparable {
     }
 }
 
+extension Resource {
+    public func store<C: RangeReplaceableCollection>(in collection: inout C) where C.Element == Resource {
+        collection.append(self)
+    }
+}
+
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension Resource: Identifiable where T: Identifiable {
     public var id: T.ID { _value.id }
