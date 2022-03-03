@@ -22,7 +22,6 @@
 
 import Foundation
 
-
 extension atomic_flag {
     @discardableResult
     public mutating func callOnce(_ body: () -> Void) -> Bool {
