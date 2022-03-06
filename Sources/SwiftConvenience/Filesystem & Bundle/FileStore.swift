@@ -41,26 +41,32 @@ extension FileStore where T == Data {
     }
 }
 
+extension FileStore {
+    public func synchronized(on queue: DispatchQueue) -> Self {
+        .init(
+            read: { location in try queue.sync { try self.read(from: location) } },
+            write: { value, location in try queue.sync(flags: .barrier) { try self.write(value, to: location) } }
+        )
+    }
+}
+
 // MARK: - Exact file
 
 extension FileStore {
-    public func exact(_ location: URL, queue: DispatchQueue? = nil) -> Exact {
-        .init(store: self, location: location, queue: queue)
+    public func exact(_ location: URL) -> Exact {
+        .init(store: self, location: location)
     }
     
     public struct Exact {
         let store: FileStore
         let location: URL
-        let queue: DispatchQueue?
         
         public func read() throws -> T {
-            guard let queue = queue else { return try store.read(location) }
-            return try queue.sync { try store.read(location) }
+            try store.read(location)
         }
         
         public func write(_ value: T) throws {
-            guard let queue = queue else { return try store.write(value, location) }
-            try queue.sync { try store.write(value, location) }
+            try store.write(value, location)
         }
     }
 }
