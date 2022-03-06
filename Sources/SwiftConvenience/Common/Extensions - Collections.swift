@@ -22,6 +22,8 @@
 
 import Foundation
 
+// MARK: - Dictionary
+
 extension Dictionary {
     /// Get and set value in nested dictionary
     /// 'Set' notes:
@@ -97,5 +99,25 @@ extension Dictionary {
     /// Inserts value in nested dictionary using dot-separated key path
     public mutating func insert(value: Any?, at dotPath: String) throws {
         try insert(value: value, at: dotPath.components(separatedBy: "."))
+    }
+}
+
+// MARK: - Array
+
+extension Array {
+    public func mutateElements(mutate: (inout Element) -> Void) -> Self {
+        map {
+            var mutated = $0
+            mutate(&mutated)
+            return mutated
+        }
+    }
+}
+
+extension Array {
+    public func appending(_ newElement: Element) -> Self {
+        var appended = self
+        appended.append(newElement)
+        return appended
     }
 }
