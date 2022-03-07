@@ -80,9 +80,24 @@ public struct GetSet<Value> {
     }
 }
 
-
 @propertyWrapper
 public struct GetUpdate<Value> {
+    public var get: () -> Value
+    public var update: ((inout Value) -> Void) -> Void
+    
+    public var wrappedValue: Value {
+        get { get() }
+        set { update { $0 = newValue } }
+    }
+    
+    public init(get: @escaping () -> Value, update: @escaping ((inout Value) -> Void) -> Void) {
+        self.get = get
+        self.update = update
+    }
+}
+
+@propertyWrapper
+public struct GetEscapingUpdate<Value> {
     public var get: () -> Value
     public var update: (@escaping (inout Value) -> Void) -> Void
     

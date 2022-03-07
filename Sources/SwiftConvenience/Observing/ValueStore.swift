@@ -24,10 +24,12 @@ import Combine
 import Foundation
 
 @dynamicMemberLookup
-public final class Store<Value>: ValueObserving {
+public final class ValueStore<Value>: ValueObserving {
     public convenience init(initialValue: Value) {
         self.init(.storage(valueView: Atomic(wrappedValue: initialValue), valueStorage: .serial(initialValue), subscriptions: .init()))
     }
+    
+    public var filters: [(Value) -> Bool] = []
     
     public var value: Value {
         switch impl {
@@ -36,31 +38,6 @@ public final class Store<Value>: ValueObserving {
         case .reference(let access, _):
             return access.get()
         }
-    }
-    
-    public func update(_ value: Value) {
-        update { $0 = value }
-    }
-    
-    public func update<Property>(_ value: Property, at keyPath: WritableKeyPath<Value, Property>) {
-        update { $0[keyPath: keyPath] = value }
-    }
-    
-    public func updateAsync(_ value: Value) {
-        update(async: true) { $0 = value }
-    }
-    
-    public func updateAsync<Property>(_ value: Property, at keyPath: WritableKeyPath<Value, Property>) {
-        update(async: true) { $0[keyPath: keyPath] = value }
-    }
-    
-    public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
-        value[keyPath: keyPath]
-    }
-    
-    public subscript<Property>(dynamicMember keyPath: WritableKeyPath<Value, Property>) -> Property {
-        get { value[keyPath: keyPath] }
-        set { update(newValue, at: keyPath) }
     }
     
     public func subscribeReceiveValue(receiveValue: @escaping (Value) -> Void) -> SubscriptionToken {
@@ -72,31 +49,46 @@ public final class Store<Value>: ValueObserving {
         }
     }
     
+    public func update(_ value: Value) {
+        update { $0 = value }
+    }
+    
+    public func update<Property>(_ value: Property, at keyPath: WritableKeyPath<Value, Property>) {
+        update { $0[keyPath: keyPath] = value }
+    }
+    
+    public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
+        value[keyPath: keyPath]
+    }
+    
+    public subscript<Property>(dynamicMember keyPath: WritableKeyPath<Value, Property>) -> Property {
+        get { value[keyPath: keyPath] }
+        set { update(newValue, at: keyPath) }
+    }
+    
     /// This is designated implementation of value update.
     /// Prefer to avoid use of this method.
     /// 'body' closure is invoked under internal lock. Careless use may lead to performance problems or deadlock
-    public func update(async: Bool = false, body: @escaping (inout Value) -> Void) {
+    public func update(body: (inout Value) -> Void) {
         switch impl {
         case .storage(let valueView, let valueStorage, let subscriptions):
-            let updateFn = { (storedValue: inout Value) in
-                body(&storedValue)
+            valueStorage.write { [filters] (storedValue: inout Value) in
+                var newValue = storedValue
+                body(&newValue)
+                guard filters.isIncluded(newValue) else { return }
+                storedValue = newValue
                 subscriptions.notify(storedValue)
                 valueView.wrappedValue = storedValue
             }
-            if async {
-                valueStorage.writeAsync(updateFn)
-            } else {
-                valueStorage.write(updateFn)
-            }
         case .reference(let access, _):
-            access.update(body)
+            access.update(body, filters)
         }
     }
     
     // MARK: Private
-    enum Impl {
+    private enum Impl {
         case storage(valueView: Atomic<Value>, valueStorage: Synchronized<Value>, subscriptions: SubscriptionMap<Value>)
-        case reference(access: GetUpdate<Value>, subscribeReveice: (@escaping (Value) -> Void) -> SubscriptionToken)
+        case reference(access: StoreGetUpdate<Value>, subscribeReveice: (@escaping (Value) -> Void) -> SubscriptionToken)
     }
     
     private let impl: Impl
@@ -105,24 +97,40 @@ public final class Store<Value>: ValueObserving {
         self.impl = impl
     }
     
-    private convenience init(access: GetUpdate<Value>, subscribeReceiveValue: @escaping (@escaping (Value) -> Void) -> SubscriptionToken) {
+    private convenience init(access: StoreGetUpdate<Value>, subscribeReceiveValue: @escaping (@escaping (Value) -> Void) -> SubscriptionToken) {
         self.init(.reference(access: access, subscribeReveice: subscribeReceiveValue))
     }
 }
 
-extension Store {
-    public func scope<U>(_ keyPath: WritableKeyPath<Value, U>) -> Store<U> {
+private struct StoreGetUpdate<Value> {
+    var get: () -> Value
+    var update: ((inout Value) -> Void, [(Value) -> Bool]) -> Void
+}
+
+private typealias StoreFilter<Value> = (Value) -> Bool
+private extension Array {
+    func isIncluded<Value>(_ value: Value) -> Bool where Element == StoreFilter<Value> {
+        for filter in self {
+            guard filter(value) else { return false }
+        }
+        return true
+    }
+}
+
+extension ValueStore {
+    public func scope<U>(_ keyPath: WritableKeyPath<Value, U>) -> ValueStore<U> {
         scope(transform: { $0[keyPath: keyPath] }, merge: { $0[keyPath: keyPath] = $1 })
     }
 
-    public func scope<U>(transform: @escaping (Value) -> U, merge: @escaping (inout Value, U) -> Void) -> Store<U> {
-        Store<U>(
-            access: GetUpdate<U>(
+    public func scope<U>(transform: @escaping (Value) -> U, merge: @escaping (inout Value, U) -> Void) -> ValueStore<U> {
+        ValueStore<U>(
+            access: StoreGetUpdate<U>(
                 get: { transform(self.value) },
-                update: { localUpdate in
+                update: { localUpdateBody, filters in
                     self.update { value in
                         var localValue = transform(value)
-                        localUpdate(&localValue)
+                        localUpdateBody(&localValue)
+                        guard filters.isIncluded(localValue) else { return }
                         merge(&value, localValue)
                     }
                 }
@@ -137,12 +145,12 @@ extension Store {
 }
 
 @available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
-extension Store: ValueObservingPublisher {
+extension ValueStore: ValueObservingPublisher {
     public typealias Output = Value
     public typealias Failure = Never
 }
 
-extension Store {
+extension ValueStore {
     public var asObservable: Observable<Value> {
         Observable(
             valueRef: .init { self.value },

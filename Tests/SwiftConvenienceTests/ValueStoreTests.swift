@@ -17,7 +17,7 @@ class StoreTests: XCTestCase {
     var cancellables: [AnyCancellable] = []
     
     func test() {
-        let store = Store(initialValue: TestStru())
+        let store = ValueStore(initialValue: TestStru())
         XCTAssertEqual(store.value, TestStru())
         
         var initial = true
@@ -40,7 +40,7 @@ class StoreTests: XCTestCase {
     }
     
     func test_scope() {
-        let store = Store(initialValue: TestStru())
+        let store = ValueStore(initialValue: TestStru())
         let nestedStore = store.scope(\.nested)
         let valStore = store.scope(\.val)
         
@@ -55,5 +55,22 @@ class StoreTests: XCTestCase {
         store.update(.init(val: "abc", nested: .init(val1: 5, val2: true)))
         XCTAssertEqual(valStore.value, "abc")
         XCTAssertEqual(nestedStore.value, .init(val1: 5, val2: true))
+    }
+    
+    func test_filter() {
+        let store = ValueStore(initialValue: 10)
+        store.filters = [
+            { -10 < $0 }, { $0 < 20 }, // isIncluded if: -10 < value < 20
+        ]
+        
+        XCTAssertEqual(store.value, 10)
+        store.update(15)
+        XCTAssertEqual(store.value, 15)
+        store.update(25)
+        XCTAssertEqual(store.value, 15)
+        store.update(-15)
+        XCTAssertEqual(store.value, 15)
+        store.update(10)
+        XCTAssertEqual(store.value, 10)
     }
 }
