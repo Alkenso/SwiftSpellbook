@@ -105,19 +105,27 @@ extension Dictionary {
 // MARK: - Array
 
 extension Array {
-    public func mutateElements(mutate: (inout Element) -> Void) -> Self {
-        map {
+    public mutating func mutateElements(mutate: (inout Element) throws -> Void) rethrows {
+        self = try mutatingElements(mutate: mutate)
+    }
+    
+    public func mutatingElements(mutate: (inout Element) throws -> Void) rethrows -> Self {
+        try map {
             var mutated = $0
-            mutate(&mutated)
+            try mutate(&mutated)
             return mutated
         }
     }
-}
-
-extension Array {
+    
     public func appending(_ newElement: Element) -> Self {
         var appended = self
         appended.append(newElement)
         return appended
+    }
+}
+
+extension Array {
+    public subscript(safe index: Index) -> Element? {
+        index < count ? self[index] : nil
     }
 }
