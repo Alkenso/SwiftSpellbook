@@ -51,12 +51,11 @@ public final class SubscriptionMap<T> {
 
 extension SubscriptionMap {
     public func subscribe(notifyImmediately currentValue: T, action: @escaping (T) -> Void) -> SubscriptionToken {
-        var once = atomic_flag()
         let token = subscribe {
-            once.callOnce {}
             action($0)
         }
-        once.callOnce { notifyOne(currentValue, action: action) }
+        notifyOne(currentValue, action: action)
+        
         return token
     }
 }

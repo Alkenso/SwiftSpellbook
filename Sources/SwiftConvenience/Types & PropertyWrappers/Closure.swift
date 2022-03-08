@@ -45,7 +45,9 @@ extension Closure {
     public func oneShot() -> Self where R == Void {
         var once = atomic_flag()
         return Self { result in
-            once.callOnce { self(result) }
+            if !atomic_flag_test_and_set(&once) {
+                self(result)
+            }
         }
     }
 
@@ -110,7 +112,9 @@ extension ClosureT {
         var once = atomic_flag()
         return Self { value in
             var result: Result<R, Error>?
-            once.callOnce { result = Result { try self(value) } }
+            if !atomic_flag_test_and_set(&once) {
+                result = Result { try self(value) }
+            }
             try result?.get()
         }
     }
