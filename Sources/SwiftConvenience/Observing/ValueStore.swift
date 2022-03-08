@@ -25,28 +25,23 @@ import Foundation
 
 @dynamicMemberLookup
 public final class ValueStore<Value>: ValueObserving {
-    public convenience init(initialValue: Value) {
-        self.init(.storage(valueView: Atomic(wrappedValue: initialValue), valueStorage: .serial(initialValue), subscriptions: .init()))
-    }
+    private let lock = NSRecursiveLock()
+    private let subscriptions = SubscriptionMap<Value>()
+    private var currentValueGet: [Value]
+    private var currentValue: Value
+    private var updateDepth = 0
     
-    public var filters: [(Value) -> Bool] = []
+    private var parentUpdate: (((inout Value) -> Void) -> Void)?
+    private var parentSubscription: SubscriptionToken?
+    private var updateChildren = SubscriptionMap<(Value, ObjectIdentifier)>()
+    
+    public init(initialValue: Value) {
+        currentValue = initialValue
+        currentValueGet = [initialValue]
+    }
     
     public var value: Value {
-        switch impl {
-        case .storage(let valueView, _, _):
-            return valueView.wrappedValue
-        case .reference(let access, _):
-            return access.get()
-        }
-    }
-    
-    public func subscribeReceiveValue(receiveValue: @escaping (Value) -> Void) -> SubscriptionToken {
-        switch impl {
-        case .storage(let valueView, _, let subscriptions):
-            return subscriptions.subscribe(notifyImmediately: valueView.wrappedValue, action: receiveValue)
-        case .reference(_, let subscribeReveice):
-            return subscribeReveice(receiveValue)
-        }
+        lock.withLock { currentValueGet[updateDepth > 0 ? updateDepth - 1 : 0] }
     }
     
     public func update(_ value: Value) {
@@ -57,63 +52,43 @@ public final class ValueStore<Value>: ValueObserving {
         update { $0[keyPath: keyPath] = value }
     }
     
+    /// This is designated implementation of value update.
+    /// Prefer to avoid use of this method.
+    /// 'body' closure is invoked under internal lock. Careless use may lead to performance problems or deadlock
+    public func update(body: (inout Value) -> Void) {
+        if let parentUpdate = parentUpdate {
+            parentUpdate(body)
+        } else {
+            directUpdate(body: body)
+        }
+    }
+    
     public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
         value[keyPath: keyPath]
     }
     
     public subscript<Property>(dynamicMember keyPath: WritableKeyPath<Value, Property>) -> Property {
         get { value[keyPath: keyPath] }
-        set { update(newValue, at: keyPath) }
+        set { self.update(newValue, at: keyPath) }
     }
     
-    /// This is designated implementation of value update.
-    /// Prefer to avoid use of this method.
-    /// 'body' closure is invoked under internal lock. Careless use may lead to performance problems or deadlock
-    public func update(body: (inout Value) -> Void) {
-        switch impl {
-        case .storage(let valueView, let valueStorage, let subscriptions):
-            valueStorage.write { [filters] (storedValue: inout Value) in
-                var newValue = storedValue
-                body(&newValue)
-                guard filters.isIncluded(newValue) else { return }
-                storedValue = newValue
-                subscriptions.notify(storedValue)
-                valueView.wrappedValue = storedValue
-            }
-        case .reference(let access, _):
-            access.update(body, filters)
+    public func subscribeReceiveValue(receiveValue: @escaping (Value) -> Void) -> SubscriptionToken {
+        subscriptions.subscribe(notifyImmediately: value, action: receiveValue)
+    }
+    
+    private func directUpdate(body: (inout Value) -> Void) {
+        lock.withLock {
+            updateDepth += 1
+            defer { updateDepth -= 1 }
+            
+            body(&currentValue)
+            
+            currentValueGet.append(currentValue)
+            defer { currentValueGet.removeFirst() }
+            
+            updateChildren.notify((currentValue, ObjectIdentifier(self)))
+            subscriptions.notify(currentValue)
         }
-    }
-    
-    // MARK: Private
-    private enum Impl {
-        case storage(valueView: Atomic<Value>, valueStorage: Synchronized<Value>, subscriptions: SubscriptionMap<Value>)
-        case reference(access: StoreGetUpdate<Value>, subscribeReveice: (@escaping (Value) -> Void) -> SubscriptionToken)
-    }
-    
-    private let impl: Impl
-    
-    private init(_ impl: Impl) {
-        self.impl = impl
-    }
-    
-    private convenience init(access: StoreGetUpdate<Value>, subscribeReceiveValue: @escaping (@escaping (Value) -> Void) -> SubscriptionToken) {
-        self.init(.reference(access: access, subscribeReveice: subscribeReceiveValue))
-    }
-}
-
-private struct StoreGetUpdate<Value> {
-    var get: () -> Value
-    var update: ((inout Value) -> Void, [(Value) -> Bool]) -> Void
-}
-
-private typealias StoreFilter<Value> = (Value) -> Bool
-private extension Array {
-    func isIncluded<Value>(_ value: Value) -> Bool where Element == StoreFilter<Value> {
-        for filter in self {
-            guard filter(value) else { return false }
-        }
-        return true
     }
 }
 
@@ -121,26 +96,24 @@ extension ValueStore {
     public func scope<U>(_ keyPath: WritableKeyPath<Value, U>) -> ValueStore<U> {
         scope(transform: { $0[keyPath: keyPath] }, merge: { $0[keyPath: keyPath] = $1 })
     }
-
+    
     public func scope<U>(transform: @escaping (Value) -> U, merge: @escaping (inout Value, U) -> Void) -> ValueStore<U> {
-        ValueStore<U>(
-            access: StoreGetUpdate<U>(
-                get: { transform(self.value) },
-                update: { localUpdateBody, filters in
-                    self.update { value in
-                        var localValue = transform(value)
-                        localUpdateBody(&localValue)
-                        guard filters.isIncluded(localValue) else { return }
-                        merge(&value, localValue)
-                    }
-                }
-            ),
-            subscribeReceiveValue: { localOnChange in
-                self.subscribeReceiveValue { change in
-                    localOnChange(transform(change))
-                }
+        let scoped = ValueStore<U>(initialValue: transform(value))
+        scoped.parentUpdate = { localBody in
+            self.update { globalValue in
+                var localValue = transform(globalValue)
+                localBody(&localValue)
+                merge(&globalValue, localValue)
             }
-        )
+        }
+        
+        scoped.parentSubscription = self.updateChildren.subscribe { [weak scoped] globalValue, owner in
+            scoped?.directUpdate { localValue in
+                localValue = transform(globalValue)
+            }
+        }
+        
+        return scoped
     }
 }
 
