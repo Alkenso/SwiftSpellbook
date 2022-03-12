@@ -28,11 +28,17 @@ import Foundation
 extension audit_token_t {
     /// Returns current task audit token.
     public static func current() throws -> audit_token_t {
-        try withTask(mach_task_self_)
+        try audit_token_t(task: mach_task_self_)
+    }
+    
+    /// Returns task for pid.
+    public init(pid: pid_t) throws {
+        let taskName = try NSError.mach.try { task_name_for_pid(mach_task_self_, pid, $0) }
+        try self.init(task: taskName)
     }
     
     /// Returns task audit token.
-    public static func withTask(_ task: task_name_t) throws -> audit_token_t {
+    public init(task: task_name_t) throws {
         var token = audit_token_t()
         
         var size = mach_msg_type_number_t(MemoryLayout<audit_token_t>.size / MemoryLayout<natural_t>.size)
@@ -43,7 +49,7 @@ extension audit_token_t {
         }
         
         if kernReturn == KERN_SUCCESS {
-            return token
+            self = token
         } else {
             throw NSError(
                 domain: NSMachErrorDomain,
