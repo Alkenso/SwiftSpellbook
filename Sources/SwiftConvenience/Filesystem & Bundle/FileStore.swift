@@ -59,7 +59,7 @@ extension FileStore {
     
     public struct Exact {
         let store: FileStore
-        let location: URL
+        public let location: URL
         
         public func read() throws -> T {
             try store.read(location)
