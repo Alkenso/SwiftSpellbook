@@ -39,26 +39,14 @@ extension audit_token_t {
     
     /// Returns task audit token.
     public init(task: task_name_t) throws {
-        var token = audit_token_t()
-        
         var size = mach_msg_type_number_t(MemoryLayout<audit_token_t>.size / MemoryLayout<natural_t>.size)
-        let kernReturn = withUnsafeMutablePointer(to: &token) {
-            $0.withMemoryRebound(to: integer_t.self, capacity: 0) {
-                task_info(task, task_flavor_t(TASK_AUDIT_TOKEN), $0, &size)
+        self = try NSError.mach
+            .debugDescription("Failed to get audit_token for task = \(task) using task_info()")
+            .try { (ptr: UnsafeMutablePointer<audit_token_t>) in
+                ptr.withMemoryRebound(to: integer_t.self, capacity: 0) {
+                    task_info(task, task_flavor_t(TASK_AUDIT_TOKEN), $0, &size)
+                }
             }
-        }
-        
-        if kernReturn == KERN_SUCCESS {
-            self = token
-        } else {
-            throw NSError(
-                domain: NSMachErrorDomain,
-                code: Int(kernReturn),
-                userInfo: [
-                    NSDebugDescriptionErrorKey: "Failed to get audit_token for task = \(task). task_info failed with error = \(kernReturn)"
-                ]
-            )
-        }
     }
 }
 
