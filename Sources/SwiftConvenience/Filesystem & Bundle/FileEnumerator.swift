@@ -44,7 +44,7 @@ public final class FileEnumerator {
 extension FileEnumerator {
     public enum Filter {
         case function(_ isIncluded: (URL) -> Bool)
-        case types(Set<URL.FileType>)
+        case types(Set<FileManager.FileType>)
     }
 }
 
@@ -94,7 +94,7 @@ private extension FileEnumerator.Filter {
             return isIncluded(url)
             
         case .types(let types):
-            guard let fileType = url.fileType else { return false }
+            guard let fileType = try? FileManager.default.typeOfItem(at: url) else { return false }
             return types.contains(fileType)
         }
     }

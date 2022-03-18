@@ -97,47 +97,15 @@ extension URL {
 }
 
 extension URL {
-    public enum FileType {
-        case blockSpecial
-        case characterSpecial
-        case fifo
-        case regular
-        case directory
-        case symbolicLink
-        case socket
-    }
-    
     /// Determines file type of given URL.
     /// Does NOT resolve symlinks.
     /// - returns: file type or nil if URL is not a file URL or file can't be stat'ed.
-    public var fileType: FileType? {
-        guard isFileURL else { return nil }
-        return (try? lstat())
-            .map(\.st_mode)
-            .flatMap(FileType.init)
-    }
-    
-    public func stat() throws -> stat {
-        try Darwin.stat(url: self, isLstat: false)
-    }
-    
-    public func lstat() throws -> stat {
-        try Darwin.stat(url: self, isLstat: true)
-    }
-}
-
-extension URL.FileType {
-    public init?(_ mode: mode_t) {
-        switch mode & S_IFMT {
-        case S_IFBLK: self = .blockSpecial
-        case S_IFCHR: self = .characterSpecial
-        case S_IFDIR: self = .directory
-        case S_IFIFO: self = .fifo
-        case S_IFLNK: self = .symbolicLink
-        case S_IFREG: self = .regular
-        case S_IFSOCK: self = .socket
-        default: return nil
-        }
+    public func ensureFileURL() throws {
+        guard isFileURL else { return }
+        throw URLError(
+            .unsupportedURL,
+            userInfo: [NSDebugDescriptionErrorKey: "URL is not a file: \(self)"]
+        )
     }
 }
 
