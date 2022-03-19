@@ -22,10 +22,13 @@
 
 #import "SwiftConvenienceObjC.h"
 
+@interface NSXPCConnection (SwiftConveniencePrivate)
+@property (nonatomic, readonly) audit_token_t auditToken;
+@end
 
-@implementation NSException (SwiftConvenience)
+@implementation SwiftConvenienceObjC
 
-+ (nullable instancetype)scbridge_catching:(void(NS_NOESCAPE ^)(void))block
++ (nullable NSException *)NSException_catching:(void(NS_NOESCAPE ^)(void))block
 {
     @try
     {
@@ -38,18 +41,9 @@
     }
 }
 
-@end
-
-
-@interface NSXPCConnection (SwiftConveniencePrivate)
-@property (nonatomic, readonly) audit_token_t auditToken;
-@end
-
-@implementation NSXPCConnection (SwiftConvenience)
-
-- (audit_token_t)scbridge_auditToken
++ (audit_token_t)NSXPCConnection_auditToken:(NSXPCConnection *)connection
 {
-    return self.auditToken;
+    return connection.auditToken;
 }
 
 @end

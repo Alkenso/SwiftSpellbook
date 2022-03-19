@@ -25,16 +25,11 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface NSException (SwiftConvenience)
+@interface SwiftConvenienceObjC : NSObject
 
-+ (nullable instancetype)scbridge_catching:(void(NS_NOESCAPE ^)(void))block;
++ (nullable NSException *)NSException_catching:(void(NS_NOESCAPE ^)(void))block;
 
-@end
-
-
-@interface NSXPCConnection (SwiftConvenience)
-
-@property (nonatomic, readonly) audit_token_t scbridge_auditToken;
++ (audit_token_t)NSXPCConnection_auditToken:(NSXPCConnection *)connection;
 
 @end
 
