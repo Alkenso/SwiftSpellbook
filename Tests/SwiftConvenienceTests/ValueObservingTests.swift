@@ -8,7 +8,7 @@ private struct ValueWrapper<T>: ValueObserving {
         willSet { subscriptions.notify(newValue) }
     }
     private let subscriptions = SubscriptionMap<T>()
-    func subscribeReceiveValue(receiveValue: @escaping (T) -> Void) -> SubscriptionToken {
+    func subscribeReceiveValue(receiveValue: @escaping (T, Any?) -> Void) -> SubscriptionToken {
         subscriptions.subscribe(notifyImmediately: value, action: receiveValue)
     }
 }

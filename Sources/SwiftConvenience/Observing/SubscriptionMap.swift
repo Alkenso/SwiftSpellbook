@@ -25,38 +25,46 @@ import Foundation
 public typealias SubscriptionToken = DeinitAction
 
 public final class SubscriptionMap<T> {
-    private let subscriptions = Synchronized<[UUID: (T) -> Void]>(.serial)
+    private let subscriptions = Synchronized<[UUID: (T, Any?) -> Void]>(.serial)
     public var notifyQueue: DispatchQueue?
     
     public init() {}
     
-    public func subscribe(action: @escaping (T) -> Void) -> SubscriptionToken {
+    public func subscribe(action: @escaping (T, _ context: Any?) -> Void) -> SubscriptionToken {
         let id = UUID()
         subscriptions.writeAsync { $0[id] = action }
         return DeinitAction { [weak subscriptions] in subscriptions?.writeAsync { $0.removeValue(forKey: id) } }
     }
     
-    public func notify(_ value: T) {
-        subscriptions.read().values.forEach { notifyOne(value, action: $0) }
+    public func notify(_ value: T, context: Any? = nil) {
+        subscriptions.read().values.forEach { notifyOne(value, context, action: $0) }
     }
     
-    private func notifyOne(_ value: T, action: @escaping (T) -> Void) {
+    private func notifyOne(_ value: T, _ context: Any?, action: @escaping (T, Any?) -> Void) {
         if let notifyQueue = notifyQueue {
-            notifyQueue.async { action(value) }
+            notifyQueue.async { action(value, context) }
         } else {
-            action(value)
+            action(value, context)
         }
     }
 }
 
 extension SubscriptionMap {
-    public func subscribe(notifyImmediately currentValue: T, action: @escaping (T) -> Void) -> SubscriptionToken {
+    public func subscribe(action: @escaping (T) -> Void) -> SubscriptionToken {
+        subscribe { value, _ in action(value) }
+    }
+    
+    public func subscribe(notifyImmediately currentValue: T, context: Any? = nil, action: @escaping (T, _ context: Any?) -> Void) -> SubscriptionToken {
         let token = subscribe {
-            action($0)
+            action($0, $1)
         }
-        notifyOne(currentValue, action: action)
+        notifyOne(currentValue, context, action: action)
         
         return token
+    }
+    
+    public func subscribe(notifyImmediately currentValue: T, action: @escaping (T) -> Void) -> SubscriptionToken {
+        subscribe(notifyImmediately: currentValue, context: nil) { value, _ in action(value) }
     }
 }
 

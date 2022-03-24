@@ -25,9 +25,9 @@ import Foundation
 @dynamicMemberLookup
 public final class Observable<Value>: ValueObserving {
     private let valueRef: ValueView<Value>
-    private let subscribeReceive: (@escaping (Value) -> Void) -> SubscriptionToken
+    private let subscribeReceive: (@escaping (Value, Any?) -> Void) -> SubscriptionToken
     
-    public init(valueRef: ValueView<Value>, subscribeReceiveValue: @escaping (@escaping (Value) -> Void) -> SubscriptionToken) {
+    public init(valueRef: ValueView<Value>, subscribeReceiveValue: @escaping (@escaping (Value, _ context: Any?) -> Void) -> SubscriptionToken) {
         self.valueRef = valueRef
         self.subscribeReceive = subscribeReceiveValue
     }
@@ -38,7 +38,7 @@ public final class Observable<Value>: ValueObserving {
         value[keyPath: keyPath]
     }
     
-    public func subscribeReceiveValue(receiveValue: @escaping (Value) -> Void) -> SubscriptionToken {
+    public func subscribeReceiveValue(receiveValue: @escaping (Value, _ context: Any?) -> Void) -> SubscriptionToken {
         subscribeReceive(receiveValue)
     }
 }
@@ -52,8 +52,8 @@ extension Observable {
         Observable<U>(
             valueRef: .init { transform(self.value) },
             subscribeReceiveValue: { localNotify in
-                self.subscribeReceiveValue { globalValue in
-                    localNotify(transform(globalValue))
+                self.subscribeReceiveValue { globalValue, context in
+                    localNotify(transform(globalValue), context)
                 }
             }
         )
@@ -62,6 +62,6 @@ extension Observable {
 
 @available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension Observable: ValueObservingPublisher {
-    public typealias Output = Value
+    public typealias Output = (Value, Any?)
     public typealias Failure = Never
 }

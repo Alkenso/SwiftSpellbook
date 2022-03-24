@@ -31,9 +31,9 @@ public final class ValueStore<Value>: ValueObserving {
     private var currentValue: Value
     private var updateDepth = 0
     
-    private var parentUpdate: (((inout Value) -> Void) -> Void)?
+    private var parentUpdate: ((_ context: Any?, _ body: (inout Value) -> Void) -> Void)?
     private var parentSubscription: SubscriptionToken?
-    private var updateChildren = SubscriptionMap<(Value, ObjectIdentifier)>()
+    private var updateChildren = SubscriptionMap<Value>()
     
     public init(initialValue: Value) {
         currentValue = initialValue
@@ -44,22 +44,22 @@ public final class ValueStore<Value>: ValueObserving {
         lock.withLock { currentValueGet[updateDepth > 0 ? updateDepth - 1 : 0] }
     }
     
-    public func update(_ value: Value) {
-        update { $0 = value }
+    public func update(_ value: Value, context: Any? = nil) {
+        update(context) { $0 = value }
     }
     
-    public func update<Property>(_ value: Property, at keyPath: WritableKeyPath<Value, Property>) {
-        update { $0[keyPath: keyPath] = value }
+    public func update<Property>(_ value: Property, at keyPath: WritableKeyPath<Value, Property>, context: Any? = nil) {
+        update(context) { $0[keyPath: keyPath] = value }
     }
     
     /// This is designated implementation of value update.
     /// Prefer to avoid use of this method.
     /// 'body' closure is invoked under internal lock. Careless use may lead to performance problems or deadlock
-    public func update(body: (inout Value) -> Void) {
+    public func update(_ context: Any?, body: (inout Value) -> Void) {
         if let parentUpdate = parentUpdate {
-            parentUpdate(body)
+            parentUpdate(context, body)
         } else {
-            directUpdate(body: body)
+            directUpdate(context, body: body)
         }
     }
     
@@ -72,11 +72,13 @@ public final class ValueStore<Value>: ValueObserving {
         set { self.update(newValue, at: keyPath) }
     }
     
-    public func subscribeReceiveValue(receiveValue: @escaping (Value) -> Void) -> SubscriptionToken {
-        subscriptions.subscribe(notifyImmediately: value, action: receiveValue)
+    public func subscribeReceiveValue(receiveValue: @escaping (Value, _ context: Any?) -> Void) -> SubscriptionToken {
+        lock.withLock {
+            subscriptions.subscribe(notifyImmediately: value, context: nil, action: receiveValue)
+        }
     }
     
-    private func directUpdate(body: (inout Value) -> Void) {
+    private func directUpdate(_ context: Any?, body: (inout Value) -> Void) {
         lock.withLock {
             updateDepth += 1
             defer { updateDepth -= 1 }
@@ -86,8 +88,8 @@ public final class ValueStore<Value>: ValueObserving {
             currentValueGet.append(currentValue)
             defer { currentValueGet.removeFirst() }
             
-            updateChildren.notify((currentValue, ObjectIdentifier(self)))
-            subscriptions.notify(currentValue)
+            updateChildren.notify(currentValue, context: context)
+            subscriptions.notify(currentValue, context: context)
         }
     }
 }
@@ -99,16 +101,16 @@ extension ValueStore {
     
     public func scope<U>(transform: @escaping (Value) -> U, merge: @escaping (inout Value, U) -> Void) -> ValueStore<U> {
         let scoped = ValueStore<U>(initialValue: transform(value))
-        scoped.parentUpdate = { localBody in
-            self.update { globalValue in
+        scoped.parentUpdate = { context, localBody in
+            self.update(context) { globalValue in
                 var localValue = transform(globalValue)
                 localBody(&localValue)
                 merge(&globalValue, localValue)
             }
         }
         
-        scoped.parentSubscription = self.updateChildren.subscribe { [weak scoped] globalValue, owner in
-            scoped?.directUpdate { localValue in
+        scoped.parentSubscription = self.updateChildren.subscribe { [weak scoped] globalValue, context in
+            scoped?.directUpdate(context) { localValue in
                 localValue = transform(globalValue)
             }
         }
@@ -119,7 +121,7 @@ extension ValueStore {
 
 @available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension ValueStore: ValueObservingPublisher {
-    public typealias Output = Value
+    public typealias Output = (Value, Any?)
     public typealias Failure = Never
 }
 

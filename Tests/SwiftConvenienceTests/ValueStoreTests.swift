@@ -1,4 +1,5 @@
 import SwiftConvenience
+import SwiftConvenienceTestUtils
 
 import XCTest
 
@@ -65,6 +66,53 @@ class StoreTests: XCTestCase {
         XCTAssertEqual(store.nested.val1, 30)
         XCTAssertEqual(nestedStore.val1, 30)
         XCTAssertEqual(nestedValStore.value, 30)
+    }
+    
+    func test_context() {
+        let initialValue = Pair<Int, String>(10, "qq")
+        let store = ValueStore(initialValue: initialValue)
+        let intStore = store.scope(\.first)
+        let stringStore = store.scope(\.second)
+        
+        let storeExp = expectation(description: "On value received - store")
+        storeExp.expectedFulfillmentCount = 4 // 3 updates + initial value
+        let contextObject = Data(pod: 123)
+        store.subscribeReceiveValue { value, context in
+            if value == initialValue {
+                XCTAssertNil(context)
+            } else {
+                XCTAssertEqual(context as? Data, contextObject)
+            }
+            storeExp.fulfill()
+        }.store(in: &cancellables)
+        
+        let intStoreExp = expectation(description: "On value received - intStore")
+        intStoreExp.expectedFulfillmentCount = 4 // 2 updates + 1 same value + initial value
+        intStore.subscribeReceiveValue { value, context in
+            if value == initialValue.first {
+                XCTAssertNil(context)
+            } else {
+                XCTAssertEqual(context as? Data, contextObject)
+            }
+            intStoreExp.fulfill()
+        }.store(in: &cancellables)
+        
+        let stringStoreExp = expectation(description: "On value received - stringStore")
+        stringStoreExp.expectedFulfillmentCount = 4 // 2 updates + 1 same value + initial value
+        stringStore.subscribeReceiveValue { value, context in
+            if value == initialValue.second {
+                XCTAssertNil(context)
+            } else {
+                XCTAssertEqual(context as? Data, contextObject)
+            }
+            stringStoreExp.fulfill()
+        }.store(in: &cancellables)
+        
+        store.update(.init(20, "ww"), context: contextObject)
+        intStore.update(30, context: contextObject)
+        stringStore.update("ee", context: contextObject)
+        
+        waitForExpectations()
     }
     
     func test_recursiveUpdate() {
