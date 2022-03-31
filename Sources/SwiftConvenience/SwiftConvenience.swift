@@ -22,11 +22,35 @@
 
 import Foundation
 
-public enum SwiftConvenience {
+public enum SwiftConvenienceLogSubsystem: SCLogSubsystem {
+    case codable(ExtCodable)
+    
+    public enum ExtCodable {
+        case json
+        case plist
+    }
 }
 
-extension SwiftConvenience {
-    public enum Log {
-        public static var logFailure: ((_ message: @autoclosure () -> Any, _ file: String, _ function: String, _ line: Int, _ context: Any?) -> Void)?
+extension SwiftConvenienceLogSubsystem: CustomStringConvertible {
+    public var description: String {
+        var components: [String] = ["SwiftConvenience"]
+        switch self {
+        case .codable(let extCodable):
+            components.append("Codable")
+            switch extCodable {
+            case .json:
+                components.append("JSON")
+            case .plist:
+                components.append("Plist")
+            }
+        }
+        
+        return components.joined(separator: ".")
+    }
+}
+
+extension SCLog {
+    static func internalLog(_ subsystem: SwiftConvenienceLogSubsystem) -> SCLog {
+        SCLogger.default.withSubsystem(subsystem)
     }
 }
