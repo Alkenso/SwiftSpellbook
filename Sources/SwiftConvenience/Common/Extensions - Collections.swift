@@ -25,56 +25,45 @@ import Foundation
 // MARK: - Dictionary
 
 extension Dictionary {
-    /// Get and set value in nested dictionary
-    /// 'Set' notes:
-    ///     1. if key path refers to nonexistent nested dictionary, it will be created as [AhyHashable: Any]
-    ///     2. if key path refers to type that cannot be casted to [AnyHashable: Any], 'set' will do nothing
-    ///     3. 'insert(value:at:)' is failable replacement of 'set'
+    /// Get the value in nested dictionary
     public subscript(keyPath keyPath: [AnyHashable]) -> Any? {
-        get {
-            guard let lastKey = keyPath.last else { return nil }
-            
-            var lastDict: [AnyHashable: Any] = self
-            for keyPathComponent in keyPath.dropLast() {
-                guard let nestedDict = lastDict[keyPathComponent] as? [AnyHashable: Any] else {
-                    return nil
-                }
-                lastDict = nestedDict
+        guard let lastKey = keyPath.last else { return nil }
+        
+        var lastDict: [AnyHashable: Any] = self
+        for keyPathComponent in keyPath.dropLast() {
+            guard let nestedDict = lastDict[keyPathComponent] as? [AnyHashable: Any] else {
+                return nil
             }
-            
-            return lastDict[lastKey]
+            lastDict = nestedDict
         }
-        set {
-            try? insert(value: newValue, at: keyPath)
-        }
+        
+        return lastDict[lastKey]
     }
     
     /// Inserts value into nested dictionary at key path
-    /// If nested dictionary(one or multiple) does not exist, they are created
+    /// If nested dictionary(one or multiple) does not exist, they are created as [AnyHashable: Any]
     /// If value at any nested level according to key path has unappropriate type, the error is thrown
     public mutating func insert(value: Any?, at keyPath: [AnyHashable]) throws {
         guard let nextKey = keyPath.first as? Key else { return }
         
         let nestedKeyPath = Array(keyPath.dropFirst())
         guard !nestedKeyPath.isEmpty else {
-            let typedValue = try (value as? Value)
-                .get(ifNil: CommonError.cast(
-                    value,
-                    to: Value.self,
-                    description: "Failed to insert value of unappropriate type"
-                ))
+            let typedValue = try (value as? Value).get(ifNil: CommonError.cast(
+                value,
+                to: Value.self,
+                description: "Failed to insert value of unappropriate type"
+            ))
             self[nextKey] = typedValue
             return
         }
         
         var nested = try nestedDict(for: nextKey)
         try nested.insert(value: value, at: nestedKeyPath)
-        self[nextKey] = try (nested as? Value)
-            .get(ifNil: CommonError.cast(
-                value,
-                to: Value.self,
-                description: "Failed to insert value of unappropriate type as nested dictionary"
-            ))
+        self[nextKey] = try (nested as? Value).get(ifNil: CommonError.cast(
+            value,
+            to: Value.self,
+            description: "Failed to insert value of unappropriate type as nested dictionary"
+        ))
     }
     
     private func nestedDict(for key: Key) throws -> [AnyHashable: Any] {
@@ -90,10 +79,10 @@ extension Dictionary {
 }
 
 extension Dictionary {
-    /// Get and set value in nested dictionary using dot-separated key path
+    /// Get value in nested dictionary using dot-separated key path.
+    /// Keys in dictionary at keyPath componenets must be of String type
     public subscript(dotPath dotPath: String) -> Any? {
-        get { self[keyPath: dotPath.components(separatedBy: ".")] }
-        set { try? insert(value: newValue, at: dotPath) }
+        self[keyPath: dotPath.components(separatedBy: ".")]
     }
 
     /// Inserts value in nested dictionary using dot-separated key path
