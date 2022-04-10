@@ -26,6 +26,14 @@ import Darwin
 
 // MARK: - Data
 
+extension DataProtocol {
+    /// Returns data representation as hex string.
+    /// - returns: string in form "00fab1c0".
+    public var hexString: String {
+        map { String(format: "%02x", $0) }.joined()
+    }
+}
+
 extension Data {
     /// Initializes Data with hex string.
     /// - Parameters:
@@ -44,14 +52,7 @@ extension Data {
         }
         self = data
     }
-    
-    /// Returns data representation as hex string.
-    /// - returns: string in form "00FAB1C0".
-    public var hexString: String {
-        map { String(format: "%02x", $0) }.joined()
-    }
 }
-
 
 extension Data {
     /// Initializes Data with binary representation of POD (Plain Old Data) value.
