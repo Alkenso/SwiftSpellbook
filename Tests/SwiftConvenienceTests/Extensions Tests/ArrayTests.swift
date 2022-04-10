@@ -4,7 +4,7 @@ import XCTest
 
 class ArrayTests: XCTestCase {
     func test_mutateElements() {
-        XCTAssertEqual([10, 20, 30].mutatingElements { $0 += 5 }, [15, 25, 35])
+        XCTAssertEqual([10, 20, 30].mutatingMap { $0 += 5 }, [15, 25, 35])
         
         var arr = [10, 20, 30]
         arr.mutateElements { $0 += 5 }

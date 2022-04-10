@@ -95,15 +95,7 @@ extension Dictionary {
 
 extension Array {
     public mutating func mutateElements(mutate: (inout Element) throws -> Void) rethrows {
-        self = try mutatingElements(mutate: mutate)
-    }
-    
-    public func mutatingElements(mutate: (inout Element) throws -> Void) rethrows -> Self {
-        try map {
-            var mutated = $0
-            try mutate(&mutated)
-            return mutated
-        }
+        self = try mutatingMap(mutate: mutate)
     }
     
     public func appending(_ newElement: Element) -> Self {
@@ -116,5 +108,17 @@ extension Array {
 extension Array {
     public subscript(safe index: Index) -> Element? {
         index < count ? self[index] : nil
+    }
+}
+
+// MARK: - Collection
+
+extension Collection {
+    public func mutatingMap(mutate: (inout Element) throws -> Void) rethrows -> [Element] {
+        try map {
+            var mutated = $0
+            try mutate(&mutated)
+            return mutated
+        }
     }
 }
