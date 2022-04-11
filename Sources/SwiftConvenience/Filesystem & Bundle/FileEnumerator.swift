@@ -94,7 +94,7 @@ private extension FileEnumerator.Filter {
             return isIncluded(url)
             
         case .types(let types):
-            guard let fileType = try? FileManager.default.typeOfItem(at: url) else { return false }
+            guard let fileType = try? FileManager.default.statItem(at: url).fileType else { return false }
             return types.contains(fileType)
         }
     }

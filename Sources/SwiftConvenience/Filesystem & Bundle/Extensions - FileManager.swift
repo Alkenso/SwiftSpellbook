@@ -68,30 +68,36 @@ extension FileManager {
             .forEach { try copyItem(at: $0, to: $1) }
     }
     
-    public func statItem(at url: URL) throws -> stat {
-        try statItem(atPath: url.path)
+    /// stat file at given URL
+    /// - Parameters:
+    ///     - url: URL to stat
+    ///     - followSymlinks: if true, stat is used, otherwise lstat
+    /// - returns: 'stat' structure
+    /// - throws: if URL is not a file URL or file can't be stat'ed
+    public func statItem(at url: URL, followSymlinks: Bool = true) throws -> stat {
+        try url.ensureFileURL()
+        return try statItem(atPath: url.path, followSymlinks: followSymlinks)
     }
     
-    public func statItem(atPath path: String) throws -> stat {
+    /// stat file at given path
+    /// - Parameters:
+    ///     - url: path to stat
+    ///     - followSymlinks: if true, stat is used, otherwise lstat
+    /// - returns: 'stat' structure
+    /// - throws: if file can't be stat'ed
+    public func statItem(atPath path: String, followSymlinks: Bool = true) throws -> stat {
         var st = stat()
         try NSError.posix
-            .debugDescription("stat failed")
+            .debugDescription("\(followSymlinks ? "stat" : "lstat") failed")
             .userInfo(path, for: NSFilePathErrorKey)
-            .try(path.withCString { stat($0, &st) } == 0)
+            .try(path.withCString { followSymlinks ? stat($0, &st) : lstat($0, &st) } == 0)
         return st
     }
-    
-    public func lstatItem(at url: URL) throws -> stat {
-        try lstatItem(atPath: url.path)
-    }
-    
-    public func lstatItem(atPath path: String) throws -> stat {
-        var st = stat()
-        try NSError.posix
-            .debugDescription("lstat failed")
-            .userInfo(path, for: NSFilePathErrorKey)
-            .try(path.withCString { lstat($0, &st) } == 0)
-        return st
+}
+
+extension stat {
+    public var fileType: FileManager.FileType? {
+        FileManager.FileType(mode: st_mode)
     }
 }
 
@@ -104,33 +110,6 @@ extension FileManager {
         case directory
         case symbolicLink
         case socket
-    }
-    
-    /// Determines file type of given URL.
-    /// - Parameters:
-    ///     - url: URL to examine
-    ///     - resolveSymlinks: if true, stat is used, otherwise lstat
-    /// - returns: the type of file
-    /// - throws: if URL is not a file URL, or file can't be stat'ed, or file type cannot be determined
-    public func typeOfItem(at url: URL, resolveSymlinks: Bool = false) throws -> FileType {
-        try url.ensureFileURL()
-        return try typeOfItem(atPath: url.path)
-    }
-    
-    /// Determines file type at given path
-    /// - Parameters:
-    ///     - url: path to examine
-    ///     - resolveSymlinks: if true, stat is used, otherwise lstat
-    /// - returns: the type of file
-    /// - throws: if file can't be stat'ed or file type cannot be determined
-    public func typeOfItem(atPath path: String, resolveSymlinks: Bool = false) throws -> FileType {
-        let fn = resolveSymlinks ? FileManager.default.lstatItem(atPath:) : FileManager.default.statItem(atPath:)
-        let st = try fn(path)
-        if let type = FileType(mode: st.st_mode) {
-            return type
-        } else {
-            throw CommonError.unexpected("Unknown mode = \(st.st_mode) of file at path = \(path)")
-        }
     }
 }
 
