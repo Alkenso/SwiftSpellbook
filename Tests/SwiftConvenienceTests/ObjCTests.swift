@@ -1,10 +1,3 @@
-//
-//  File.swift
-//  
-//
-//  Created by Alkenso (Vladimir Vashurkin) on 20.11.2021.
-//
-
 import SwiftConvenience
 import XCTest
 
