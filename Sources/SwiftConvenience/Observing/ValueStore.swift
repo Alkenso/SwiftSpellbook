@@ -45,17 +45,17 @@ public final class ValueStore<Value>: ValueObserving {
     }
     
     public func update(_ value: Value, context: Any? = nil) {
-        update(context) { $0 = value }
+        update(context: context) { $0 = value }
     }
     
     public func update<Property>(_ value: Property, at keyPath: WritableKeyPath<Value, Property>, context: Any? = nil) {
-        update(context) { $0[keyPath: keyPath] = value }
+        update(context: context) { $0[keyPath: keyPath] = value }
     }
     
     /// This is designated implementation of value update.
     /// Prefer to avoid use of this method.
-    /// 'body' closure is invoked under internal lock. Careless use may lead to performance problems or deadlock
-    public func update(_ context: Any?, body: (inout Value) -> Void) {
+    /// 'body' closure is invoked under internal lock. Careless use may lead to performance problems or even deadlock
+    public func update(context: Any?, body: (inout Value) -> Void) {
         if let parentUpdate = parentUpdate {
             parentUpdate(context, body)
         } else {
@@ -102,7 +102,7 @@ extension ValueStore {
     public func scope<U>(transform: @escaping (Value) -> U, merge: @escaping (inout Value, U) -> Void) -> ValueStore<U> {
         let scoped = ValueStore<U>(initialValue: transform(value))
         scoped.parentUpdate = { context, localBody in
-            self.update(context) { globalValue in
+            self.update(context: context) { globalValue in
                 var localValue = transform(globalValue)
                 localBody(&localValue)
                 merge(&globalValue, localValue)
