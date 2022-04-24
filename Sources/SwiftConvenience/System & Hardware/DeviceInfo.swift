@@ -112,11 +112,16 @@ public extension DeviceInfo {
         case iPhone11
         case iPhone11Pro
         case iPhone11ProMax
-        case iPhoneSE2nd
+        case iPhoneSE2
         case iPhone12Mini
         case iPhone12
         case iPhone12Pro
         case iPhone12ProMax
+        case iPhoneSE3
+        case iPhone13Mini
+        case iPhone13
+        case iPhone13Pro
+        case iPhone13ProMax
         
         case iPod1
         case iPod2
@@ -149,11 +154,17 @@ public extension DeviceInfo {
         case iPadPro4_11
         case iPadPro4_12_9
         case iPadMini5
+        case iPadMini6_WiFi // iPad14,1
+        case iPadMini6_Cellular // iPad14,2
         case iPadAir3
         case iPad8
+        case iPad9_WiFi // iPad12,1
+        case iPad9_Cellular // iPad12,2
         case iPadAir4
         case iPadPro3_11
         case iPadPro5_12_9
+        case iPadAir5_WiFi // iPad13,16
+        case iPadAir5_Cellular // iPad13,17
         
         case other(String)
     }
@@ -211,7 +222,7 @@ public extension DeviceInfo {
         case "iPhone12,5":
             return .iPhone11ProMax
         case "iPhone12,8":
-            return .iPhoneSE2nd
+            return .iPhoneSE2
         case "iPhone13,1":
             return .iPhone12Mini
         case "iPhone13,2":
@@ -220,6 +231,16 @@ public extension DeviceInfo {
             return .iPhone12Pro
         case "iPhone13,4":
             return .iPhone12ProMax
+        case "iPhone14,6":
+            return .iPhoneSE2
+        case "iPhone14,4":
+            return .iPhone13Mini
+        case "iPhone14,5":
+            return .iPhone13
+        case "iPhone14,2":
+            return .iPhone13Pro
+        case "iPhone14,3":
+            return .iPhone13ProMax
             
         case "iPod1,1": // 1st Gen iPod
             return .iPod1
@@ -376,6 +397,18 @@ public extension DeviceInfo {
             return .iPadPro5_12_9
         case "iPad13,11": // iPad Pro 12.9 inch 5th Gen
             return .iPadPro5_12_9
+        case "iPad14,1":
+            return .iPadMini6_WiFi
+        case "iPad14,2":
+            return .iPadMini6_Cellular
+        case "iPad12,1":
+            return .iPad9_WiFi
+        case "iPad12,2":
+            return .iPad9_Cellular
+        case "iPad13,16":
+            return .iPadAir5_WiFi
+        case "iPad13,17":
+            return .iPadAir5_Cellular
             
         default:
             return .other(modelName)
