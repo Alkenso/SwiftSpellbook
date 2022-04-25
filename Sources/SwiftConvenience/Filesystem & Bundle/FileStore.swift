@@ -28,6 +28,11 @@ public struct FileStore<T> {
     private let read: (URL) throws -> T
     private let write: (T, URL) throws -> Void
     
+    public init(read: @escaping (URL) throws -> T, write: @escaping (T, URL) throws -> Void) {
+        self.read = read
+        self.write = write
+    }
+    
     public func read(from location: URL) throws -> T { try read(location) }
     public func write(_ value: T, to location: URL) throws { try write(value, location) }
 }
