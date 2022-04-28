@@ -102,11 +102,12 @@ extension URL {
     /// Does NOT resolve symlinks.
     /// - returns: file type or nil if URL is not a file URL or file can't be stat'ed.
     public func ensureFileURL() throws {
-        guard isFileURL else { return }
-        throw URLError(
-            .unsupportedURL,
-            userInfo: [NSDebugDescriptionErrorKey: "URL is not a file: \(self)"]
-        )
+        if !isFileURL {
+            throw URLError(
+                .unsupportedURL,
+                userInfo: [NSDebugDescriptionErrorKey: "URL is not a file: \(self)"]
+            )
+        }
     }
 }
 
