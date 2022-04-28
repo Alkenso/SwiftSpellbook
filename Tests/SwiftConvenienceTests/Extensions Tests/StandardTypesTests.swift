@@ -112,4 +112,12 @@ class StandardTypesExtensionsTests: XCTestCase {
         XCTAssertEqual((-0.1).clamped(to: 0...1.0), 0)
         XCTAssertEqual(1.1.clamped(to: 0...1.0), 1)
     }
+    
+    func test_URL_ensureFileURL() throws {
+        XCTAssertNoThrow(try URL(fileURLWithPath: "relative").ensureFileURL())
+        XCTAssertNoThrow(try URL(fileURLWithPath: "/absolute").ensureFileURL())
+        XCTAssertNoThrow(try URL(fileURLWithPath: "/absolute/dir").ensureFileURL())
+        
+        XCTAssertThrowsError(try URL(staticString: "https://remote.com").ensureFileURL())
+    }
 }

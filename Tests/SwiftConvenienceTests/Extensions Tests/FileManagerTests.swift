@@ -38,4 +38,26 @@ class FileManagerExtensionsTests: XCTestCase {
         XCTAssertTrue(isDirectory.boolValue)
         XCTAssertTrue(FileManager.default.directoryExists(at: directory))
     }
+    
+    func test_xattr() throws {
+        let file = try tempDir.createFile("file")
+        XCTAssertEqual(try FileManager.default.listXattr(at: file), [])
+        XCTAssertThrowsError(try FileManager.default.xattr(at: file, name: "xa"))
+        XCTAssertThrowsError(try FileManager.default.removeXattr(at: file, name: "xa"))
+        
+        let value1 = Data(pod: 100500)
+        let value2 = Data("some value".utf8)
+        XCTAssertNoThrow(try FileManager.default.setXattr(at: file, name: "xa1", value: value1))
+        XCTAssertNoThrow(try FileManager.default.setXattr(at: file, name: "xa2", value: value2))
+        
+        let attrs = try FileManager.default.listXattr(at: file)
+        XCTAssertTrue(attrs.contains("xa1"))
+        XCTAssertTrue(attrs.contains("xa2"))
+        
+        XCTAssertEqual(try FileManager.default.xattr(at: file, name: "xa1"), value1)
+        XCTAssertEqual(try FileManager.default.xattr(at: file, name: "xa2"), value2)
+        
+        try FileManager.default.removeXattr(at: file, name: "xa1")
+        XCTAssertEqual(try FileManager.default.listXattr(at: file), ["xa2"])
+    }
 }
