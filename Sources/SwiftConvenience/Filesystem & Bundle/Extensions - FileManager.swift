@@ -93,6 +93,67 @@ extension FileManager {
             .try(path.withCString { followSymlinks ? stat($0, &st) : lstat($0, &st) } == 0)
         return st
     }
+    
+    public func xattr(at url: URL, name: String) throws -> Data {
+        try url.ensureFileURL()
+        return try xattr(atPath: url.path, name: name)
+    }
+    
+    public func xattr(atPath path: String, name: String) throws -> Data {
+        try NSError.posix.debugDescription("getxattr").try {
+            let length = getxattr(path, name, nil, 0, 0, 0)
+            guard length >= 0 else { return nil }
+            guard length > 0 else { return Data() }
+            
+            var data = Data(count: length)
+            let result = data.withUnsafeMutableBytes { [count = data.count] in
+                getxattr(path, name, $0.baseAddress, count, 0, 0)
+            }
+            
+            return result > 0 ? data : nil
+        }
+    }
+    
+    public func listXattr(atPath path: String) throws -> [String]  {
+        try NSError.posix.debugDescription("listxattr").try {
+            let length = listxattr(path, nil, 0, 0)
+            guard length >= 0 else { return nil }
+            guard length > 0 else { return [] }
+            
+            var data = Data(count: length)
+            let result = data.withUnsafeMutableBytes { [count = data.count] in
+                listxattr(path, $0.bindMemory(to: CChar.self).baseAddress, count, 0)
+            }
+            
+            guard result > 0 else { return nil }
+            return data.split(separator: 0).filter { !$0.isEmpty }.compactMap { String(data: $0, encoding: .utf8) }
+        }
+    }
+    
+    public func listXattr(at url: URL) throws -> [String] {
+        try url.ensureFileURL()
+        return try listXattr(atPath: url.path)
+    }
+    
+    public func setXattr(atPath path: String, name: String, value: Data) throws {
+        try NSError.posix.debugDescription("setxattr").try(
+            value.withUnsafeBytes { setxattr(path, name, $0.baseAddress, $0.count, 0, 0) >= 0 }
+        )
+    }
+    
+    public func setXattr(at url: URL, name: String, value: Data) throws {
+        try url.ensureFileURL()
+        return try setXattr(atPath: url.path, name: name, value: value)
+    }
+    
+    public func removeXattr(atPath path: String, name: String) throws {
+        try NSError.posix.debugDescription("removexattr").try(removexattr(path, name, 0) >= 0)
+    }
+    
+    public func removeXattr(at url: URL, name: String) throws {
+        try url.ensureFileURL()
+        try removeXattr(atPath: url.path, name: name)
+    }
 }
 
 extension stat {
