@@ -26,18 +26,29 @@ import Foundation
 
 extension Dictionary {
     /// Get the value in nested dictionary
+    /// Specific cases:
+    ///     - Nested Array:
+    ///         - pass [1] to follow the 1-st item in the nested array
+    ///         - pass [Int.max] to follow the last item in the nested array
     public subscript(keyPath keyPath: [AnyHashable]) -> Any? {
-        guard let lastKey = keyPath.last else { return nil }
-        
-        var lastDict: [AnyHashable: Any] = self
-        for keyPathComponent in keyPath.dropLast() {
-            guard let nestedDict = lastDict[keyPathComponent] as? [AnyHashable: Any] else {
+        var lastItem: Any? = self
+        for keyPathComponent in keyPath {
+            switch lastItem {
+            case let collection as [AnyHashable: Any]:
+                lastItem = collection[keyPathComponent]
+            case let collection as [AnyHashable]:
+                if let arrayIndexkey = keyPathComponent as? [Int], arrayIndexkey.count == 1 {
+                    let idx = arrayIndexkey[0]
+                    lastItem = idx != .max ? collection[safe: idx] : collection.last
+                } else {
+                    lastItem = nil
+                }
+            default:
                 return nil
             }
-            lastDict = nestedDict
         }
         
-        return lastDict[lastKey]
+        return lastItem
     }
     
     /// Inserts value into nested dictionary at key path
@@ -81,8 +92,24 @@ extension Dictionary {
 extension Dictionary {
     /// Get value in nested dictionary using dot-separated key path.
     /// Keys in dictionary at keyPath componenets must be of String type
+    /// Specific cases:
+    ///     - Nested Array:
+    ///         - pass [1] to follow the 1-st item in the nested array
+    ///         - pass [*] to follow the last item in the nested array
     public subscript(dotPath dotPath: String) -> Any? {
-        self[keyPath: dotPath.components(separatedBy: ".")]
+        guard !dotPath.isEmpty else { return self }
+        
+        let components: [AnyHashable] = dotPath.components(separatedBy: ".").map {
+            if $0 == "[*]" {
+                return [Int.max]
+            } else if $0.hasPrefix("[") && $0.hasSuffix("]"),
+                      let idx = Int($0.dropFirst().dropLast()) {
+                return [idx]
+            } else {
+                return $0
+            }
+        }
+        return self[keyPath: components]
     }
 
     /// Inserts value in nested dictionary using dot-separated key path
