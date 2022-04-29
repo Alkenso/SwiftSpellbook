@@ -21,7 +21,7 @@ class StoreTests: XCTestCase {
         XCTAssertEqual(store.value, TestStru())
         
         var initial = true
-        store.subscribeReceiveValue { val in
+        store.subscribe { val in
             if initial {
                 XCTAssertEqual(val, store.value)
             } else {
@@ -31,7 +31,7 @@ class StoreTests: XCTestCase {
         }.store(in: &cancellables)
         
         let updateValue = TestStru(val: "q", nested: TestStru.Nested(val1: 11, val2: true))
-        store.subscribeReceiveChange { change in
+        store.subscribeChange { change in
             XCTAssertEqual(change.old, TestStru())
             XCTAssertEqual(change.new, updateValue)
         }.store(in: &cancellables)
@@ -77,7 +77,7 @@ class StoreTests: XCTestCase {
         let storeExp = expectation(description: "On value received - store")
         storeExp.expectedFulfillmentCount = 4 // 3 updates + initial value
         let contextObject = Data(pod: 123)
-        store.subscribeReceiveValue { value, context in
+        store.subscribe { value, context in
             if value == initialValue {
                 XCTAssertNil(context)
             } else {
@@ -88,7 +88,7 @@ class StoreTests: XCTestCase {
         
         let intStoreExp = expectation(description: "On value received - intStore")
         intStoreExp.expectedFulfillmentCount = 4 // 2 updates + 1 same value + initial value
-        intStore.subscribeReceiveValue { value, context in
+        intStore.subscribe { value, context in
             if value == initialValue.first {
                 XCTAssertNil(context)
             } else {
@@ -99,7 +99,7 @@ class StoreTests: XCTestCase {
         
         let stringStoreExp = expectation(description: "On value received - stringStore")
         stringStoreExp.expectedFulfillmentCount = 4 // 2 updates + 1 same value + initial value
-        stringStore.subscribeReceiveValue { value, context in
+        stringStore.subscribe { value, context in
             if value == initialValue.second {
                 XCTAssertNil(context)
             } else {
@@ -119,7 +119,7 @@ class StoreTests: XCTestCase {
         let store = ValueStore<Int>(initialValue: 0)
         let exp = expectation(description: "Recursive store calls")
         exp.expectedFulfillmentCount = 3
-        store.subscribeReceiveValue { value in
+        store.subscribe { value in
             guard value < 3 else { return }
             if value == 0 {
                 XCTAssertEqual(value, store.value)

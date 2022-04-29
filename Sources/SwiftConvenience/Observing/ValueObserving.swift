@@ -25,12 +25,12 @@ import Foundation
 
 public protocol ValueObserving {
     associatedtype T
-    func subscribeReceiveValue(receiveValue: @escaping (T, _ context: Any?) -> Void) -> SubscriptionToken
+    func subscribe(receiveValue: @escaping (T, _ context: Any?) -> Void) -> SubscriptionToken
 }
 
 public struct AnyValueObserving<T>: ValueObserving {
     public init<VO: ValueObserving>(observing: VO) where VO.T == T {
-        self.subscribe = observing.subscribeReceiveValue
+        self.subscribe = observing.subscribe
     }
     
     public init(subscribe: @escaping (@escaping (T, Any?) -> Void) -> SubscriptionToken) {
@@ -39,7 +39,7 @@ public struct AnyValueObserving<T>: ValueObserving {
     
     private let subscribe: (@escaping (T, Any?) -> Void) -> SubscriptionToken
     
-    public func subscribeReceiveValue(receiveValue: @escaping (T, Any?) -> Void) -> SubscriptionToken {
+    public func subscribe(receiveValue: @escaping (T, Any?) -> Void) -> SubscriptionToken {
         subscribe(receiveValue)
     }
 }
@@ -47,7 +47,7 @@ public struct AnyValueObserving<T>: ValueObserving {
 extension ValueObserving {
     public func receive(onQueue queue: DispatchQueue) -> AnyValueObserving<T> {
         .init { receiveValue in
-            self.subscribeReceiveValue { value, context in
+            self.subscribe { value, context in
                 queue.async { receiveValue(value, context) }
             }
         }
@@ -55,24 +55,24 @@ extension ValueObserving {
 }
 
 extension ValueObserving {
-    public func subscribeReceiveValue(receiveValue: @escaping (T) -> Void) -> SubscriptionToken {
-        subscribeReceiveValue { value, _ in receiveValue(value) }
+    public func subscribe(receiveValue: @escaping (T) -> Void) -> SubscriptionToken {
+        subscribe { value, _ in receiveValue(value) }
     }
     
     /// Publishes value changes in order it receives the values
     /// - Warning: When using `subscribeReceiveChange`, be sure it receives the input in right order.
     /// Avoid use `receive(on:)` with concurrent queues in upstream `ValueObserving`.
-    public func subscribeReceiveChange(receiveChange: @escaping (Change<T>, _ context: Any?) -> Void) -> SubscriptionToken where T: Equatable {
+    public func subscribeChange(receiveChange: @escaping (Change<T>, _ context: Any?) -> Void) -> SubscriptionToken where T: Equatable {
         let oldValue = Atomic<T?>(wrappedValue: nil)
-        return subscribeReceiveValue {
+        return subscribe {
             if let oldValue = oldValue.exchange($0), let change = Change(old: oldValue, new: $0) {
                 receiveChange(change, $1)
             }
         }
     }
     
-    public func subscribeReceiveChange(receiveChange: @escaping (Change<T>) -> Void) -> SubscriptionToken where T: Equatable {
-        subscribeReceiveChange { change, _ in receiveChange(change) }
+    public func subscribeChange(receiveChange: @escaping (Change<T>) -> Void) -> SubscriptionToken where T: Equatable {
+        subscribeChange { change, _ in receiveChange(change) }
     }
 }
 
@@ -86,7 +86,7 @@ extension ValueObservingPublisher {
         subscriber.receive(subscription: subscription)
         
         subscription.onCancel = { [weak subscription] in subscription?.context = nil }
-        subscription.context = subscribeReceiveValue { value, context in
+        subscription.context = subscribe { value, context in
             _ = subscriber.receive((value, context))
         }
     }

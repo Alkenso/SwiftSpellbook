@@ -7,9 +7,11 @@ private struct ValueWrapper<T>: ValueObserving {
     var value: T {
         willSet { subscriptions.notify(newValue) }
     }
-    private let subscriptions = SubscriptionMap<T>()
-    func subscribeReceiveValue(receiveValue: @escaping (T, Any?) -> Void) -> SubscriptionToken {
-        subscriptions.subscribe(notifyImmediately: value, action: receiveValue)
+    private let subscriptions = EventNotify<T>()
+    func subscribe(receiveValue: @escaping (T, Any?) -> Void) -> SubscriptionToken {
+        let token = subscriptions.subscribe(receiveValue: receiveValue)
+        receiveValue(value, nil)
+        return token
     }
 }
 
@@ -21,7 +23,7 @@ class ValueObservingTests: XCTestCase {
         XCTAssertEqual(wrapper.value, 10)
         
         var receivedValue: Int?
-        wrapper.subscribeReceiveValue {
+        wrapper.subscribe {
             receivedValue = $0
         }.store(in: &cancellables)
         
@@ -39,7 +41,7 @@ class ValueObservingTests: XCTestCase {
         XCTAssertEqual(wrapper.value, 10)
         
         var receivedChange: Change<Int>?
-        wrapper.subscribeReceiveChange {
+        wrapper.subscribeChange {
             receivedChange = $0
         }.store(in: &cancellables)
         

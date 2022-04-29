@@ -2,11 +2,11 @@ import SwiftConvenience
 import XCTest
 
 
-final class TransformerTests: XCTestCase {
+final class EventAskTests: XCTestCase {
     func test_emptyHandlers() {
-        let transformer = TransformerOneToMany<String, Int>()
+        let transformer = EventAskMany<String, Int>()
         let exp = expectation(description: "Evaluated.")
-        transformer.async("some event") {
+        transformer.askAsync("some event") {
             XCTAssertTrue($0.isEmpty)
             exp.fulfill()
         }
@@ -17,7 +17,7 @@ final class TransformerTests: XCTestCase {
     func test_oneToMany_multipleHandlers() {
         var disposables: [Any] = []
         let postedEvent = "some event"
-        let transformer = TransformerOneToMany<String, Int>()
+        let transformer = EventAskMany<String, Int>()
         disposables.append(transformer.subscribe { event in
             XCTAssertEqual(event, postedEvent)
             return 1
@@ -28,7 +28,7 @@ final class TransformerTests: XCTestCase {
         })
 
         let exp = expectation(description: "Evaluated.")
-        transformer.async(postedEvent) {
+        transformer.askAsync(postedEvent) {
             XCTAssertTrue($0.contains(1)) // response from first handler
             XCTAssertTrue($0.contains(2)) // response from second handler
             exp.fulfill()

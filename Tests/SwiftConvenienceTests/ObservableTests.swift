@@ -6,10 +6,14 @@ import XCTest
 class ObservableTests: XCTestCase {
     func test() {
         var value = 10
-        let subscriptionMap = SubscriptionMap<Int>()
+        let event = EventNotify<Int>()
         let observable = Observable<Int>(
             valueRef: .init { value },
-            subscribeReceiveValue: { subscriptionMap.subscribe(notifyImmediately: value, action: $0) }
+            subscribeReceiveValue: {
+                let token = event.subscribe(receiveValue: $0)
+                $0(value, nil)
+                return token
+            }
         )
         XCTAssertEqual(observable.value, 10)
         
@@ -18,7 +22,7 @@ class ObservableTests: XCTestCase {
         
         let exp = expectation(description: "OnChange called")
         
-        observable.subscribeReceiveChange { change in
+        observable.subscribeChange { change in
             XCTAssertEqual(change.old, 10)
             XCTAssertEqual(change.new, 20)
             
@@ -27,17 +31,21 @@ class ObservableTests: XCTestCase {
         }.store(in: &cancellables)
         
         value = 20
-        subscriptionMap.notify(20)
+        event.notify(20)
         
         waitForExpectations()
     }
     
     func test_scope() {
         var value = 10
-        let subscriptionMap = SubscriptionMap<Int>()
+        let event = EventNotify<Int>()
         let observable = Observable<Int>(
             valueRef: .init { value },
-            subscribeReceiveValue: { subscriptionMap.subscribe(notifyImmediately: value, action: $0) }
+            subscribeReceiveValue: {
+                let token = event.subscribe(receiveValue: $0)
+                $0(value, nil)
+                return token
+            }
         )
         
         var cancellables: [AnyCancellable] = []
@@ -46,28 +54,28 @@ class ObservableTests: XCTestCase {
         let exp = expectation(description: "OnChange called")
         exp.expectedFulfillmentCount = 3
         
-        observable.subscribeReceiveChange { change in
+        observable.subscribeChange { change in
             XCTAssertEqual(change.old, 10)
             XCTAssertEqual(change.new, 200)
             exp.fulfill()
         }.store(in: &cancellables)
         
         let stringObservable = observable.scope(String.init)
-        stringObservable.subscribeReceiveChange { change in
+        stringObservable.subscribeChange { change in
             XCTAssertEqual(change.old, "10")
             XCTAssertEqual(change.new, "200")
             exp.fulfill()
         }.store(in: &cancellables)
         
         let countObservable = stringObservable.scope(\.count)
-        countObservable.subscribeReceiveChange { change in
+        countObservable.subscribeChange { change in
             XCTAssertEqual(change.old, 2)
             XCTAssertEqual(change.new, 3)
             exp.fulfill()
         }.store(in: &cancellables)
         
         value = 200
-        subscriptionMap.notify(200)
+        event.notify(200)
         
         waitForExpectations()
     }

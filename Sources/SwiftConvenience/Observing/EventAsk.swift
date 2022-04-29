@@ -23,13 +23,10 @@
 import Combine
 import Foundation
 
+public typealias EventAskOne<Input, Output> = EventAsk<Input, Output, Output>
+public typealias EventAskMany<Input, Output> = EventAsk<Input, Output, [Output]>
 
-public typealias TransformerSubscription = DeinitAction
-
-public typealias TransformerOneToOne<Input, Output> = Transformer<Input, Output, Output>
-public typealias TransformerOneToMany<Input, Output> = Transformer<Input, Output, [Output]>
-
-public class Transformer<Input, Transformed, Output> {
+public class EventAsk<Input, Transformed, Output> {
     public typealias AsyncTransform = (Input, @escaping (Transformed) -> Void) -> Void
     public typealias SyncTransform = (Input) -> Transformed
     
@@ -42,14 +39,13 @@ public class Transformer<Input, Transformed, Output> {
         self.init { $0 }
     }
     
+    // MARK: Ask
     
-    // MARK: Transform
-    
-    public func async(_ value: Input, receive queue: DispatchQueue = .global(), completion: @escaping (Output) -> Void) {
+    public func askAsync(_ value: Input, receive queue: DispatchQueue = .global(), completion: @escaping (Output) -> Void) {
         transform(value, queue: queue, completion: completion)
     }
     
-    public func sync(_ value: Input) -> Output {
+    public func askSync(_ value: Input) -> Output {
         var output: Output!
         transform(value, queue: nil) { output = $0 }
         return output
@@ -83,10 +79,9 @@ public class Transformer<Input, Transformed, Output> {
         }
     }
     
+    // MARK: Subscribe
     
-    // MARK: Subscription
-    
-    public func subscribe(on queue: DispatchQueue = .global(), transform: @escaping AsyncTransform) -> TransformerSubscription {
+    public func subscribe(on queue: DispatchQueue = .global(), transform: @escaping AsyncTransform) -> SubscriptionToken {
         let subscription = DeinitAction {}
         let id = ObjectIdentifier(subscription)
         _transforms.writeAsync {
@@ -96,7 +91,7 @@ public class Transformer<Input, Transformed, Output> {
         return subscription
     }
     
-    public func subscribe(on queue: DispatchQueue = .global(), transform: @escaping SyncTransform) -> TransformerSubscription {
+    public func subscribe(on queue: DispatchQueue = .global(), transform: @escaping SyncTransform) -> SubscriptionToken {
         subscribe(on: queue) { $1(transform($0)) }
     }
     
@@ -111,41 +106,4 @@ public class Transformer<Input, Transformed, Output> {
     private typealias Entry<T> = (transform: AsyncTransform, queue: DispatchQueue)
     private let _transforms = Synchronized<[ObjectIdentifier: Entry<AsyncTransform>]>(.concurrent)
     private let _combine: ([Transformed]) -> Output
-}
-
-
-// MARK: -
-
-public typealias Notifier<T> = Transformer<T, Void, Void>
-
-extension Transformer where Transformed == Void, Output == Void {
-    public convenience init() {
-        self.init { _ in }
-    }
-    
-    public func notify(_ value: Input) {
-        async(value) { _ in }
-    }
-}
-
-@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
-extension Notifier where Transformed == Void, Output == Void {
-    public var publisher: AnyPublisher<Input, Never> {
-        let subject = PassthroughSubject<Input, Never>()
-        var proxy = NotificationChainSubject(proxy: subject.eraseToAnyPublisher())
-        proxy.chainSubscription = subscribe(on: .global(), transform: subject.send)
-        return proxy.eraseToAnyPublisher()
-    }
-    
-    private struct NotificationChainSubject: Publisher {
-        typealias Output = Input
-        typealias Failure = Never
-        
-        let proxy: AnyPublisher<Output, Failure>
-        var chainSubscription: Cancellable?
-        
-        func receive<S>(subscriber: S) where S : Subscriber, Never == S.Failure, Input == S.Input {
-            proxy.receive(subscriber: subscriber)
-        }
-    }
 }
