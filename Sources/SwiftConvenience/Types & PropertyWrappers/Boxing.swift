@@ -35,14 +35,21 @@ public struct Weak<Value: AnyObject> {
     }
 }
 
-
 @propertyWrapper
 @dynamicMemberLookup
-public final class Box<Value> {
-    public var wrappedValue: Value
+public enum Box<Value> {
+    indirect case wrappedValue(Value)
     
-    public init(wrappedValue: Value) {
-        self.wrappedValue = wrappedValue
+    public var wrappedValue: Value {
+        get {
+            switch self {
+            case .wrappedValue(let value):
+                return value
+            }
+        }
+        set {
+            self = .wrappedValue(newValue)
+        }
     }
     
     public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
@@ -55,13 +62,33 @@ public final class Box<Value> {
     }
 }
 
-public typealias WeakBox<Value: AnyObject> = Box<Weak<Value>>
-
 extension Box {
-    public convenience init<T>(wrappedValue: T?) where Value == Weak<T> {
-        self.init(wrappedValue: Weak(wrappedValue))
+    public init(wrappedValue: Value) {
+        self = .wrappedValue(wrappedValue)
+    }
+    
+    public init<T>(wrappedValue: T?) where Value == Weak<T> {
+        self = .wrappedValue(Weak(wrappedValue))
     }
 }
+
+extension Box: ExpressibleByNilLiteral where Value: ExpressibleByNilLiteral {
+    public init(nilLiteral: ()) {
+        self = .wrappedValue(nil)
+    }
+}
+
+extension Box: Equatable where Value: Equatable {}
+extension Box: Hashable where Value: Hashable {}
+extension Box: Encodable where Value: Encodable {}
+extension Box: Decodable where Value: Decodable {}
+
+@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
+extension Box: Identifiable where Value: Identifiable {
+    public var id: Value.ID { wrappedValue.id }
+}
+
+public typealias WeakBox<Value: AnyObject> = Box<Weak<Value>>
 
 
 @propertyWrapper
