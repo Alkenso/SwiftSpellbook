@@ -107,6 +107,12 @@ public struct GetSet<Value> {
     }
 }
 
+extension GetSet {
+    public init<O>(_ object: O, _ keyPath: ReferenceWritableKeyPath<O, Value>) {
+        self.init(get: { object[keyPath: keyPath] }, set: { object[keyPath: keyPath] = $0 })
+    }
+}
+
 @propertyWrapper
 public struct GetUpdate<Value> {
     public var get: () -> Value
