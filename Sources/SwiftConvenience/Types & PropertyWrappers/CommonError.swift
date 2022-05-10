@@ -46,7 +46,9 @@ extension CommonError {
 }
 
 extension CommonError: CustomNSError {
-    public static var errorDomain: String { "CommonErrorDomain" }
+    /// CommonError's domain can be customized
+    public static var errorDomain = "CommonErrorDomain"
+    
     public var errorCode: Int { Int(code.rawValue) }
     public var errorUserInfo: [String : Any] { userInfo }
 }
