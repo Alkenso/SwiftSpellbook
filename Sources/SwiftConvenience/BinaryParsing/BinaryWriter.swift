@@ -82,7 +82,7 @@ public extension BinaryWriter {
         try write(value, at: offset)
     }
     
-    func writeDefaultUInt(_ value: UInt, at offset: Int) throws {
+    func writeUInt(_ value: UInt, at offset: Int) throws {
         try write(value, at: offset)
     }
     
@@ -102,7 +102,7 @@ public extension BinaryWriter {
         try write(value, at: offset)
     }
     
-    func writeDefaultInt(_ value: Int, at offset: Int) throws {
+    func writeInt(_ value: Int, at offset: Int) throws {
         try write(value, at: offset)
     }
     
@@ -142,7 +142,7 @@ public extension BinaryWriter {
         try append(value)
     }
     
-    mutating func appendDefaultUInt(_ value: UInt) throws {
+    mutating func appendUInt(_ value: UInt) throws {
         try append(value)
     }
     
@@ -162,7 +162,7 @@ public extension BinaryWriter {
         try append(value)
     }
     
-    mutating func appendDefaultInt(_ value: Int) throws {
+    mutating func appendInt(_ value: Int) throws {
         try append(value)
     }
     

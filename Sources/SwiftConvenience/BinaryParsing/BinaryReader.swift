@@ -103,12 +103,16 @@ public extension BinaryReader {
         return data
     }
     
-    func peek<T>(offset: Int) throws -> T {
+    func peek<T>(_ type: T.Type, offset: Int) throws -> T {
         try ensureTrivial(T.self)
         
         let range = Range(offset: offset, length: MemoryLayout<T>.stride)
         let data = try peek(at: range)
         return data.pod(adopting: T.self)
+    }
+    
+    func peek<T>(offset: Int) throws -> T {
+        try peek(T.self, offset: offset)
     }
     
     func peekUInt8(offset: Int) throws -> UInt8 {
@@ -127,7 +131,7 @@ public extension BinaryReader {
         try peek(offset: offset)
     }
     
-    func peekDefaultUInt(offset: Int) throws -> UInt {
+    func peekUInt(offset: Int) throws -> UInt {
         try peek(offset: offset)
     }
     
@@ -147,7 +151,7 @@ public extension BinaryReader {
         try peek(offset: offset)
     }
     
-    func peekDefaultInt(offset: Int) throws -> Int {
+    func peekInt(offset: Int) throws -> Int {
         try peek(offset: offset)
     }
 }
@@ -169,11 +173,15 @@ public extension BinaryReader {
         }
     }
     
-    mutating func read<T>() throws -> T {
+    mutating func read<T>(_ type: T.Type) throws -> T {
         try ensureTrivial(T.self)
         
         let data = try read(count: MemoryLayout<T>.stride)
         return data.pod(adopting: T.self)
+    }
+    
+    mutating func read<T>() throws -> T {
+        try read(T.self)
     }
     
     mutating func readUInt8() throws -> UInt8 {
@@ -192,7 +200,7 @@ public extension BinaryReader {
         try read()
     }
     
-    mutating func readDefaultUInt() throws -> UInt {
+    mutating func readUInt() throws -> UInt {
         try read()
     }
     
@@ -212,7 +220,7 @@ public extension BinaryReader {
         try read()
     }
     
-    mutating func readDefaultInt() throws -> Int {
+    mutating func readInt() throws -> Int {
         try read()
     }
 }
