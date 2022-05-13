@@ -10,7 +10,7 @@ class ObjCTests: XCTestCase {
         switch result {
         case .success(let value):
             XCTAssertEqual(value, 10)
-        case .exception:
+        case .failure:
             XCTFail()
         }
     }
@@ -22,9 +22,9 @@ class ObjCTests: XCTestCase {
         switch result {
         case .success:
             XCTFail()
-        case .exception(let exception):
-            XCTAssertEqual(exception.name, .genericException)
-            XCTAssertEqual(exception.reason, "Just")
+        case .failure(let error):
+            XCTAssertEqual(error.exception.name, .genericException)
+            XCTAssertEqual(error.exception.reason, "Just")
         }
     }
 }

@@ -23,14 +23,26 @@
 import Foundation
 @_implementationOnly import SwiftConvenienceObjC
 
+public struct NSExceptionError: Error {
+    public var exception: NSException
+    public init(exception: NSException) {
+        self.exception = exception
+    }
+}
+
+extension NSExceptionError: CustomStringConvertible, CustomDebugStringConvertible {
+    public var description: String { exception.description }
+    public var debugDescription: String { exception.debugDescription }
+}
+
 extension NSException {
-    public static func catching<R>(_ body: () -> R) -> NSExceptionResult<R> {
-        var result: NSExceptionResult<R>!
+    public static func catching<R>(_ body: () -> R) -> Result<R, NSExceptionError> {
+        var result: Result<R, NSExceptionError>!
         if let exception = SwiftConvenienceObjC.nsException_catching({
             let value = body()
             result = .success(value)
         }) {
-            result = .exception(exception)
+            result = .failure(NSExceptionError(exception: exception))
         }
         return result
     }
@@ -40,37 +52,5 @@ extension NSException {
 extension NSXPCConnection {
     public var auditToken: audit_token_t {
         SwiftConvenienceObjC.nsxpcConnection_auditToken(self)
-    }
-}
-
-public enum NSExceptionResult<Success> {
-    case success(Success)
-    case exception(NSException)
-}
-
-extension NSExceptionResult {
-    public var success: Success? {
-        if case let .success(value) = self {
-            return value
-        } else {
-            return nil
-        }
-    }
-    
-    public var exception: NSException? {
-        if case let .exception(value) = self {
-            return value
-        } else {
-            return nil
-        }
-    }
-    
-    public func mapToResult<Failure: Error>(exceptionTransform: (NSException) -> Failure) -> Result<Success, Failure> {
-        switch self {
-        case .success(let success):
-            return .success(success)
-        case .exception(let exception):
-            return .failure(exceptionTransform(exception))
-        }
     }
 }

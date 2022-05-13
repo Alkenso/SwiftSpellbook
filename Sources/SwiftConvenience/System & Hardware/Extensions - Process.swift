@@ -40,7 +40,7 @@ public extension Process {
         proc.standardOutput = standardOutPipe.fileHandleForWriting
         proc.standardError = standardErrPipe.fileHandleForWriting
         
-        if let exception = NSException.catching({ proc.launch() }).exception {
+        if let exception = NSException.catching({ proc.launch() }).failure?.exception {
             return (
                 ENOENT,
                 "",
