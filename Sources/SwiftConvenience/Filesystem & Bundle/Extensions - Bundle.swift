@@ -25,16 +25,16 @@ import Foundation
 
 extension Bundle {
     /// Bundle name. Value for Info.plist key "CFBundleNameKey".
-    public var name: String? { return value(for: kCFBundleNameKey as String) }
+    public var name: String? { stringValue(for: kCFBundleNameKey as String) }
 
     /// Bundle short version. Value for Info.plist key "CFBundleShortVersionString".
-    public var shortVersion: String? { return value(for: "CFBundleShortVersionString") }
+    public var shortVersion: String? { stringValue(for: "CFBundleShortVersionString") }
 
     /// Bundle version. Value for Info.plist key "CFBundleVersion".
-    public var version: String? { return value(for: "CFBundleVersion") }
+    public var version: String? { stringValue(for: "CFBundleVersion") }
 
-    private func value(for key: String) -> String? {
-        return object(forInfoDictionaryKey: key) as? String
+    private func stringValue(for key: String) -> String? {
+        object(forInfoDictionaryKey: key) as? String
     }
 }
 
