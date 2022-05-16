@@ -37,19 +37,11 @@ public struct Weak<Value: AnyObject> {
 
 @propertyWrapper
 @dynamicMemberLookup
-public enum Box<Value> {
-    indirect case wrappedValue(Value)
+public final class Box<Value> {
+    public var wrappedValue: Value
     
-    public var wrappedValue: Value {
-        get {
-            switch self {
-            case .wrappedValue(let value):
-                return value
-            }
-        }
-        set {
-            self = .wrappedValue(newValue)
-        }
+    public init(wrappedValue: Value) {
+        self.wrappedValue = wrappedValue
     }
     
     public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
@@ -63,23 +55,29 @@ public enum Box<Value> {
 }
 
 extension Box {
-    public init(wrappedValue: Value) {
-        self = .wrappedValue(wrappedValue)
-    }
-    
-    public init<T>(wrappedValue: T?) where Value == Weak<T> {
-        self = .wrappedValue(Weak(wrappedValue))
+    public convenience init<T>(wrappedValue: T?) where Value == Weak<T> {
+        self.init(wrappedValue: Weak(wrappedValue))
     }
 }
 
 extension Box: ExpressibleByNilLiteral where Value: ExpressibleByNilLiteral {
-    public init(nilLiteral: ()) {
-        self = .wrappedValue(nil)
+    public convenience init(nilLiteral: ()) {
+        self.init(wrappedValue: nil)
     }
 }
 
-extension Box: Equatable where Value: Equatable {}
-extension Box: Hashable where Value: Hashable {}
+extension Box: Equatable where Value: Equatable {
+    public static func == (lhs: Box<Value>, rhs: Box<Value>) -> Bool {
+        lhs.wrappedValue == rhs.wrappedValue
+    }
+}
+
+extension Box: Hashable where Value: Hashable {
+    public func hash(into hasher: inout Hasher) {
+        wrappedValue.hash(into: &hasher)
+    }
+}
+
 extension Box: Encodable where Value: Encodable {}
 extension Box: Decodable where Value: Decodable {}
 
@@ -89,6 +87,27 @@ extension Box: Identifiable where Value: Identifiable {
 }
 
 public typealias WeakBox<Value: AnyObject> = Box<Weak<Value>>
+
+
+@propertyWrapper
+public enum Indirect<Value> {
+    indirect case wrappedValue(Value)
+    
+    public var wrappedValue: Value {
+        get { switch self { case .wrappedValue(let value): return value } }
+        set { self = .wrappedValue(newValue) }
+    }
+}
+
+extension Indirect: Equatable where Value: Equatable {}
+extension Indirect: Hashable where Value: Hashable {}
+extension Indirect: Encodable where Value: Encodable {}
+extension Indirect: Decodable where Value: Decodable {}
+
+@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
+extension Indirect: Identifiable where Value: Identifiable {
+    public var id: Value.ID { wrappedValue.id }
+}
 
 
 @propertyWrapper
