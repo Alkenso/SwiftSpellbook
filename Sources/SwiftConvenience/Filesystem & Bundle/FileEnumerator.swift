@@ -50,8 +50,9 @@ extension FileEnumerator {
 
 extension FileEnumerator: Sequence, IteratorProtocol {
     public func next() -> URL? {
+        guard !filters.isEmpty else { return nextUnfiltered() }
+        
         while let next = nextUnfiltered() {
-            guard !filters.isEmpty else { return next }
             let included = filters.contains(where: { $0(isIncluded: next) })
             if included {
                 return next
