@@ -46,6 +46,16 @@ extension NSException {
         }
         return result
     }
+    
+    public static func catchingAll<R>(_ body: () throws -> R) throws -> R {
+        try catching { () -> Result<R, Error> in
+            do {
+                return .success(try body())
+            } catch {
+                return .failure(error)
+            }
+        }.get().get()
+    }
 }
 
 
