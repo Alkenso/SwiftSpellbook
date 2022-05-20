@@ -79,4 +79,20 @@ class DictionaryTests: XCTestCase {
         XCTAssertEqual(dict[keyPath: ["lv1_key2", "lv2_key1"]] as? Int, 21)
         XCTAssertEqual(dict[keyPath: ["lv1_key2", "lv2_key2", "lv3_key1"]] as? String, "lv3_val1")
     }
+    
+    func test_get() throws {
+        let dict: [AnyHashable: Any] = [
+            "key": "value",
+            "key2": 100,
+            10: "value3",
+        ]
+        
+        XCTAssertEqual(try dict.get("key", as: String.self), "value")
+        XCTAssertEqual(try dict.get("key2", as: Int.self), 100)
+        XCTAssertEqual(try dict.get(10, as: String.self), "value3")
+        
+        XCTAssertThrowsError(try dict.get("key", as: Int.self))
+        XCTAssertThrowsError(try dict.get("invalid_key", as: String.self))
+        
+    }
 }

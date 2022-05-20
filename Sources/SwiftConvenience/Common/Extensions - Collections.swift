@@ -118,6 +118,26 @@ extension Dictionary {
     }
 }
 
+extension Dictionary {
+    public func `get`<T>(_ key: Key, transform: (Value) -> T?) throws -> T {
+        guard let value = self[key] else {
+            throw CommonError.notFound(what: "\(key)", where: "\(self)")
+        }
+        guard let transformedValue = transform(value) else {
+            throw CommonError.cast(
+                value,
+                to: T.self,
+                description: "Invalid value type for key '\(key)' in dict \(String(describing: self))"
+            )
+        }
+        return transformedValue
+    }
+    
+    public func `get`<T>(_ key: Key, as type: T.Type) throws -> T {
+        try get(key) { $0 as? T }
+    }
+}
+
 // MARK: - Array
 
 extension Array {
