@@ -86,7 +86,7 @@ extension CommonError {
         return .init(.unwrapNil, "Failed to cast \(from) to \(to)" + additional)
     }
     
-    public static func notFound(what: String, value: Any? = nil, where: String? = nil, description: Any? = nil) -> Self {
+    public static func notFound(what: String, value: Any? = nil, where: Any? = nil, description: Any? = nil) -> Self {
         let valueString = value.flatMap { " = \($0)" } ?? ""
         let whereString = `where`.flatMap { " in \($0)" } ?? ""
         let additional = description.flatMap { ". \($0)" } ?? ""
