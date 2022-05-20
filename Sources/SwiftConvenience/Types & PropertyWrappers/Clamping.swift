@@ -28,7 +28,7 @@ public struct Clamping<Value: Comparable> {
     var value: Value
     let range: ClosedRange<Value>
     
-    public init(initialValue value: Value, _ range: ClosedRange<Value>) {
+    public init(wrappedValue value: Value, _ range: ClosedRange<Value>) {
         self.value = value.clamped(to: range)
         self.range = range
     }
