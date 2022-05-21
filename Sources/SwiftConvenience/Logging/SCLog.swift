@@ -92,7 +92,7 @@ public struct SCLogRecord {
     }
 }
 
-public protocol SCLogSubsystem {}
+public protocol SCLogSubsystem: CustomStringConvertible {}
 
 public class SCLogger {
     private let queue: DispatchQueue

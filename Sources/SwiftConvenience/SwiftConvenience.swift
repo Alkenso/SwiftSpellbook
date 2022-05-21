@@ -49,8 +49,8 @@ extension SwiftConvenienceLogSubsystem: CustomStringConvertible {
     }
 }
 
-extension SCLog {
-    static func internalLog(_ subsystem: SwiftConvenienceLogSubsystem) -> SCLog {
-        SCLogger.default.withSubsystem(subsystem)
+extension SCLogger {
+    static func `default`(_ subsystem: SwiftConvenienceLogSubsystem) -> SCLog {
+        self.default.withSubsystem(subsystem)
     }
 }

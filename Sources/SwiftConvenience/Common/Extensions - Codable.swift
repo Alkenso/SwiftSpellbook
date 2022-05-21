@@ -54,7 +54,7 @@ extension Decodable {
     }
 }
 
-private let jsonLogger = SCLogger.internalLog(.codable(.json))
+private let jsonLogger = SCLogger.default(.codable(.json))
 
 
 extension Encodable {
@@ -100,4 +100,4 @@ extension Decodable {
     }
 }
 
-private let plistLogger = SCLogger.internalLog(.codable(.plist))
+private let plistLogger = SCLogger.default(.codable(.plist))

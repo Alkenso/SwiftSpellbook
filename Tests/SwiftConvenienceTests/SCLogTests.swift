@@ -79,8 +79,9 @@ final class SCLogTests: XCTestCase {
     }
     
     func test_subsystem() {
-        enum TestSubsystem: SCLogSubsystem {
+        enum TestSubsystem: String, SCLogSubsystem {
             case a, b
+            var description: String { rawValue }
         }
         
         let log = SCLogger(name: "test")
