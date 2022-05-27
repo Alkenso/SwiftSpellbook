@@ -100,11 +100,27 @@ extension CommonError {
 extension Optional {
     /// Unwraps Error that is expected to be not nil, but syntactically is optional.
     /// Often happens when bridge ObjC <-> Swift API.
-    public func get(ifNil: Error? = nil) throws -> Wrapped {
+    public func get() throws -> Wrapped {
         if let value = self {
             return value
         } else {
             throw CommonError.unwrapNil("Nil found when unwrapping \(Self.self)")
+        }
+    }
+    
+    public func get(underlyingError: Error) throws -> Wrapped {
+        if let value = self {
+            return value
+        } else {
+            throw CommonError.unwrapNil("Nil found when unwrapping \(Self.self). Underlying error: \(underlyingError)")
+        }
+    }
+    
+    public func get(named name: String) throws -> Wrapped {
+        if let value = self {
+            return value
+        } else {
+            throw CommonError.unwrapNil("Nil found when unwrapping '\(name)' of type \(Self.self)")
         }
     }
 }

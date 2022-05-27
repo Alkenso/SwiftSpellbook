@@ -59,7 +59,7 @@ extension Dictionary {
         
         let nestedKeyPath = Array(keyPath.dropFirst())
         guard !nestedKeyPath.isEmpty else {
-            let typedValue = try (value as? Value).get(ifNil: CommonError.cast(
+            let typedValue = try (value as? Value).get(underlyingError: CommonError.cast(
                 value,
                 to: Value.self,
                 description: "Failed to insert value of unappropriate type"
@@ -70,7 +70,7 @@ extension Dictionary {
         
         var nested = try nestedDict(for: nextKey)
         try nested.insert(value: value, at: nestedKeyPath)
-        self[nextKey] = try (nested as? Value).get(ifNil: CommonError.cast(
+        self[nextKey] = try (nested as? Value).get(underlyingError: CommonError.cast(
             value,
             to: Value.self,
             description: "Failed to insert value of unappropriate type as nested dictionary"
@@ -80,7 +80,7 @@ extension Dictionary {
     private func nestedDict(for key: Key) throws -> [AnyHashable: Any] {
         guard let value = self[key] else { return [AnyHashable: Any]() }
         let nestedDict = try (value as? [AnyHashable: Any])
-            .get(ifNil: CommonError.cast(
+            .get(underlyingError: CommonError.cast(
                 value,
                 to: [AnyHashable: Any].self,
                 description: "Trying to insert value to nested dictionary but unexpected type found"
