@@ -48,8 +48,8 @@ public final class ValueStore<Value>: ValueObserving {
         update(context: context) { $0 = value }
     }
     
-    public func update<Property>(_ value: Property, at keyPath: WritableKeyPath<Value, Property>, context: Any? = nil) {
-        update(context: context) { $0[keyPath: keyPath] = value }
+    public func update<Property>(_ keyPath: WritableKeyPath<Value, Property>, _ property: Property, context: Any? = nil) {
+        update(context: context) { $0[keyPath: keyPath] = property }
     }
     
     /// This is designated implementation of value update.
@@ -69,7 +69,7 @@ public final class ValueStore<Value>: ValueObserving {
     
     public subscript<Property>(dynamicMember keyPath: WritableKeyPath<Value, Property>) -> Property {
         get { value[keyPath: keyPath] }
-        set { self.update(newValue, at: keyPath) }
+        set { self.update(keyPath, newValue) }
     }
     
     public func subscribe(receiveValue: @escaping (Value, _ context: Any?) -> Void) -> SubscriptionToken {
