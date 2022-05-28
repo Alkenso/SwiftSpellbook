@@ -25,71 +25,17 @@ import Foundation
 // MARK: - Dictionary
 
 extension Dictionary {
+    public var reader: DictionaryReader<Key, Value> { .init(self) }
+    
     /// Get the value in nested dictionary
     /// Specific cases:
     ///     - Nested Array:
     ///         - pass [1] to follow the 1-st item in the nested array
     ///         - pass [Int.max] to follow the last item in the nested array
-    public subscript(keyPath keyPath: [AnyHashable]) -> Any? {
-        var lastItem: Any? = self
-        for keyPathComponent in keyPath {
-            switch lastItem {
-            case let collection as [AnyHashable: Any]:
-                lastItem = collection[keyPathComponent]
-            case let collection as [AnyHashable]:
-                if let arrayIndexkey = keyPathComponent as? [Int], arrayIndexkey.count == 1 {
-                    let idx = arrayIndexkey[0]
-                    lastItem = idx != .max ? collection[safe: idx] : collection.last
-                } else {
-                    lastItem = nil
-                }
-            default:
-                return nil
-            }
-        }
-        
-        return lastItem
+    public subscript(codingPath codingPath: [DictionaryCodingKey]) -> Any? {
+        try? reader.read(codingPath: codingPath, as: Any.self)
     }
     
-    /// Inserts value into nested dictionary at key path
-    /// If nested dictionary(one or multiple) does not exist, they are created as [AnyHashable: Any]
-    /// If value at any nested level according to key path has unappropriate type, the error is thrown
-    public mutating func insert(value: Any?, at keyPath: [AnyHashable]) throws {
-        guard let nextKey = keyPath.first as? Key else { return }
-        
-        let nestedKeyPath = Array(keyPath.dropFirst())
-        guard !nestedKeyPath.isEmpty else {
-            let typedValue = try (value as? Value).get(underlyingError: CommonError.cast(
-                value,
-                to: Value.self,
-                description: "Failed to insert value of unappropriate type"
-            ))
-            self[nextKey] = typedValue
-            return
-        }
-        
-        var nested = try nestedDict(for: nextKey)
-        try nested.insert(value: value, at: nestedKeyPath)
-        self[nextKey] = try (nested as? Value).get(underlyingError: CommonError.cast(
-            value,
-            to: Value.self,
-            description: "Failed to insert value of unappropriate type as nested dictionary"
-        ))
-    }
-    
-    private func nestedDict(for key: Key) throws -> [AnyHashable: Any] {
-        guard let value = self[key] else { return [AnyHashable: Any]() }
-        let nestedDict = try (value as? [AnyHashable: Any])
-            .get(underlyingError: CommonError.cast(
-                value,
-                to: [AnyHashable: Any].self,
-                description: "Trying to insert value to nested dictionary but unexpected type found"
-            ))
-        return nestedDict
-    }
-}
-
-extension Dictionary {
     /// Get value in nested dictionary using dot-separated key path.
     /// Keys in dictionary at keyPath componenets must be of String type
     /// Specific cases:
@@ -97,44 +43,31 @@ extension Dictionary {
     ///         - pass [1] to follow the 1-st item in the nested array
     ///         - pass [*] to follow the last item in the nested array
     public subscript(dotPath dotPath: String) -> Any? {
-        guard !dotPath.isEmpty else { return self }
-        
-        let components: [AnyHashable] = dotPath.components(separatedBy: ".").map {
-            if $0 == "[*]" {
-                return [Int.max]
-            } else if $0.hasPrefix("[") && $0.hasSuffix("]"),
-                      let idx = Int($0.dropFirst().dropLast()) {
-                return [idx]
-            } else {
-                return $0
-            }
-        }
-        return self[keyPath: components]
-    }
-
-    /// Inserts value in nested dictionary using dot-separated key path
-    public mutating func insert(value: Any?, at dotPath: String) throws {
-        try insert(value: value, at: dotPath.components(separatedBy: "."))
+        try? reader.read(dotPath: dotPath, as: Any.self)
     }
 }
 
 extension Dictionary {
-    public func `get`<T>(_ key: Key, transform: (Value) -> T?) throws -> T {
-        guard let value = self[key] else {
-            throw CommonError.notFound(what: "\(key)", where: "\(self)")
+    public var writer: DictionaryWriter<Key, Value> { .init(self) }
+    
+    /// Inserts value in nested dictionary using CodingPath-separated key path
+    public mutating func insert(value: Any, codingPath: [DictionaryCodingKey]) -> Bool {
+        var writer = DictionaryWriter(self)
+        let inserted = (try? writer.insert(value: value, codingPath: codingPath)) != nil
+        if inserted {
+            self = writer.dictionary
         }
-        guard let transformedValue = transform(value) else {
-            throw CommonError.cast(
-                value,
-                to: T.self,
-                description: "Invalid value type for key '\(key)' in dict \(String(describing: self))"
-            )
-        }
-        return transformedValue
+        return inserted
     }
     
-    public func `get`<T>(_ key: Key, as type: T.Type) throws -> T {
-        try get(key) { $0 as? T }
+    /// Inserts value in nested dictionary using dot-separated key path
+    public mutating func insert(value: Any, dotPath: String) -> Bool {
+        var writer = DictionaryWriter(self)
+        let inserted = (try? writer.insert(value: value, dotPath: dotPath)) != nil
+        if inserted {
+            self = writer.dictionary
+        }
+        return inserted
     }
 }
 
