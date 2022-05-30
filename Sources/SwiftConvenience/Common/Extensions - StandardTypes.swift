@@ -83,7 +83,6 @@ extension Data {
     }
 }
 
-
 // MARK: - URL
 
 extension URL {
@@ -110,7 +109,6 @@ extension URL {
         }
     }
 }
-
 
 // MARK: - String
 
@@ -143,7 +141,6 @@ extension UUID {
     }
 }
 
-
 // MARK: - Result
 
 extension Result {
@@ -169,11 +166,10 @@ extension Result where Failure == Error {
         if let success = success {
             self = .success(success)
         } else {
-            self = .failure(failure.unwrapSafely)
+            self = .failure(failure.safelyUnwrapped)
         }
     }
 }
-
 
 // MARK: - Error
 
@@ -188,5 +184,42 @@ extension Error {
 extension Range {
     public init(offset: Bound, length: Bound) where Bound: SignedNumeric {
         self.init(uncheckedBounds: (offset, offset + length))
+    }
+}
+
+// MARK: - Optional
+
+extension Optional {
+    /// Returns the value if present or throws error otherwise
+    public func get(name: String? = nil, description: String? = nil, reason: Error? = nil) throws -> Wrapped {
+        if let value = self {
+            return value
+        }
+        
+        let valueName = name.flatMap { "'\($0)'" } ?? "value"
+        var message = "Nil found when unwrapping \(valueName) of type \(Self.self)"
+        description.flatMap { message += ". \($0)" }
+        
+        var userInfo: [String: Any] = [:]
+        userInfo[NSDebugDescriptionErrorKey] = message
+        userInfo[NSUnderlyingErrorKey] = reason
+        throw CommonError(.unwrapNil, userInfo: userInfo)
+    }
+    
+    /// Returns the value if present or throws error otherwise
+    public func get(_ error: Error) throws -> Wrapped {
+        if let value = self {
+            return value
+        } else {
+            throw error
+        }
+    }
+}
+
+extension Optional where Wrapped: Error {
+    /// Unwraps Error that is expected to be not nil, but syntactically is optional.
+    /// Often happens when bridge ObjC <-> Swift API.
+    public var safelyUnwrapped: Error {
+        self ?? CommonError.unexpected("Unexpected nil when unwrapping logically non-nil error.")
     }
 }

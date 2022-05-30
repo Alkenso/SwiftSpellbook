@@ -84,7 +84,8 @@ extension NSError {
                 }
             case Self.multipleUnderlyingErrorsKey:
                 guard let newErrors = $0.value as? [Error] else {
-                    preconditionFailure("Value for Error userInfo key \($0.key) MUST be of type [Error]")
+                    assertionFailure("Value for Error userInfo key \($0.key) MUST be of type [Error]")
+                    return
                 }
                 let errors = merged[$0.key] as? [Any] ?? []
                 merged[$0.key] = errors + newErrors

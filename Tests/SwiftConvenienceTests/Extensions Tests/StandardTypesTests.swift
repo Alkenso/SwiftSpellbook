@@ -7,11 +7,11 @@ import XCTest
 class StandardTypesExtensionsTests: XCTestCase {
     func test_Error_unwrapSafely() {
         let error: Error? = TestError()
-        let unwrapped = error.unwrapSafely
+        let unwrapped = error.safelyUnwrapped
         XCTAssertNotNil(unwrapped as? TestError)
         
         let nilError: Error? = nil
-        let unwrappedNil = nilError.unwrapSafely
+        let unwrappedNil = nilError.safelyUnwrapped
         XCTAssertNotNil(unwrappedNil as? CommonError)
     }
     

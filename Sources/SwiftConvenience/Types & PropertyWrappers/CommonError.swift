@@ -30,12 +30,13 @@ public struct CommonError: Error {
         self.userInfo = userInfo
     }
     
-    public let code: Code
-    public let userInfo: [String: Any]
+    public var code: Code
+    public var userInfo: [String: Any]
 }
 
 extension CommonError {
     public enum Code: Int {
+        case general
         case fatal
         case unexpected
         case unwrapNil
@@ -62,6 +63,14 @@ extension CommonError {
         self = .init(code, userInfo: userInfo)
     }
     
+    public init(_ description: String) {
+        self.init(.general, description)
+    }
+    
+    public init(userInfo: [String: Any]) {
+        self.init(.general, userInfo: userInfo)
+    }
+    
     public static func fatal(_ description: String) -> Self {
         .init(.fatal, description)
     }
@@ -81,9 +90,19 @@ extension CommonError {
         return .init(.invalidArgument, "Invalid value \(value) for argument \(arg)" + additional)
     }
     
-    public static func cast<From, To>(_ from: From, to: To.Type, description: Any? = nil) -> Self {
-        let additional = description.flatMap { ". \($0)" } ?? ""
-        return .init(.unwrapNil, "Failed to cast \(from) to \(to)" + additional)
+    public static func cast<From, To>(name: String? = nil, _ from: From, to: To.Type, description: Any? = nil) -> Self {
+        var fullDescription = "Failed to cast "
+        if let what = name {
+            fullDescription += "'\(what)' of"
+        } else {
+            fullDescription += "from"
+        }
+        fullDescription += " type \(type(of: from)) to \(to)"
+        if let description = description {
+            fullDescription += ". \(description)"
+        }
+        
+        return .init(.cast, fullDescription)
     }
     
     public static func notFound(what: String, value: Any? = nil, where: Any? = nil, description: Any? = nil) -> Self {
@@ -92,43 +111,4 @@ extension CommonError {
         let additional = description.flatMap { ". \($0)" } ?? ""
         return .init(.notFound, "\(what)\(valueString) not found \(whereString)" + additional)
     }
-}
-
-
-// MARK: Optional extension
-
-extension Optional {
-    /// Unwraps Error that is expected to be not nil, but syntactically is optional.
-    /// Often happens when bridge ObjC <-> Swift API.
-    public func get() throws -> Wrapped {
-        if let value = self {
-            return value
-        } else {
-            throw CommonError.unwrapNil("Nil found when unwrapping \(Self.self)")
-        }
-    }
-    
-    public func get(underlyingError: Error) throws -> Wrapped {
-        if let value = self {
-            return value
-        } else {
-            throw CommonError.unwrapNil("Nil found when unwrapping \(Self.self). Underlying error: \(underlyingError)")
-        }
-    }
-    
-    public func get(named name: String) throws -> Wrapped {
-        if let value = self {
-            return value
-        } else {
-            throw CommonError.unwrapNil("Nil found when unwrapping '\(name)' of type \(Self.self)")
-        }
-    }
-}
-
-extension Optional where Wrapped: Error {
-    /// Unwraps Error that is expected to be not nil, but syntactically is optional.
-    /// Often happens when bridge ObjC <-> Swift API.
-        public var unwrapSafely: Error {
-            self ?? CommonError.unexpected("Unexpected nil error.")
-        }
 }
