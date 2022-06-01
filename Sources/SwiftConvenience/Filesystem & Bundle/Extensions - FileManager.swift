@@ -157,34 +157,22 @@ extension FileManager {
 }
 
 extension stat {
-    public var fileType: FileManager.FileType? {
-        FileManager.FileType(mode: st_mode)
+    public var fileType: URLFileResourceType {
+        URLFileResourceType(mode: st_mode)
     }
 }
 
-extension FileManager {
-    public enum FileType {
-        case blockSpecial
-        case characterSpecial
-        case fifo
-        case regular
-        case directory
-        case symbolicLink
-        case socket
-    }
-}
-
-extension FileManager.FileType {
-    public init?(mode: mode_t) {
+extension URLFileResourceType {
+    public init(mode: mode_t) {
         switch mode & S_IFMT {
         case S_IFBLK: self = .blockSpecial
         case S_IFCHR: self = .characterSpecial
         case S_IFDIR: self = .directory
-        case S_IFIFO: self = .fifo
+        case S_IFIFO: self = .namedPipe
         case S_IFLNK: self = .symbolicLink
         case S_IFREG: self = .regular
         case S_IFSOCK: self = .socket
-        default: return nil
+        default: self = .unknown
         }
     }
 }

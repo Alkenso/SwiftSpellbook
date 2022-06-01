@@ -44,7 +44,7 @@ public final class FileEnumerator {
 extension FileEnumerator {
     public enum Filter {
         case function(_ isIncluded: (URL) -> Bool)
-        case types(Set<FileManager.FileType>)
+        case types(Set<URLFileResourceType>)
     }
 }
 
