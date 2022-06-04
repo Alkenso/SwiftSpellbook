@@ -22,7 +22,6 @@
 
 import Foundation
 
-
 /// Performs convenient enumeration of filesystem items at given location(s).
 public final class FileEnumerator {
     private var locations: [URL]
@@ -32,12 +31,41 @@ public final class FileEnumerator {
     public var options: FileManager.DirectoryEnumerationOptions = []
     
     
-    public init(locations: [URL]) {
+    /// Creates `FileEnumerator` that enumerates given locations recursively
+    /// - Parameters:
+    ///     - types: In not empty, set of file types, included into enumeration
+    ///     - locations: Array of locations enumerated recursively
+    public init(types: Set<URLFileResourceType> = [], locations: [URL]) {
         self.locations = locations.reversed()
+        if !types.isEmpty {
+            self.filters.append(.types(types))
+        }
+    }
+}
+
+extension FileEnumerator {
+    /// Creates `FileEnumerator` that enumerates given location
+    /// - Parameters:
+    ///     - types: In not empty, set of file types, included into enumeration
+    ///     - locations: Location enumerated recursively
+    public convenience init(types: Set<URLFileResourceType> = [], _ location: URL) {
+        self.init(types: types, locations: [location])
     }
     
-    public convenience init(_ location: URL) {
-        self.init(locations: [location])
+    /// Creates `FileEnumerator` that enumerates given file paths recursively
+    /// - Parameters:
+    ///     - types: In not empty, set of file types, included into enumeration
+    ///     - paths: Array of file paths enumerated recursively
+    public convenience init(types: Set<URLFileResourceType> = [], paths: [String]) {
+        self.init(types: types, locations: paths.map(URL.init(fileURLWithPath:)))
+    }
+    
+    /// Creates `FileEnumerator` that enumerates given file path recursively
+    /// - Parameters:
+    ///     - types: In not empty, set of file types, included into enumeration
+    ///     - paths: File path enumerated recursively
+    public convenience init(types: Set<URLFileResourceType> = [], _ path: String) {
+        self.init(types: types, paths: [path])
     }
 }
 
@@ -93,7 +121,6 @@ private extension FileEnumerator.Filter {
         switch self {
         case .function(let isIncluded):
             return isIncluded(url)
-            
         case .types(let types):
             guard let fileType = try? FileManager.default.statItem(at: url).fileType else { return false }
             return types.contains(fileType)
