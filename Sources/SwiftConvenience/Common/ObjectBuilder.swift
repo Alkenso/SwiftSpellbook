@@ -22,18 +22,14 @@
 
 import Foundation
 
-public protocol Builder {}
+public protocol ObjectBuilder {}
 
-public extension Builder {
-    func `set`<T>(_ value: T, keyPath: WritableKeyPath<Self, T>) -> Self {
+public extension ObjectBuilder {
+    func set<T>(_ keyPath: WritableKeyPath<Self, T>, _ value: T?) -> Self {
+        guard let value = value else { return self }
         var copy = self
         copy[keyPath: keyPath] = value
         return copy
-    }
-    
-    func set<T>(_ value: T?, keyPath: WritableKeyPath<Self, T>) -> Self {
-        guard let value = value else { return self }
-        return set(value, keyPath: keyPath)
     }
     
     func `if`(_ condition: Bool, body: (inout Self) -> Void) -> Self {
