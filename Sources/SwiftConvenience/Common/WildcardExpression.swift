@@ -22,16 +22,16 @@
 
 import Foundation
 
-
 /// In contrast to NSRegularExpression, implements matching for string by wildcards "*" and "?".
 public struct WildcardExpression {
     public var pattern: String
-    public var caseSensitive = true
-    public var fileNames = false
+    public var caseSensitive: Bool
+    public var fileNames: Bool
     
-    
-    public init(pattern: String) {
+    public init(pattern: String, caseSensitive: Bool = true, fileNames: Bool = false) {
         self.pattern = pattern
+        self.caseSensitive = caseSensitive
+        self.fileNames = fileNames
     }
     
     public func match(_ string: String) -> Bool {
@@ -44,12 +44,22 @@ public struct WildcardExpression {
     
     private var flags: Int32 {
         var flags: Int32 = 0
-        if caseSensitive {
+        if !caseSensitive {
             flags = flags | FNM_CASEFOLD
         }
         if fileNames {
             flags = flags | FNM_FILE_NAME
         }
         return flags
+    }
+}
+
+extension WildcardExpression {
+    public static func caseSensitive(pattern: String) -> Self {
+        .init(pattern: pattern, caseSensitive: true)
+    }
+    
+    public static func caseInsensitive(pattern: String) -> Self {
+        .init(pattern: pattern, caseSensitive: false)
     }
 }
