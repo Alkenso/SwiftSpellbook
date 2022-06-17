@@ -30,7 +30,6 @@ public final class FileEnumerator {
     public var filters: [Filter] = []
     public var options: FileManager.DirectoryEnumerationOptions = []
     
-    
     /// Creates `FileEnumerator` that enumerates given locations recursively
     /// - Parameters:
     ///     - types: In not empty, set of file types, included into enumeration
@@ -38,7 +37,7 @@ public final class FileEnumerator {
     public init(types: Set<URLFileResourceType> = [], locations: [URL]) {
         self.locations = locations.reversed()
         if !types.isEmpty {
-            self.filters.append(.types(types))
+            filters.append(.types(types))
         }
     }
 }

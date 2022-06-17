@@ -6,7 +6,7 @@ import XCTest
 
 class PropertyWrapperTests: XCTestCase {
     func test_clamping() {
-        @Clamping(0...10) var a = 15
+        @Clamping(0 ... 10) var a = 15
         XCTAssertEqual(a, 10)
         
         a = 0

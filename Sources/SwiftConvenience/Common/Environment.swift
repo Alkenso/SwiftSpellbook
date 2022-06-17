@@ -22,13 +22,12 @@
 
 import Foundation
 
-
 public enum BuildEnvironment {
     public static let isDebug: Bool = {
         #if DEBUG
-        return true
+            return true
         #else
-        return false
+            return false
         #endif
     }()
     
@@ -37,9 +36,9 @@ public enum BuildEnvironment {
     public static let isXcodePreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"]?.isEmpty == false
     public static let isSimulator: Bool = {
         #if targetEnvironment(simulator)
-        return true
+            return true
         #else
-        return false
+            return false
         #endif
     }()
 }

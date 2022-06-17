@@ -23,7 +23,6 @@
 import Combine
 import Foundation
 
-
 /// Resource wrapper that follows the RAII rule: 'Resource acquisition is initialization'.
 /// It is a resource wrapper that performs cleanup when resource is not used anymore.
 @dynamicMemberLookup
@@ -34,7 +33,6 @@ public class Resource<T> {
     /// Swift optimizations may free Resource (and perform cleanup)
     /// in the place of last use of Resource, not the Resource.value place
     public var unsafeValue: T { _value }
-    
     
     public init(_ value: T, cleanup: @escaping (T) -> Void) {
         _value = value

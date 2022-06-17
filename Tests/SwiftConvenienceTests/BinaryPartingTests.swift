@@ -3,7 +3,6 @@ import SwiftConvenienceTestUtils
 
 import XCTest
 
-
 class BinaryReaderTests: XCTestCase {
     func test() throws {
         let data = Data([0x01, 0x02, 0x03, 0x04, 0xaa, 0xbb, 0xcc, 0xdd])
@@ -18,7 +17,6 @@ class BinaryReaderTests: XCTestCase {
         XCTAssertEqual(try reader.peek(at: Range(offset: 1, length: 3)), Data([0x02, 0x03, 0x04]))
     }
 }
-
 
 class BinaryWriterTests: XCTestCase {
     func test() throws {

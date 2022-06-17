@@ -69,7 +69,7 @@ public final class ValueStore<Value>: ValueObserving {
     
     public subscript<Property>(dynamicMember keyPath: WritableKeyPath<Value, Property>) -> Property {
         get { value[keyPath: keyPath] }
-        set { self.update(keyPath, newValue) }
+        set { update(keyPath, newValue) }
     }
     
     public func subscribe(receiveValue: @escaping (Value, _ context: Any?) -> Void) -> SubscriptionToken {
@@ -117,7 +117,7 @@ extension ValueStore {
             }
         }
         
-        scoped.parentSubscription = self.updateChildren.subscribe { [weak scoped] globalValue, context in
+        scoped.parentSubscription = updateChildren.subscribe { [weak scoped] globalValue, context in
             scoped?.directUpdate(context) { localValue in
                 localValue = transform(globalValue)
             }

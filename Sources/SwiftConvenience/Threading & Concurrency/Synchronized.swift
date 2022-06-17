@@ -22,7 +22,6 @@
 
 import Foundation
 
-
 public enum SynchronizationType {
     case serial(DispatchQoS)
     case concurrent(DispatchQoS)

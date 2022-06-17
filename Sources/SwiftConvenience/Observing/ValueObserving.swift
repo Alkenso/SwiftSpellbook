@@ -30,7 +30,7 @@ public protocol ValueObserving {
 
 public struct AnyValueObserving<T>: ValueObserving {
     public init<VO: ValueObserving>(observing: VO) where VO.T == T {
-        self.subscribe = observing.subscribe
+        subscribe = observing.subscribe
     }
     
     public init(subscribe: @escaping (@escaping (T, Any?) -> Void) -> SubscriptionToken) {
@@ -81,7 +81,7 @@ public protocol ValueObservingPublisher: ValueObserving, Publisher where Failure
 
 @available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension ValueObservingPublisher {
-    public func receive<S>(subscriber: S) where S : Subscriber, Failure == S.Failure, Output == S.Input {
+    public func receive<S>(subscriber: S) where S: Subscriber, Failure == S.Failure, Output == S.Input {
         let subscription = ProxySubscription<T>()
         subscriber.receive(subscription: subscription)
         

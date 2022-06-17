@@ -46,7 +46,7 @@ extension DictionaryCodingKey: CodingKey {
     }
     
     public var intValue: Int? {
-        if case let .index(index) = self {
+        if case .index(let index) = self {
             return index
         } else {
             return nil
@@ -66,7 +66,7 @@ extension DictionaryCodingKey {
         return dotPath.components(separatedBy: ".").map {
             if $0 == "[*]" {
                 return .index(.max)
-            } else if $0.hasPrefix("[") && $0.hasSuffix("]"), let index = Int($0.dropFirst().dropLast()) {
+            } else if $0.hasPrefix("["), $0.hasSuffix("]"), let index = Int($0.dropFirst().dropLast()) {
                 return .index(index)
             } else {
                 return .key($0)

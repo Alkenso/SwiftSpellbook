@@ -2,10 +2,9 @@ import SwiftConvenienceTestUtils
 
 import XCTest
 
-
 class TestTemporaryDirectoryTests: XCTestCase {
     let testTempDir = TestTemporaryDirectory(prefix: "MHT-Tests")
-
+    
     override func setUpWithError() throws {
         continueAfterFailure = false
         
@@ -44,20 +43,20 @@ class TestTemporaryDirectoryTests: XCTestCase {
         XCTAssertFalse(fm.directoryExists(at: subdir))
         XCTAssertFalse(fm.directoryExists(at: tempDir.url))
     }
-
+    
     func test_createSubdirectory() throws {
         // simple subpath
         let simpleSubdir = try testTempDir.createSubdirectory("Subdir")
         XCTAssertEqual(simpleSubdir.lastPathComponent, "Subdir")
         XCTAssertTrue(FileManager.default.directoryExists(at: simpleSubdir))
-
+        
         // complex subpath
         let complexSubdir = try testTempDir.createSubdirectory("Subdir2/Subsubdir")
         XCTAssertEqual(complexSubdir.lastPathComponent, "Subsubdir")
         XCTAssertEqual(complexSubdir.deletingLastPathComponent().lastPathComponent, "Subdir2")
         XCTAssertTrue(FileManager.default.directoryExists(at: complexSubdir))
     }
-
+    
     func test_createFile() throws {
         let emptyFile = try testTempDir.createFile("Empty.txt")
         XCTAssertTrue(FileManager.default.fileExists(at: emptyFile))

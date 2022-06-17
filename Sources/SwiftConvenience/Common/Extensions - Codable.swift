@@ -56,7 +56,6 @@ extension Decodable {
 
 private let jsonLogger = SCLogger.default(.codable(.json))
 
-
 extension Encodable {
     /// Encode value to plist using specified encoder.
     /// Log failure to SwiftConvenience.Log

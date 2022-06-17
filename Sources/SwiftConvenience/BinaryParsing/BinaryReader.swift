@@ -22,12 +22,10 @@
 
 import Foundation
 
-
 public struct BinaryReader {
     public private(set) var offset: Int = 0
     
     public var userInfo: [String: Any] = [:]
-    
     
     public init(_ source: BinaryReaderInput) {
         _input = source
@@ -40,7 +38,7 @@ public struct BinaryReader {
     public func peek(to buffer: UnsafeMutableRawBufferPointer, offset: Int) throws {
         let requiredInputSize = offset + buffer.count
         try ensureSize(requiredInputSize)
-
+        
         try _input.readBytes(to: buffer.bindMemory(to: UInt8.self), offset: offset)
     }
     
@@ -54,10 +52,9 @@ public struct BinaryReader {
         offset = 0
     }
     
-    
     // MARK: Private
-    private let _input: BinaryReaderInput
     
+    private let _input: BinaryReaderInput
     
     private func ensureSize(_ count: Int) throws {
         if try size() < count {
@@ -95,7 +92,7 @@ public extension BinaryReader {
     func peek(at: Range<Int>) throws -> Data {
         let requiredInputSize = at.lowerBound + at.count
         try ensureSize(requiredInputSize)
-
+        
         var data = Data(repeating: 0, count: at.count)
         try data.withUnsafeMutableBytes {
             try peek(to: $0, offset: at.lowerBound)

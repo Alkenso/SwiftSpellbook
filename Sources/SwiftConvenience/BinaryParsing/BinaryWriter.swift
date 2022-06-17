@@ -22,13 +22,11 @@
 
 import Foundation
 
-
 public struct BinaryWriter {
     private let _output: BinaryWriterOutput
     
     public var userInfo: [String: Any] = [:]
     public private(set) var offset: Int = 0
-    
     
     public init(_ output: BinaryWriterOutput) {
         _output = output

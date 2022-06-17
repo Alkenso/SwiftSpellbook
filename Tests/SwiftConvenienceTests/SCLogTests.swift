@@ -2,7 +2,6 @@ import SwiftConvenience
 import SwiftConvenienceTestUtils
 import XCTest
 
-
 final class SCLogTests: XCTestCase {
     func test_levels() {
         let expVerbose = expectation(description: "verbose")

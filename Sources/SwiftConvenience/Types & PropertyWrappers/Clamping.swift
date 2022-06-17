@@ -22,7 +22,6 @@
 
 import Foundation
 
-
 @propertyWrapper
 public struct Clamping<Value: Comparable> {
     var value: Value

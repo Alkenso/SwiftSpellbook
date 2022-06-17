@@ -23,7 +23,6 @@
 import Combine
 import Foundation
 
-
 public class CancellationToken {
     private let _queue: DispatchQueue
     private let _onDeinit: Bool
@@ -33,7 +32,6 @@ public class CancellationToken {
     private var _children = Synchronized<[CancellationToken]>(.serial)
     
     public var isCancelled: Bool { _cancelled }
-    
     
     public init(on queue: DispatchQueue = .global(), onDeinit: Bool = false, cancel: @escaping () -> Void) {
         _queue = queue
@@ -77,7 +75,6 @@ extension CancellationToken {
         parent.addChild(self)
     }
 }
-
 
 @available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension CancellationToken: Cancellable {}

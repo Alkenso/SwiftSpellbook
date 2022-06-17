@@ -7,6 +7,7 @@ private struct ValueWrapper<T>: ValueObserving {
     var value: T {
         willSet { subscriptions.notify(newValue) }
     }
+    
     private let subscriptions = EventNotify<T>()
     func subscribe(receiveValue: @escaping (T, Any?) -> Void) -> SubscriptionToken {
         let token = subscriptions.subscribe(receiveValue: receiveValue)

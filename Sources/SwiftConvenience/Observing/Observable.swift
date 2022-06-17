@@ -29,7 +29,7 @@ public final class Observable<Value>: ValueObserving {
     
     public init(valueRef: ValueView<Value>, subscribeReceiveValue: @escaping (@escaping (Value, _ context: Any?) -> Void) -> SubscriptionToken) {
         self.valueRef = valueRef
-        self.subscribeReceive = subscribeReceiveValue
+        subscribeReceive = subscribeReceiveValue
     }
     
     public var value: Value { valueRef.get() }

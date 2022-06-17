@@ -38,7 +38,6 @@ extension NSError {
     }
 }
 
-
 // MARK: - NSError Builder
 
 extension NSError {
@@ -110,14 +109,12 @@ extension NSError {
     }
 }
 
-
 // MARK: - NSError Try
 
 extension NSError {
     public static var osstatus: TryBuilder<OSStatusTryTag> { .init() }
     public static var posix: TryBuilder<POSIXTryTag> { .init() }
     public static var mach: TryBuilder<MachTryTag> { .init() }
-    
     
     public struct OSStatusTryTag {}
     public struct POSIXTryTag {}

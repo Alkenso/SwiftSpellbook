@@ -22,7 +22,6 @@
 
 import Foundation
 
-
 // MARK: - audit_token_t
 
 extension audit_token_t {
@@ -51,20 +50,19 @@ extension audit_token_t {
 }
 
 #if os(macOS)
-
-extension audit_token_t {
-    public var auid: uid_t { audit_token_to_auid(self) }
-    public var euid: uid_t { audit_token_to_euid(self) }
-    public var egid: gid_t { audit_token_to_egid(self) }
-    public var ruid: uid_t { audit_token_to_ruid(self) }
-    public var rgid: gid_t { audit_token_to_rgid(self) }
-    public var pid: pid_t { audit_token_to_pid(self) }
-    public var asid: au_asid_t { audit_token_to_asid(self) }
-    public var pidversion: Int32 { audit_token_to_pidversion(self) }
-}
-
+    
+    extension audit_token_t {
+        public var auid: uid_t { audit_token_to_auid(self) }
+        public var euid: uid_t { audit_token_to_euid(self) }
+        public var egid: gid_t { audit_token_to_egid(self) }
+        public var ruid: uid_t { audit_token_to_ruid(self) }
+        public var rgid: gid_t { audit_token_to_rgid(self) }
+        public var pid: pid_t { audit_token_to_pid(self) }
+        public var asid: au_asid_t { audit_token_to_asid(self) }
+        public var pidversion: Int32 { audit_token_to_pidversion(self) }
+    }
+    
 #endif
-
 
 // MARK: - Mach Time
 
@@ -93,7 +91,7 @@ extension mach_timebase_info {
                 domain: NSMachErrorDomain,
                 code: Int(kernReturn),
                 userInfo: [
-                    NSDebugDescriptionErrorKey: "mach_timebase_info fails with result \(kernReturn)"
+                    NSDebugDescriptionErrorKey: "mach_timebase_info fails with result \(kernReturn)",
                 ]
             )
         }

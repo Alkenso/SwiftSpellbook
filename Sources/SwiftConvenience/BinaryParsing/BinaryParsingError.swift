@@ -22,7 +22,6 @@
 
 import Foundation
 
-
 public enum BinaryParsingError: Error {
     case outOfRange
     case notTrivial(String)

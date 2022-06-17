@@ -30,12 +30,11 @@ public class EventAsk<Input, Transformed, Output> {
     public typealias AsyncTransform = (Input, @escaping (Transformed) -> Void) -> Void
     public typealias SyncTransform = (Input) -> Transformed
     
-    
     public init(combine: @escaping ([Transformed]) -> Output) {
         _combine = combine
     }
     
-    public convenience init() where Output == Array<Transformed> {
+    public convenience init() where Output == [Transformed] {
         self.init { $0 }
     }
     
@@ -101,8 +100,8 @@ public class EventAsk<Input, Transformed, Output> {
         }
     }
     
-    
     // MARK: Private
+    
     private typealias Entry<T> = (transform: AsyncTransform, queue: DispatchQueue)
     private let _transforms = Synchronized<[ObjectIdentifier: Entry<AsyncTransform>]>(.concurrent)
     private let _combine: ([Transformed]) -> Output

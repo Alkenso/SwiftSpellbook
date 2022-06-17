@@ -88,7 +88,6 @@ extension Box: Identifiable where Value: Identifiable {
 
 public typealias WeakBox<Value: AnyObject> = Box<Weak<Value>>
 
-
 @propertyWrapper
 public enum Indirect<Value> {
     indirect case wrappedValue(Value)
@@ -108,7 +107,6 @@ extension Indirect: Decodable where Value: Decodable {}
 extension Indirect: Identifiable where Value: Identifiable {
     public var id: Value.ID { wrappedValue.id }
 }
-
 
 @propertyWrapper
 public struct GetSet<Value> {
@@ -164,7 +162,6 @@ public struct GetEscapingUpdate<Value> {
     }
 }
 
-
 /// Wrapper that provides access to value. Useful when value is a struct that may be changed over time.
 @dynamicMemberLookup
 public final class ValueView<Value> {
@@ -182,11 +179,11 @@ public final class ValueView<Value> {
 }
 
 extension ValueView {
-    public static func `weak`<U: AnyObject>(_ value: U) -> ValueView<U?> {
+    public static func weak<U: AnyObject>(_ value: U) -> ValueView<U?> {
         .init { [weak value] in value }
     }
     
-    public subscript<U, Property>(dynamicMember keyPath: KeyPath<U, Property>) -> Property? where Value == Optional<U> {
+    public subscript<U, Property>(dynamicMember keyPath: KeyPath<U, Property>) -> Property? where Value == U? {
         (get())?[keyPath: keyPath]
     }
 }

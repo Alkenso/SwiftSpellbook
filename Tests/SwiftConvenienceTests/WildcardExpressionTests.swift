@@ -2,7 +2,6 @@ import SwiftConvenience
 
 import XCTest
 
-
 class WildcardExpressionTests: XCTestCase {
     func test_WildcardExpression() throws {
         XCTAssertTrue(WildcardExpression(pattern: "").match(""))

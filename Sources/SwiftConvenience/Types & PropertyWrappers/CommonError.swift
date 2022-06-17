@@ -22,7 +22,6 @@
 
 import Foundation
 
-
 /// Type representing error for common situations.
 public struct CommonError: Error {
     public init(_ code: Code, userInfo: [String: Any] = [:]) {
@@ -51,7 +50,7 @@ extension CommonError: CustomNSError {
     public static var errorDomain = "CommonErrorDomain"
     
     public var errorCode: Int { Int(code.rawValue) }
-    public var errorUserInfo: [String : Any] { userInfo }
+    public var errorUserInfo: [String: Any] { userInfo }
 }
 
 extension CommonError {

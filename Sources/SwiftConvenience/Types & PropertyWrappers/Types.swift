@@ -57,7 +57,6 @@ extension Change: Hashable where T: Hashable {}
 extension Change: Equatable where T: Equatable {}
 extension Change: Codable where T: Codable {}
 
-
 public struct Pair<First, Second> {
     public var first: First
     public var second: Second
@@ -82,7 +81,6 @@ extension Pair: Hashable where First: Hashable, Second: Hashable {}
 extension Pair: Equatable where First: Equatable, Second: Equatable {}
 extension Pair: Codable where First: Codable, Second: Codable {}
 
-
 public struct KeyValue<Key, Value> {
     public var key: Key
     public var value: Value
@@ -106,7 +104,6 @@ extension KeyValue {
 extension KeyValue: Hashable where Key: Hashable, Value: Hashable {}
 extension KeyValue: Equatable where Key: Equatable, Value: Equatable {}
 extension KeyValue: Codable where Key: Codable, Value: Codable {}
-
 
 /// An alternative between two elements
 public enum Either<First, Second> {
@@ -134,12 +131,12 @@ extension Either {
     }
     
     public func flatMapFirst<U>(_ transform: (First) throws -> U) rethrows -> U? {
-        guard case let .first(value) = self else { return nil }
+        guard case .first(let value) = self else { return nil }
         return try transform(value)
     }
     
     public func flatMapSecond<U>(_ transform: (Second) throws -> U) rethrows -> U? {
-        guard case let .second(value) = self else { return nil }
+        guard case .second(let value) = self else { return nil }
         return try transform(value)
     }
 }

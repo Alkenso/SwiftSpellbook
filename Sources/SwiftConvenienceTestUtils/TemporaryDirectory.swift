@@ -24,12 +24,10 @@ import SwiftConvenience
 
 import Foundation
 
-
 public class TestTemporaryDirectory {
     private let _temp: TemporaryDirectory
     public var url: URL { _temp.url }
     
-
     public init(prefix: String? = nil) {
         _temp = TemporaryDirectory.default.uniqueSubdir(prefix: prefix)
     }

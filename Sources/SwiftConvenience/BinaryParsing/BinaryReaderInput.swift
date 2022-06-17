@@ -22,7 +22,6 @@
 
 import Foundation
 
-
 public protocol BinaryReaderInput {
     func readBytes(to: UnsafeMutableBufferPointer<UInt8>, offset: Int) throws
     func size() throws -> Int
@@ -31,7 +30,6 @@ public protocol BinaryReaderInput {
 public struct AnyBinaryReaderInput: BinaryReaderInput {
     private var _readBytes: (_ to: UnsafeMutableBufferPointer<UInt8>, _ offset: Int) throws -> Void
     private var _size: () -> Int
-    
     
     public init(
         readBytes: @escaping (UnsafeMutableBufferPointer<UInt8>, Int) throws -> Void,

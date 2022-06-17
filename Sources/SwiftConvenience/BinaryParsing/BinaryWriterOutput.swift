@@ -22,7 +22,6 @@
 
 import Foundation
 
-
 public protocol BinaryWriterOutput: AnyObject {
     func writeBytes(from: UnsafeBufferPointer<UInt8>, at offset: Int) throws
     func size() throws -> Int
@@ -31,7 +30,6 @@ public protocol BinaryWriterOutput: AnyObject {
 public class AnyBinaryWriterOutput: BinaryWriterOutput {
     private var _writeBytes: (_ from: UnsafeBufferPointer<UInt8>, _ offset: Int) throws -> Void
     private var _size: () throws -> Int
-    
     
     public init(
         writeBytes: @escaping (UnsafeBufferPointer<UInt8>, Int) throws -> Void,
@@ -52,7 +50,6 @@ public class AnyBinaryWriterOutput: BinaryWriterOutput {
 
 public class DataBinaryWriterOutput: BinaryWriterOutput {
     public var data: Data
-    
     
     public init(data: Data = Data()) {
         self.data = data

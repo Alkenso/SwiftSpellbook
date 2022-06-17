@@ -13,7 +13,7 @@ class DictionaryReaderTests: XCTestCase {
             "children": [
                 ["name": "Volodymyr", "age": 10],
                 ["name": "Julia", "age": 6],
-            ]
+            ],
         ]
         var reader = DictionaryReader(person)
         reader.contextDescription = "Parsing person properties from dict \(person)"
@@ -36,7 +36,7 @@ class DictionaryReaderTests: XCTestCase {
         XCTAssertEqual(try reader.read(codingPath: ["children", .index(.max), "age"], as: Int.self), 6)
         XCTAssertEqual(try reader.read(codingPath: ["children", .index(.max), "age"], as: Int.self), 6)
         XCTAssertThrowsError(try reader.read(codingPath: ["children", .index(123), "age"], as: Int.self))
-    
+        
         // dotPath
         XCTAssertEqual(try reader.read(dotPath: "address.city", as: String.self), "Miami")
         XCTAssertThrowsError(try reader.read(dotPath: "address.city2", as: String.self))
@@ -53,15 +53,13 @@ class DictionaryReaderTests: XCTestCase {
         do {
             _ = try DictionaryReader([:]).read(codingPath: [], as: String.self)
             XCTFail("Read should fail")
-        }
-        catch let error as CommonError {
+        } catch let error as CommonError {
             XCTAssertEqual(error.code, .invalidArgument)
         }
         do {
             _ = try DictionaryReader([:]).read(dotPath: "", as: String.self)
             XCTFail("Read should fail")
-        }
-        catch let error as CommonError {
+        } catch let error as CommonError {
             XCTAssertEqual(error.code, .invalidArgument)
         }
         
@@ -69,8 +67,7 @@ class DictionaryReaderTests: XCTestCase {
         do {
             _ = try DictionaryReader(["key": "value"]).read(codingPath: ["key"], as: Int.self)
             XCTFail("Read should fail")
-        }
-        catch let error as DecodingError {
+        } catch let error as DecodingError {
             if case .typeMismatch = error {} else {
                 XCTFail("Error must be DecodingError.typeMismatch, but got \(error)")
             }
@@ -78,8 +75,7 @@ class DictionaryReaderTests: XCTestCase {
         do {
             _ = try DictionaryReader(["key": "value"]).read(dotPath: "key", as: Int.self)
             XCTFail("Read should fail")
-        }
-        catch let error as DecodingError {
+        } catch let error as DecodingError {
             if case .typeMismatch = error {} else {
                 XCTFail("Error must be DecodingError.typeMismatch, but got \(error)")
             }
@@ -89,8 +85,7 @@ class DictionaryReaderTests: XCTestCase {
         do {
             _ = try DictionaryReader(["key": "value"]).read(codingPath: ["key_2"], as: Int.self)
             XCTFail("Read should fail")
-        }
-        catch let error as DecodingError {
+        } catch let error as DecodingError {
             if case .keyNotFound = error {} else {
                 XCTFail("Error must be DecodingError.keyNotFound, but got \(error)")
             }
@@ -98,8 +93,7 @@ class DictionaryReaderTests: XCTestCase {
         do {
             _ = try DictionaryReader(["key": "value"]).read(dotPath: "key_2", as: Int.self)
             XCTFail("Read should fail")
-        }
-        catch let error as DecodingError {
+        } catch let error as DecodingError {
             if case .keyNotFound = error {} else {
                 XCTFail("Error must be DecodingError.keyNotFound, but got \(error)")
             }
@@ -118,7 +112,7 @@ class DictionaryWriterTests: XCTestCase {
             "children": [
                 ["name": "Volodymyr", "age": 10],
                 ["name": "Julia", "age": 6],
-            ]
+            ],
         ]
         
         var writer = DictionaryWriter(person) { person = $0 }
@@ -144,16 +138,14 @@ class DictionaryWriterTests: XCTestCase {
             var writer = DictionaryWriter([:])
             _ = try writer.insert(value: 10, codingPath: [])
             XCTFail("Insert should fail")
-        }
-        catch let error as CommonError {
+        } catch let error as CommonError {
             XCTAssertEqual(error.code, .invalidArgument)
         }
         do {
             var writer = DictionaryWriter([:])
             _ = try writer.insert(value: 10, dotPath: "")
             XCTFail("Insert should fail")
-        }
-        catch let error as CommonError {
+        } catch let error as CommonError {
             XCTAssertEqual(error.code, .invalidArgument)
         }
         
@@ -162,8 +154,7 @@ class DictionaryWriterTests: XCTestCase {
             var writer = DictionaryWriter(["key": "value"])
             _ = try writer.insert(value: 10, codingPath: ["key", "value", "q"])
             XCTFail("Insert should fail")
-        }
-        catch let error as DecodingError {
+        } catch let error as DecodingError {
             if case .typeMismatch = error {} else {
                 XCTFail("Error must be DecodingError.typeMismatch, but got \(error)")
             }
@@ -172,8 +163,7 @@ class DictionaryWriterTests: XCTestCase {
             var writer = DictionaryWriter(["key": "value"])
             _ = try writer.insert(value: 10, dotPath: "key.value.[0]")
             XCTFail("Insert should fail")
-        }
-        catch let error as DecodingError {
+        } catch let error as DecodingError {
             if case .typeMismatch = error {} else {
                 XCTFail("Error must be DecodingError.typeMismatch, but got \(error)")
             }
@@ -184,8 +174,7 @@ class DictionaryWriterTests: XCTestCase {
             var writer = DictionaryWriter(["key": [1, 2, 3]])
             _ = try writer.insert(value: 10, codingPath: ["key", .index(20)])
             XCTFail("Insert should fail")
-        }
-        catch let error as DecodingError {
+        } catch let error as DecodingError {
             if case .keyNotFound = error {} else {
                 XCTFail("Error must be DecodingError.keyNotFound, but got \(error)")
             }
@@ -194,8 +183,7 @@ class DictionaryWriterTests: XCTestCase {
             var writer = DictionaryWriter(["key": [1, 2, 3]])
             _ = try writer.insert(value: 10, dotPath: "key.[20]")
             XCTFail("Insert should fail")
-        }
-        catch let error as DecodingError {
+        } catch let error as DecodingError {
             if case .keyNotFound = error {} else {
                 XCTFail("Error must be DecodingError.keyNotFound, but got \(error)")
             }

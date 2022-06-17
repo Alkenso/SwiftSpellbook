@@ -1,7 +1,6 @@
 import Foundation
 import SwiftConvenience
 
-
 public enum Testing {
     public enum Web {
         public static let urlPath = "/get/stuff"

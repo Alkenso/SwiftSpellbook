@@ -22,11 +22,9 @@
 
 import Foundation
 
-
 public struct TestError: Error {
     public let description: String
     public let underlyingError: Error?
-    
     
     public init() {
         self.init("Any test error.")

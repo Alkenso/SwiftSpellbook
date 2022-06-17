@@ -20,9 +20,8 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-import Foundation
 import Darwin
-
+import Foundation
 
 // MARK: - Data
 
@@ -46,7 +45,7 @@ extension Data {
         for i in stride(from: 0, to: hexString.count, by: 2) {
             let byteStart = hexString.index(hexString.startIndex, offsetBy: i)
             let byteEnd = hexString.index(after: byteStart)
-            let byteString = hexString[byteStart...byteEnd]
+            let byteString = hexString[byteStart ... byteEnd]
             guard let byte = UInt8(byteString, radix: 16) else { return nil }
             data.append(byte)
         }
@@ -91,7 +90,7 @@ extension URL {
         guard let url = Self(string: "\(staticString)") else {
             preconditionFailure("Invalid static URL string: \(staticString)")
         }
-
+        
         self = url
     }
 }
@@ -118,6 +117,7 @@ extension String {
     public func appendingPathComponent(_ str: String) -> String {
         (self as NSString).appendingPathComponent(str)
     }
+    
     public var deletingLastPathComponent: String { (self as NSString).deletingLastPathComponent }
     
     public var pathExtension: String { (self as NSString).pathExtension }
@@ -125,9 +125,9 @@ extension String {
         let result = (self as NSString).appendingPathExtension(str)
         return result ?? (self + "." + str)
     }
+    
     public var deletingPathExtension: String { (self as NSString).deletingPathExtension }
 }
-
 
 // MARK: - UUID
 

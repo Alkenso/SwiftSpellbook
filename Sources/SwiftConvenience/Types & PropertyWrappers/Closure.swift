@@ -26,11 +26,11 @@ import Foundation
 /// Design follows 'Decorator' pattern.
 public struct Closure<T, R> {
     private let action: (T) -> R
-
+    
     public init(_ action: @escaping (T) -> R) {
         self.action = action
     }
-
+    
     public func callAsFunction(_ value: T) -> R {
         action(value)
     }
@@ -50,11 +50,11 @@ extension Closure {
             }
         }
     }
-
+    
     public func sync(on queue: DispatchQueue) -> Self {
         Self { result in queue.sync { self(result) } }
     }
-
+    
     public func async(on queue: DispatchQueue) -> Self where R == Void {
         Self { result in queue.async { self(result) } }
     }
@@ -68,24 +68,23 @@ extension Closure {
     public func callAsFunction<T1, T2>(_ arg1: T1, _ arg2: T2) -> R where T == (T1, T2) {
         callAsFunction((arg1, arg2))
     }
-
+    
     public func callAsFunction<T1, T2, T3>(_ arg1: T1, _ arg2: T2, _ arg3: T3) -> R where T == (T1, T2, T3) {
         callAsFunction((arg1, arg2, arg3))
     }
-
+    
     public func callAsFunction<T1, T2, T3, T4>(_ arg1: T1, _ arg2: T2, _ arg3: T3, _ arg4: T4) -> R where T == (T1, T2, T3, T4) {
         callAsFunction((arg1, arg2, arg3, arg4))
     }
-
+    
     public func callAsFunction<T1, T2, T3, T4, T5>(_ arg1: T1, _ arg2: T2, _ arg3: T3, _ arg4: T4, _ arg5: T5) -> R where T == (T1, T2, T3, T4, T5) {
         callAsFunction((arg1, arg2, arg3, arg4, arg5))
     }
-
+    
     public func callAsFunction<T1, T2, T3, T4, T5, T6>(_ arg1: T1, _ arg2: T2, _ arg3: T3, _ arg4: T4, _ arg5: T5, _ arg6: T6) -> R where T == (T1, T2, T3, T4, T5, T6) {
         callAsFunction((arg1, arg2, arg3, arg4, arg5, arg6))
     }
 }
-
 
 /// Throwing version of `Closure`
 public struct ClosureT<T, R> {

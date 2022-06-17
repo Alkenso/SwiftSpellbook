@@ -22,7 +22,6 @@
 
 import Foundation
 
-
 /// PODCodable performs coding of POD value as single Data object.
 public protocol PODCodable: Codable {}
 
@@ -75,10 +74,8 @@ extension PODUnsafeHashable {
     }
 }
 
-
 public protocol SafePOD: PODCodable {}
 public protocol UnsafePOD: PODUnsafeHashable {}
-
 
 // MARK: - Oftenly used POD types
 
@@ -89,7 +86,6 @@ extension attrlist: SafePOD, UnsafePOD {}
 extension attribute_set: SafePOD, UnsafePOD {}
 extension attrreference: SafePOD, UnsafePOD {}
 extension diskextent: SafePOD, UnsafePOD {}
-
 
 extension stat: SafePOD {}
 extension statfs: SafePOD {}

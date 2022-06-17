@@ -3,10 +3,9 @@ import SwiftConvenienceTestUtils
 
 import XCTest
 
-
 class FileManagerExtensionsTests: XCTestCase {
     let tempDir = TestTemporaryDirectory(prefix: "MHT-Tests")
-
+    
     override func setUpWithError() throws {
         continueAfterFailure = false
         

@@ -1,7 +1,6 @@
 import SwiftConvenience
 import XCTest
 
-
 final class EventAskTests: XCTestCase {
     func test_emptyHandlers() {
         let transformer = EventAskMany<String, Int>()
@@ -13,7 +12,7 @@ final class EventAskTests: XCTestCase {
         
         waitForExpectations()
     }
-
+    
     func test_oneToMany_multipleHandlers() {
         var disposables: [Any] = []
         let postedEvent = "some event"
@@ -26,7 +25,7 @@ final class EventAskTests: XCTestCase {
             XCTAssertEqual(event, postedEvent)
             completion(2)
         })
-
+        
         let exp = expectation(description: "Evaluated.")
         transformer.askAsync(postedEvent) {
             XCTAssertTrue($0.contains(1)) // response from first handler

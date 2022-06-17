@@ -55,7 +55,6 @@ public struct DictionaryWriter<Key: Hashable, Value> {
     /// If set, context description is appended to any error thrown while inserting into the dictionary
     public var contextDescription: String?
     
-    
     /// Creates `DictionaryWriter` with dictionary and update closure
     /// - Parameters:
     ///     - dictionary: initial dictionary
@@ -142,7 +141,7 @@ public struct DictionaryWriter<Key: Hashable, Value> {
             
             let isFirstOrLast = index == 0 || index == .max
             let existingItemAtIndex = index != .max ? array[safe: index] : array.last
-            if existingItemAtIndex == nil && !isFirstOrLast {
+            if existingItemAtIndex == nil, !isFirstOrLast {
                 try throwOutOfRange(size: array.count, codingPath: keyPath)
             }
             

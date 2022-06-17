@@ -22,7 +22,6 @@
 
 import Foundation
 
-
 extension FileManager {
     /// Sets the attributes of the specified file or directory recursively.
     public func setAttributes(_ attributes: [FileAttributeKey: Any], recursivelyOfItemAt url: URL) throws {
@@ -60,7 +59,7 @@ extension FileManager {
     
     /// Copies contents of given directory to other directory.
     public func copyContents(ofDirectory src: URL, to target: URL, createTarget: Bool = false) throws {
-        if !fileExists(at: target) && createTarget {
+        if !fileExists(at: target), createTarget {
             try createDirectory(at: target, withIntermediateDirectories: true, attributes: nil)
         }
         try contentsOfDirectory(at: src, includingPropertiesForKeys: nil)
@@ -114,7 +113,7 @@ extension FileManager {
         }
     }
     
-    public func listXattr(atPath path: String) throws -> [String]  {
+    public func listXattr(atPath path: String) throws -> [String] {
         try NSError.posix.debugDescription("listxattr").try {
             let length = listxattr(path, nil, 0, 0)
             guard length >= 0 else { return nil }

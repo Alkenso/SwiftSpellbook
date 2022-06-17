@@ -22,7 +22,6 @@
 
 import Foundation
 
-
 /// Atomic property wrapper is designed to simple & safe operations of
 /// getting / setting particular value.
 /// For reacher thread-safe functionality consider using 'Synchronized' class.
@@ -43,7 +42,7 @@ public final class Atomic<Value> {
         storage.exchange(value)
     }
     
-    public func initialize<T>(_ initialize: @autoclosure () -> T) -> T where Value == Optional<T> {
+    public func initialize<T>(_ initialize: @autoclosure () -> T) -> T where Value == T? {
         storage.write {
             if let value = $0 {
                 return value

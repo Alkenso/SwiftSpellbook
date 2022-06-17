@@ -1,7 +1,6 @@
 import SwiftConvenience
 import XCTest
 
-
 class CancellationTokenTests: XCTestCase {
     func test_basic() {
         var isCancelled = false

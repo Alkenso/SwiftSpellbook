@@ -2,7 +2,6 @@ import SwiftConvenience
 import SwiftConvenienceTestUtils
 import XCTest
 
-
 class ResourceTests: XCTestCase {
     func test_accessValue() {
         let resource = Resource<Int>.stub(10)

@@ -22,7 +22,6 @@
 
 import XCTest
 
-
 public extension XCTestCase {
     static var waitTimeout: TimeInterval = 0.5
     

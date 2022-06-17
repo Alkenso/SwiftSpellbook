@@ -22,7 +22,6 @@
 
 import Foundation
 
-
 /// Checks if memory of instances is equal. Generic version of memcmp.
 public func unsafeMemoryEquals<T>(_ lhs: T, _ rhs: T) -> Bool {
     withUnsafeBytes(of: lhs) { lhsBuffer in
@@ -31,7 +30,6 @@ public func unsafeMemoryEquals<T>(_ lhs: T, _ rhs: T) -> Bool {
         }
     }
 }
-
 
 public protocol CPointer {
     /// Returns true is pointer is 0x0, false otherwise.
@@ -52,11 +50,11 @@ extension UnsafeRawPointer: CPointer {
 }
 
 extension UnsafeBufferPointer: CPointer {
-    public var isNull: Bool { self.baseAddress == nil }
+    public var isNull: Bool { baseAddress == nil }
 }
 
 extension UnsafeRawBufferPointer: CPointer {
-    public var isNull: Bool { self.baseAddress == nil }
+    public var isNull: Bool { baseAddress == nil }
 }
 
 extension UnsafeMutablePointer: CPointer {
@@ -68,17 +66,16 @@ extension UnsafeMutableRawPointer: CPointer {
 }
 
 extension UnsafeMutableBufferPointer: CPointer {
-    public var isNull: Bool { self.baseAddress == nil }
+    public var isNull: Bool { baseAddress == nil }
 }
 
 extension UnsafeMutableRawBufferPointer: CPointer {
-    public var isNull: Bool { self.baseAddress == nil }
+    public var isNull: Bool { baseAddress == nil }
 }
 
 extension AutoreleasingUnsafeMutablePointer: CPointer {
     public var isNull: Bool { self == Self(bitPattern: 0) }
 }
-
 
 public extension UnsafeMutablePointer {
     func bzero() {

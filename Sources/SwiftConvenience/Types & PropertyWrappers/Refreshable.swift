@@ -29,12 +29,12 @@ public struct Refreshable<Value> {
     private let source: Source
     
     public init(wrappedValue: Value? = nil, expire: Expiration, source: Source) {
-        self.innerValue = wrappedValue
-        self.expiration = expire
+        innerValue = wrappedValue
+        expiration = expire
         self.source = source
         
         if let innerValue = innerValue {
-            self.expiration.onUpdate(innerValue)
+            expiration.onUpdate(innerValue)
         }
     }
     

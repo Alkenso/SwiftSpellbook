@@ -22,17 +22,16 @@
 
 import Foundation
 
-
 extension Bundle {
     /// Bundle name. Value for Info.plist key "CFBundleNameKey".
     public var name: String? { stringValue(for: kCFBundleNameKey as String) }
-
+    
     /// Bundle short version. Value for Info.plist key "CFBundleShortVersionString".
     public var shortVersion: String? { stringValue(for: "CFBundleShortVersionString") }
-
+    
     /// Bundle version. Value for Info.plist key "CFBundleVersion".
     public var version: String? { stringValue(for: "CFBundleVersion") }
-
+    
     private func stringValue(for key: String) -> String? {
         object(forInfoDictionaryKey: key) as? String
     }
@@ -44,13 +43,13 @@ extension Bundle {
     /// - throws: NSError with code NSURLErrorFileDoesNotExist, domain NSURLErrorDomain if file does not exist.
     public func existingURL(forResource name: String, withExtension ext: String?) throws -> URL {
         guard let url = url(forResource: name, withExtension: ext),
-              FileManager.default.fileExists(atPath: url.path)
+            FileManager.default.fileExists(atPath: url.path)
         else {
             throw NSError(
                 domain: NSURLErrorDomain,
                 code: NSURLErrorFileDoesNotExist,
                 userInfo: [
-                    NSDebugDescriptionErrorKey: "Resource file \(name) not found."
+                    NSDebugDescriptionErrorKey: "Resource file \(name) not found.",
                 ]
             )
         }
