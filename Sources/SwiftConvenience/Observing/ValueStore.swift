@@ -102,28 +102,25 @@ extension ValueStore {
     }
     
     public func scope<U>(transform: @escaping (Value) -> U, merge: @escaping (inout Value, U) -> Void) -> ValueStore<U> {
-        let scoped = ValueStore<U>(initialValue: transform(value))
-        defer {
-            //  To be sure that value is up to date
-            //  (ignoring changes between scoped store init and before subscriptions established)
-            scoped.update(transform(value))
-        }
-        
-        scoped.parentUpdate = { context, localBody in
-            self.update(context: context) { globalValue in
-                var localValue = transform(globalValue)
-                localBody(&localValue)
-                merge(&globalValue, localValue)
+        lock.withLock {
+            let scoped = ValueStore<U>(initialValue: transform(value))
+            
+            scoped.parentUpdate = { context, localBody in
+                self.update(context: context) { globalValue in
+                    var localValue = transform(globalValue)
+                    localBody(&localValue)
+                    merge(&globalValue, localValue)
+                }
             }
-        }
-        
-        scoped.parentSubscription = updateChildren.subscribe { [weak scoped] globalValue, context in
-            scoped?.directUpdate(context) { localValue in
-                localValue = transform(globalValue)
+            
+            scoped.parentSubscription = updateChildren.subscribe { [weak scoped] globalValue, context in
+                scoped?.directUpdate(context) { localValue in
+                    localValue = transform(globalValue)
+                }
             }
+            
+            return scoped
         }
-        
-        return scoped
     }
 }
 
