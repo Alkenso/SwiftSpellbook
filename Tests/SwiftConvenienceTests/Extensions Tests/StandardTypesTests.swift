@@ -118,4 +118,8 @@ class StandardTypesExtensionsTests: XCTestCase {
         
         XCTAssertThrowsError(try URL(staticString: "https://remote.com").ensureFileURL())
     }
+    
+    func test_UUID_zero() {
+        XCTAssertEqual(UUID.zero.uuidString, "00000000-0000-0000-0000-000000000000")
+    }
 }

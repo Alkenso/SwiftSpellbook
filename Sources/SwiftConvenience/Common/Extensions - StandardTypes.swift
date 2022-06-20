@@ -139,6 +139,8 @@ extension UUID {
         }
         self = value
     }
+    
+    public static let zero = UUID(staticString: "00000000-0000-0000-0000-000000000000")
 }
 
 // MARK: - Result
