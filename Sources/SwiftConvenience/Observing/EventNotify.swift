@@ -25,19 +25,49 @@ import Foundation
 public typealias SubscriptionToken = DeinitAction
 
 public final class EventNotify<T>: ValueObserving {
-    private let subscriptions = Synchronized<[UUID: (T, Any?) -> Void]>(.serial)
+    private typealias Handler = (T, Any?) -> Void
+    
+    private let lock = NSRecursiveLock()
+    private var subscriptions: [UUID: Handler] = [:]
+    private var lastValue: T?
+    
+    /// Queue to be used to notify subscribers. If not set, it will be notified on caller thread.
     public var notifyQueue: DispatchQueue?
     
-    public init() {}
+    /// Create EventNotify. Acts like PassthoughtSubject from Combine.
+    public convenience init() {
+        self.init(initialValue: nil)
+    }
+    
+    /// Create EventNotify with initial value. Such EventNotify will notify it's subscriber immediately
+    /// with that last value (initial value or last value passed to `notify` method.
+    /// Acts like CurrentValueSubject from Combine.
+    public init(initialValue: T?) {
+        self.lastValue = initialValue
+    }
     
     public func subscribe(receiveValue: @escaping (T, _ context: Any?) -> Void) -> SubscriptionToken {
         let id = UUID()
-        subscriptions.writeAsync { $0[id] = receiveValue }
-        return DeinitAction { [weak subscriptions] in subscriptions?.writeAsync { $0.removeValue(forKey: id) } }
+        lock.withLock {
+            subscriptions[id] = receiveValue
+            if let lastValue = lastValue {
+                notifyOne(lastValue, nil, action: receiveValue)
+            }
+        }
+        return DeinitAction { [weak self] in
+            guard let self = self else { return }
+            self.lock.withLock { _ = self.subscriptions.removeValue(forKey: id) }
+        }
     }
     
     public func notify(_ value: T, context: Any? = nil) {
-        subscriptions.read().values.forEach { notifyOne(value, context, action: $0) }
+        let subscriptions: [Handler] = lock.withLock {
+            if lastValue != nil {
+                lastValue = value
+            }
+            return Array(self.subscriptions.values)
+        }
+        subscriptions.forEach { notifyOne(value, context, action: $0) }
     }
     
     private func notifyOne(_ value: T, _ context: Any?, action: @escaping (T, Any?) -> Void) {

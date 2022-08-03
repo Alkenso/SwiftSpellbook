@@ -26,7 +26,7 @@ import Foundation
 @dynamicMemberLookup
 public final class ValueStore<Value>: ValueObserving {
     private let lock = NSRecursiveLock()
-    private let subscriptions = EventNotify<Value>()
+    private let subscriptions: EventNotify<Value>
     private var currentValueGet: [Value]
     private var currentValue: Value
     private var updateDepth = 0
@@ -36,6 +36,7 @@ public final class ValueStore<Value>: ValueObserving {
     private var updateChildren = EventNotify<Value>()
     
     public init(initialValue: Value) {
+        subscriptions = EventNotify(initialValue: initialValue)
         currentValue = initialValue
         currentValueGet = [initialValue]
     }
@@ -74,9 +75,7 @@ public final class ValueStore<Value>: ValueObserving {
     
     public func subscribe(receiveValue: @escaping (Value, _ context: Any?) -> Void) -> SubscriptionToken {
         lock.withLock {
-            let token = subscriptions.subscribe(receiveValue: receiveValue)
-            receiveValue(value, nil)
-            return token
+            subscriptions.subscribe(receiveValue: receiveValue)
         }
     }
     
