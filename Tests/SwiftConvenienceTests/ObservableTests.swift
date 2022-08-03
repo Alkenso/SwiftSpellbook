@@ -52,7 +52,7 @@ class ObservableTests: XCTestCase {
         defer { withExtendedLifetime(cancellables) {} }
         
         let exp = expectation(description: "OnChange called")
-        exp.expectedFulfillmentCount = 3
+        exp.expectedFulfillmentCount = 4
         
         observable.subscribeChange { change in
             XCTAssertEqual(change.old, 10)
@@ -69,6 +69,13 @@ class ObservableTests: XCTestCase {
         
         let countObservable = stringObservable.scope(\.count)
         countObservable.subscribeChange { change in
+            XCTAssertEqual(change.old, 2)
+            XCTAssertEqual(change.new, 3)
+            exp.fulfill()
+        }.store(in: &cancellables)
+        
+        // anonymous.
+        stringObservable.scope(\.count).subscribeChange { change in
             XCTAssertEqual(change.old, 2)
             XCTAssertEqual(change.new, 3)
             exp.fulfill()

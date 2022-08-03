@@ -65,32 +65,32 @@ public class Resource<T> {
     @Atomic private var _cleanup: (T) -> Void
 }
 
-public extension Resource {
+extension Resource {
     /// Safe way accessing the value
-    func withValue<R>(_ body: (T) throws -> R) rethrows -> R {
+    public func withValue<R>(_ body: (T) throws -> R) rethrows -> R {
         try body(unsafeValue)
     }
     
-    subscript<Local>(dynamicMember keyPath: KeyPath<T, Local>) -> Local {
+    public subscript<Local>(dynamicMember keyPath: KeyPath<T, Local>) -> Local {
         unsafeValue[keyPath: keyPath]
     }
 }
 
-public extension Resource {
+extension Resource {
     /// Create Resource wrapping value and performing cleanup block when the wrapper if freed.
-    static func raii(_ value: T, cleanup: @escaping (T) -> Void) -> Resource {
+    public static func raii(_ value: T, cleanup: @escaping (T) -> Void) -> Resource {
         Resource(value, cleanup: cleanup)
     }
     
     /// Create Resource wrapping value and performing nothing when the wrapper if freed.
-    static func stub(_ value: T) -> Resource {
+    public static func stub(_ value: T) -> Resource {
         Resource(value, cleanup: { _ in })
     }
 }
 
-public extension Resource {
+extension Resource {
     /// Create Resource wrapping pointer. Deinitializes and deallocates it on cleanup.
-    static func pointer<P>(_ ptr: T) -> Resource where T == UnsafeMutablePointer<P> {
+    public static func pointer<P>(_ ptr: T) -> Resource where T == UnsafeMutablePointer<P> {
         Resource(
             ptr,
             cleanup: {
@@ -103,14 +103,14 @@ public extension Resource {
     /// Create Resource wrapping pointer.
     /// Allocated and initializes pointer on create,
     /// deinitializes and deallocates it on cleanup.
-    static func pointer<P>(value: P) -> Resource where T == UnsafeMutablePointer<P> {
+    public static func pointer<P>(value: P) -> Resource where T == UnsafeMutablePointer<P> {
         let ptr = T.allocate(capacity: 1)
         ptr.initialize(to: value)
         return .pointer(ptr)
     }
     
     /// Create Resource wrapping pointer. Deinitializes and deallocates it on cleanup.
-    static func pointer<P>(_ buffer: T) -> Resource where T == UnsafeMutableBufferPointer<P> {
+    public static func pointer<P>(_ buffer: T) -> Resource where T == UnsafeMutableBufferPointer<P> {
         Resource(
             buffer,
             cleanup: {
@@ -123,46 +123,56 @@ public extension Resource {
     /// Create Resource wrapping pointer.
     /// Allocated and initializes pointer on create,
     /// deinitializes and deallocates it on cleanup.
-    static func pointer<P, C: Collection>(values: C) -> Resource where T == UnsafeMutableBufferPointer<P>, C.Element == P {
+    public static func pointer<P, C: Collection>(values: C) -> Resource where T == UnsafeMutableBufferPointer<P>, C.Element == P {
         let ptr = T.allocate(capacity: values.count)
         _ = ptr.initialize(from: values)
         return .pointer(ptr)
     }
     
     /// Create Resource wrapping pointer. Deallocates it on cleanup.
-    static func pointer(_ ptr: T) -> Resource where T == UnsafeMutableRawPointer {
+    public static func pointer(_ ptr: T) -> Resource where T == UnsafeMutableRawPointer {
         Resource(ptr, cleanup: { $0.deallocate() })
     }
     
     /// Create Resource wrapping pointer. Deallocates it on cleanup.
-    static func pointer(_ buffer: T) -> Resource where T == UnsafeMutableRawBufferPointer {
+    public static func pointer(_ buffer: T) -> Resource where T == UnsafeMutableRawBufferPointer {
         Resource(buffer, cleanup: { $0.deallocate() })
     }
 }
 
 /// Performs action on deinit.
 public typealias DeinitAction = Resource<Void>
-public extension Resource where T == Void {
+extension Resource where T == Void {
     /// Perform the action when the instance is freed.
-    convenience init(onDeinit: @escaping () -> Void) {
+    public convenience init(onDeinit: @escaping () -> Void) {
         self.init((), cleanup: onDeinit)
     }
     
     /// Perform the action when the instance is freed.
-    static func onDeinit(_ action: @escaping () -> Void) -> DeinitAction {
+    public static func onDeinit(_ action: @escaping () -> Void) -> DeinitAction {
         DeinitAction(onDeinit: action)
+    }
+    
+    /// Capture variable up to the end of `Resource` life time.
+    public static func capturing(_ object: Any) -> DeinitAction {
+        DeinitAction { _ = object }
+    }
+    
+    /// Add capture variable up to the end of `Resource` life time.
+    public func capturing(_ object: Any) -> DeinitAction {
+        .capturing((self, object))
     }
 }
 
-public extension Resource where T == URL {
+extension Resource where T == URL {
     /// Create Resource wrapping URL and removing it when the wrapper if freed.
-    static func raii(location filesystemURL: URL) -> Resource {
+    public static func raii(location filesystemURL: URL) -> Resource {
         raii(filesystemURL) { try? FileManager.default.removeItem(at: $0) }
     }
     
     /// Create Resource wrapping URL and removing it when the wrapper if freed.
     /// The item will be moved into temporary location first.
-    static func raii(moving url: URL) throws -> Resource {
+    public static func raii(moving url: URL) throws -> Resource {
         let owned = TemporaryDirectory.default.uniqueFile(basename: url.lastPathComponent)
         try FileManager.default.createDirectoryTree(for: owned)
         try FileManager.default.moveItem(at: url, to: owned)

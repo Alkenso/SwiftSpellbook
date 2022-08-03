@@ -75,7 +75,7 @@ public final class ValueStore<Value>: ValueObserving {
     
     public func subscribe(receiveValue: @escaping (Value, _ context: Any?) -> Void) -> SubscriptionToken {
         lock.withLock {
-            subscriptions.subscribe(receiveValue: receiveValue)
+            subscriptions.subscribe(receiveValue: receiveValue).capturing(self)
         }
     }
     

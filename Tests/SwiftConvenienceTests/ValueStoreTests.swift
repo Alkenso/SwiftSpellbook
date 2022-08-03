@@ -16,6 +16,10 @@ private struct TestStru: Equatable {
 class StoreTests: XCTestCase {
     var cancellables: [SubscriptionToken] = []
     
+    override func tearDown() {
+        cancellables.removeAll()
+    }
+    
     func test() {
         let store = ValueStore(initialValue: TestStru())
         XCTAssertEqual(store.value, TestStru())
@@ -66,6 +70,44 @@ class StoreTests: XCTestCase {
         XCTAssertEqual(store.nested.val1, 30)
         XCTAssertEqual(nestedStore.val1, 30)
         XCTAssertEqual(nestedValStore.value, 30)
+    }
+    
+    func test_scope_subscribe() {
+        let store = ValueStore(initialValue: TestStru())
+        
+        var expectedValues = ["", "qwert"]
+        
+        let exp = expectation(description: "Expected to be notified on parent update")
+        exp.expectedFulfillmentCount = expectedValues.count
+        store.scope(\.val).subscribe {
+            guard !expectedValues.isEmpty else { return }
+            XCTAssertEqual($0, expectedValues.removeFirst())
+            exp.fulfill()
+        }.store(in: &cancellables)
+        
+        store.val = "qwert"
+        
+        waitForExpectations()
+    }
+    
+    func test_subscribe_retainCycle() {
+        var store: ValueStore? = ValueStore(initialValue: TestStru())
+        
+        var parentSubscription = store?.subscribe { XCTAssertEqual($0.val, "") }
+        _ = parentSubscription
+        var scopeSubscription = store?.scope(\.val).subscribe { XCTAssertEqual($0, "") }
+        _ = scopeSubscription
+        
+        weak var weakStore = store
+        store = nil
+        
+        XCTAssertNotNil(weakStore)
+        
+        parentSubscription = nil
+        XCTAssertNotNil(weakStore)
+        
+        scopeSubscription = nil
+        XCTAssertNil(weakStore)
     }
     
     func test_context() {
