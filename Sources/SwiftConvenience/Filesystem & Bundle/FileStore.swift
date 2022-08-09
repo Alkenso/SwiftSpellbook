@@ -78,59 +78,41 @@ extension FileStore {
 
 // MARK: - Codable
 
-extension FileStore {
-    public func codable<U: Codable>(_ type: U.Type, using coder: FileStoreCoder<U, T>) -> FileStore<U> {
+extension FileStore where T == Data {
+    public func codable<U: Codable>(_ type: U.Type, using coder: FileStoreCoder<U>) -> FileStore<U> {
         .init(
             read: { try decode(U.self, from: $0, using: coder.decoder) },
             write: { try encode($0, to: $1, using: coder.encoder) }
         )
     }
     
-    public func encode<U: Encodable>(_ value: U, to location: URL, using encoder: FileStoreEncoder<U, T>) throws {
-        let representation = try encoder(value)
+    public func encode<U: Encodable>(_ value: U, to location: URL, using encoder: ObjectEncoder<U>) throws {
+        let representation = try encoder.encode(value)
         try write(representation, to: location)
     }
     
-    public func decode<U: Decodable>(_ type: U.Type, from location: URL, using decoder: FileStoreDecoder<T, U>) throws -> U {
+    public func decode<U: Decodable>(_ type: U.Type, from location: URL, using decoder: ObjectDecoder<U>) throws -> U {
         let representation = try read(from: location)
-        return try decoder(representation)
+        return try decoder.decode(U.self, representation)
     }
 }
 
-public typealias FileStoreEncoder<Input: Encodable, Output> = ClosureT<Input, Output>
-public typealias FileStoreDecoder<Input, Output: Decodable> = ClosureT<Input, Output>
-public struct FileStoreCoder<T: Codable, Representation> {
-    public var encoder: FileStoreEncoder<T, Representation>
-    public var decoder: FileStoreDecoder<Representation, T>
-}
-
-extension FileStoreEncoder where T: Encodable, R == Data {
-    public static func json(encoder: JSONEncoder = JSONEncoder()) -> Self {
-        .init(encoder.encode)
-    }
+public struct FileStoreCoder<T: Codable> {
+    public var encoder: ObjectEncoder<T>
+    public var decoder: ObjectDecoder<T>
     
-    public static func plist(encoder: PropertyListEncoder = PropertyListEncoder(), format: PropertyListSerialization.PropertyListFormat? = nil) -> Self {
-        format.flatMap { encoder.outputFormat = $0 }
-        return .init(encoder.encode)
+    public init(encoder: ObjectEncoder<T>, decoder: ObjectDecoder<T>) {
+        self.encoder = encoder
+        self.decoder = decoder
     }
 }
 
-extension FileStoreDecoder where T == Data, R: Decodable {
-    public static func json(decoder: JSONDecoder = JSONDecoder()) -> Self {
-        .init { try decoder.decode(R.self, from: $0) }
+extension FileStoreCoder {
+    public static func json(_ format: JSONEncoder.OutputFormatting = []) -> Self {
+        .init(encoder: .json(format), decoder: .json())
     }
-    
-    public static func plist(decoder: PropertyListDecoder = PropertyListDecoder()) -> Self {
-        return .init { try decoder.decode(R.self, from: $0) }
-    }
-}
 
-extension FileStoreCoder where Representation == Data {
-    public static var json: Self {
-        .init(encoder: .json(), decoder: .json())
-    }
-    
-    public static func plist(_ format: PropertyListSerialization.PropertyListFormat) -> Self {
-        .init(encoder: .plist(format: format), decoder: .plist())
+    public static func plist(_ format: PropertyListSerialization.PropertyListFormat = .xml) -> Self {
+        .init(encoder: .plist(format), decoder: .plist())
     }
 }

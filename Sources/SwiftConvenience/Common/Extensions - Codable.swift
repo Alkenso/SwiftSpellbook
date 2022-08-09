@@ -22,19 +22,53 @@
 
 import Foundation
 
+private let codableLogger = SCLogger.default(.codable)
+
 extension Encodable {
     /// Encode value to json using specified encoder.
     /// Log failure to SwiftConvenience.Log
-    public func json(
-        encoder: JSONEncoder = JSONEncoder(),
+    public func encode(
+        with encoder: ObjectEncoder<Self>,
         file: String = #file, _ function: String = #function, line: Int = #line, log: SCLog? = nil
     ) -> Data? {
         do {
             return try encoder.encode(self)
         } catch {
-            (log ?? jsonLogger).error("Encoding \(Self.self) to json failed. Error: \(error)", file, function, line: line)
+            (log ?? codableLogger).error("Encoding \(Self.self) to \(encoder.formatName) failed. Error: \(error)", file, function, line: line)
             return nil
         }
+    }
+}
+
+public struct ObjectEncoder<T: Encodable> {
+    public var formatName: String
+    public var encode: (T) throws -> Data
+    
+    public init(name formatName: String, encode: @escaping (T) throws -> Data) {
+        self.formatName = formatName
+        self.encode = encode
+    }
+}
+
+extension ObjectEncoder {
+    public static func json(encoder: JSONEncoder = JSONEncoder()) -> Self {
+        .init(name: "json", encode: encoder.encode)
+    }
+    
+    public static func json(_ format: JSONEncoder.OutputFormatting) -> Self {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = format
+        return .json(encoder: encoder)
+    }
+    
+    public static func plist(encoder: PropertyListEncoder = PropertyListEncoder()) -> Self {
+        .init(name: "plist", encode: encoder.encode)
+    }
+    
+    public static func plist(_ format: PropertyListSerialization.PropertyListFormat) -> Self {
+        let encoder = PropertyListEncoder()
+        encoder.outputFormat = format
+        return .plist(encoder: encoder)
     }
 }
 
@@ -42,61 +76,34 @@ extension Decodable {
     /// Initialize value from json using specified decoder.
     /// Log failure to SwiftConvenience.Log
     public init?(
-        json: Data, decoder: JSONDecoder = JSONDecoder(),
+        from data: Data, decoder: ObjectDecoder<Self>,
         file: String = #file, _ function: String = #function, line: Int = #line, log: SCLog? = nil
     ) {
         do {
-            self = try decoder.decode(Self.self, from: json)
+            self = try decoder.decode(Self.self, data)
         } catch {
-            (log ?? jsonLogger).error("Decoding \(Self.self) from json failed. Error: \(error)", file, function, line: line)
+            (log ?? codableLogger).error("Decoding \(Self.self) from \(decoder.formatName) failed. Error: \(error)", file, function, line: line)
             return nil
         }
     }
 }
 
-private let jsonLogger = SCLogger.default(.codable(.json))
+public struct ObjectDecoder<T: Decodable> {
+    public var formatName: String
+    public var decode: (T.Type, Data) throws -> T
+    
+    public init(formatName: String = "custom", decode: @escaping (T.Type, Data) throws -> T) {
+        self.formatName = formatName
+        self.decode = decode
+    }
+}
 
-extension Encodable {
-    /// Encode value to plist using specified encoder.
-    /// Log failure to SwiftConvenience.Log
-    public func plist(
-        encoder: PropertyListEncoder = PropertyListEncoder(),
-        file: String = #file, _ function: String = #function, line: Int = #line, log: SCLog? = nil
-    ) -> Data? {
-        do {
-            return try encoder.encode(self)
-        } catch {
-            (log ?? plistLogger).error("Encoding \(Self.self) to plist failed. Error: \(error)", file, function, line: line)
-            return nil
-        }
+extension ObjectDecoder {
+    public static func json(decoder: JSONDecoder = JSONDecoder()) -> Self {
+        .init(formatName: "json", decode: decoder.decode)
     }
     
-    /// Encode value to plist using specified plist format.
-    /// Log failure to SwiftConvenience.Log
-    public func plist(
-        format: PropertyListSerialization.PropertyListFormat,
-        file: String = #file, _ function: String = #function, line: Int = #line, log: SCLog? = nil
-    ) -> Data? {
-        let encoder = PropertyListEncoder()
-        encoder.outputFormat = format
-        return plist(encoder: encoder, file: file, function, line: line, log: log)
+    public static func plist(decoder: PropertyListDecoder = PropertyListDecoder()) -> Self {
+        .init(formatName: "plist", decode: decoder.decode)
     }
 }
-
-extension Decodable {
-    /// Initialize value from plist using specified decoder.
-    /// Log failure to SwiftConvenience.Log
-    public init?(
-        plist: Data, decoder: PropertyListDecoder = PropertyListDecoder(),
-        file: String = #file, _ function: String = #function, line: Int = #line, log: SCLog? = nil
-    ) {
-        do {
-            self = try decoder.decode(Self.self, from: plist)
-        } catch {
-            (log ?? plistLogger).error("Decoding \(Self.self) from plist failed. Error: \(error)", file, function, line: line)
-            return nil
-        }
-    }
-}
-
-private let plistLogger = SCLogger.default(.codable(.plist))

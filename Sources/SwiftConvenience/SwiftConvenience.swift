@@ -23,26 +23,15 @@
 import Foundation
 
 public enum SwiftConvenienceLogSubsystem: SCLogSubsystem {
-    case codable(ExtCodable)
-    
-    public enum ExtCodable {
-        case json
-        case plist
-    }
+    case codable
 }
 
 extension SwiftConvenienceLogSubsystem: CustomStringConvertible {
     public var description: String {
         var components: [String] = ["SwiftConvenience"]
         switch self {
-        case .codable(let extCodable):
+        case .codable:
             components.append("Codable")
-            switch extCodable {
-            case .json:
-                components.append("JSON")
-            case .plist:
-                components.append("Plist")
-            }
         }
         
         return components.joined(separator: ".")
