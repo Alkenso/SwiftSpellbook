@@ -22,7 +22,9 @@
 
 import Foundation
 
+/// Different indicators related to Application environment.
 public enum BuildEnvironment {
+    /// Runtime check if run in debug mode.
     public static let isDebug: Bool = {
         #if DEBUG
             return true
@@ -31,9 +33,19 @@ public enum BuildEnvironment {
         #endif
     }()
     
+    /// Runtime check if run inside XCTest bundle.
     public static let isXCTesting: Bool = NSClassFromString("XCTestProbe") != nil
     
+    /// Runtime check if run from Xcode.
+    public static let isRunFromXcode: Bool = {
+        guard let mode = ProcessInfo.processInfo.environment["OS_ACTIVITY_DT_MODE"] else { return false }
+        return mode.uppercased() == "YES" || mode == "1"
+    }()
+    
+    /// Runtime check if run as Xcode preview.
     public static let isXcodePreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"]?.isEmpty == false
+    
+    /// Runtime check if run in simulator.
     public static let isSimulator: Bool = {
         #if targetEnvironment(simulator)
             return true
