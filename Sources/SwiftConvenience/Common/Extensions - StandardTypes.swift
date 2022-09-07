@@ -127,6 +127,51 @@ extension String {
     }
     
     public var deletingPathExtension: String { (self as NSString).deletingPathExtension }
+    
+    /// Parse string consisted of key-value pairs.
+    ///
+    /// Example:
+    /// ```
+    /// - string: "key1=value1,key2=value2"
+    /// - call: string.parseKeyValuePairs(keyValue: "=", pairs: ",")
+    /// - result: [("key1", "value1"), ("key2", "value2")] as [KeyValue<String, String>]
+    /// ```
+    ///
+    /// Supports duplicated keys.
+    ///
+    /// - Parameters:
+    ///     - keyValue: separator used to split key from value.
+    ///     - pairs: separator used to split keyValue pairs.
+    /// - returns: array of key-value pairs.
+    /// - throws: error if string is not valid key-value pairs string or if `keyValue` / `pairsSeparator` is empty.
+    public func parseKeyValuePairs(
+        keyValue keyValueSeparator: String, pairs pairsSeparator: String
+    ) throws -> [KeyValue<String, String>] {
+        guard !keyValueSeparator.isEmpty else {
+            throw CommonError.invalidArgument(
+                arg: "keyValueSeparator", invalidValue: keyValueSeparator, description: "empty separator"
+            )
+        }
+        guard !pairsSeparator.isEmpty else {
+            throw CommonError.invalidArgument(
+                arg: "pairsSeparator", invalidValue: pairsSeparator, description: "empty separator"
+            )
+        }
+        
+        var pairs: [KeyValue<String, String>] = []
+        for pair in components(separatedBy: pairsSeparator) {
+            let keyValue = pair.components(separatedBy: keyValueSeparator)
+            guard keyValue.count == 2 else {
+                throw CommonError.invalidArgument(
+                    arg: "key-value pair", invalidValue: keyValue,
+                    description: "not a key-value pair separated by '\(keyValueSeparator)'"
+                )
+            }
+            pairs.append(.init(keyValue[0], keyValue[1]))
+        }
+        
+        return pairs
+    }
 }
 
 // MARK: - UUID

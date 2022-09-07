@@ -122,4 +122,18 @@ class StandardTypesExtensionsTests: XCTestCase {
     func test_UUID_zero() {
         XCTAssertEqual(UUID.zero.uuidString, "00000000-0000-0000-0000-000000000000")
     }
+    
+    func test_String_zero() throws {
+        XCTAssertThrowsError(try "".parseKeyValuePairs(keyValue: "", pairs: ""))
+        XCTAssertThrowsError(try "".parseKeyValuePairs(keyValue: "=", pairs: ""))
+        XCTAssertThrowsError(try "".parseKeyValuePairs(keyValue: "", pairs: "="))
+        
+        XCTAssertThrowsError(try "keyvalue,keyvalue2".parseKeyValuePairs(keyValue: "=", pairs: ","))
+        XCTAssertThrowsError(try "key=valuekey=value2".parseKeyValuePairs(keyValue: "=", pairs: ","))
+        
+        XCTAssertEqual(
+            try "key1=value1,key1=value2,key3=value3".parseKeyValuePairs(keyValue: "=", pairs: ","),
+            [KeyValue("key1", "value1"), KeyValue("key1", "value2"), KeyValue("key3", "value3")]
+        )
+    }
 }
