@@ -103,7 +103,8 @@ extension KeyValue {
 
 extension KeyValue: Hashable where Key: Hashable, Value: Hashable {}
 extension KeyValue: Equatable where Key: Equatable, Value: Equatable {}
-extension KeyValue: Codable where Key: Codable, Value: Codable {}
+extension KeyValue: Encodable where Key: Encodable, Value: Encodable {}
+extension KeyValue: Decodable where Key: Decodable, Value: Decodable {}
 
 /// An alternative between two elements
 public enum Either<First, Second> {
