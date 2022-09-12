@@ -128,7 +128,7 @@ public extension BinaryWriter {
         try append(value)
     }
     
-    mutating func appendUInt8(_ value: UInt16) throws {
+    mutating func appendUInt16(_ value: UInt16) throws {
         try append(value)
     }
     
