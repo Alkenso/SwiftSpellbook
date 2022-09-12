@@ -95,6 +95,19 @@ class StandardTypesExtensionsTests: XCTestCase {
         XCTAssertNotNil(Result<Int?, Error>(success: nil as Int??, failure: TestError()).failure)
     }
     
+    func test_Error_xpcCompatible() {
+        struct SwiftType {}
+        let error = NSError(domain: "test", code: 1, userInfo: [
+            "compatible_key": "compatible_value",
+            "incompatible_key": SwiftType(),
+        ])
+        
+        XCTAssertThrowsError(try NSKeyedArchiver.archivedData(withRootObject: error, requiringSecureCoding: false))
+        
+        let xpcCompatible = error.xpcCompatible()
+        XCTAssertNoThrow(try NSKeyedArchiver.archivedData(withRootObject: xpcCompatible, requiringSecureCoding: false))
+    }
+    
     func test_Comparable_clamped() {
         XCTAssertEqual(5.clamped(to: 0 ... 10), 5)
         XCTAssertEqual(5.clamped(to: 5 ... 10), 5)
