@@ -147,30 +147,45 @@ extension String {
     public func parseKeyValuePairs(
         keyValue keyValueSeparator: String, pairs pairsSeparator: String
     ) throws -> [KeyValue<String, String>] {
-        guard !keyValueSeparator.isEmpty else {
-            throw CommonError.invalidArgument(
-                arg: "keyValueSeparator", invalidValue: keyValueSeparator, description: "empty separator"
-            )
-        }
         guard !pairsSeparator.isEmpty else {
             throw CommonError.invalidArgument(
                 arg: "pairsSeparator", invalidValue: pairsSeparator, description: "empty separator"
             )
         }
         
-        var pairs: [KeyValue<String, String>] = []
-        for pair in components(separatedBy: pairsSeparator) {
-            let keyValue = pair.components(separatedBy: keyValueSeparator)
-            guard keyValue.count == 2 else {
-                throw CommonError.invalidArgument(
-                    arg: "key-value pair", invalidValue: keyValue,
-                    description: "not a key-value pair separated by '\(keyValueSeparator)'"
-                )
-            }
-            pairs.append(.init(keyValue[0], keyValue[1]))
+        let pairs = components(separatedBy: pairsSeparator)
+        return try pairs.map { try $0.parseKeyValuePair(separatedBy: keyValueSeparator) }
+    }
+    
+    /// Parse key-value pair string.
+    ///
+    /// Example:
+    /// ```
+    /// - string: "key1=value1"
+    /// - call: string.parseKeyValuePair(separatedBy: "=")
+    /// - result: ("key1", "value1") as KeyValue<String, String>
+    /// ```
+    ///
+    /// - Parameters:
+    ///     - separatedBy: separator used to split key from value.
+    /// - returns: key-value pair.
+    /// - throws: error if string is not valid key-value pair string or if `separator` is empty.
+    public func parseKeyValuePair(separatedBy separator: String) throws -> KeyValue<String, String> {
+        guard !separator.isEmpty else {
+            throw CommonError.invalidArgument(
+                arg: "keyValueSeparator", invalidValue: separator, description: "empty separator"
+            )
         }
         
-        return pairs
+        let keyValue = components(separatedBy: separator)
+        guard keyValue.count == 2 else {
+            throw CommonError.invalidArgument(
+                arg: "key-value pair", invalidValue: self,
+                description: "not a key-value pair separated by '\(separator)'"
+            )
+        }
+        
+        return KeyValue(keyValue[0], keyValue[1])
     }
 }
 

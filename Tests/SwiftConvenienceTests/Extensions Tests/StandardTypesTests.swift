@@ -136,7 +136,11 @@ class StandardTypesExtensionsTests: XCTestCase {
         XCTAssertEqual(UUID.zero.uuidString, "00000000-0000-0000-0000-000000000000")
     }
     
-    func test_String_zero() throws {
+    func test_String_parseKeyValuePairs() throws {
+        XCTAssertThrowsError(try "".parseKeyValuePair(separatedBy: ""))
+        XCTAssertThrowsError(try "keyvalue".parseKeyValuePair(separatedBy: "="))
+        XCTAssertEqual(try "key=value".parseKeyValuePair(separatedBy: "="), KeyValue("key", "value"))
+        
         XCTAssertThrowsError(try "".parseKeyValuePairs(keyValue: "", pairs: ""))
         XCTAssertThrowsError(try "".parseKeyValuePairs(keyValue: "=", pairs: ""))
         XCTAssertThrowsError(try "".parseKeyValuePairs(keyValue: "", pairs: "="))
