@@ -42,6 +42,7 @@ extension CommonError {
         case invalidArgument
         case cast
         case notFound
+        case timedOut
     }
 }
 
@@ -109,5 +110,10 @@ extension CommonError {
         let whereString = `where`.flatMap { " in \($0)" } ?? ""
         let additional = description.flatMap { ". \($0)" } ?? ""
         return .init(.notFound, "\(what)\(valueString) not found \(whereString)" + additional)
+    }
+    
+    public static func timedOut(what: String, description: Any? = nil) -> Self {
+        let additional = description.flatMap { ". \($0)" } ?? ""
+        return .init(.timedOut, "\(what) timed out" + additional)
     }
 }
