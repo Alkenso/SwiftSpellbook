@@ -44,6 +44,21 @@ class StoreTests: XCTestCase {
         XCTAssertEqual(store.value.nested.val1, 11)
     }
     
+    func test_updateIfNil() {
+        let store = ValueStore<Pair<Int, String>?>(initialValue: .init(1, "q"))
+        XCTAssertEqual(store.value?.first, 1)
+        XCTAssertEqual(store.value?.second, "q")
+        
+        store.update(\.first, 2)
+        XCTAssertEqual(store.value?.first, 2)
+        
+        store.update(nil)
+        XCTAssertNil(store.value)
+        
+        store.update(\.first, 2)
+        XCTAssertNil(store.value)
+    }
+    
     func test_scope() {
         let store = ValueStore(initialValue: TestStru())
         let nestedStore = store.scope(\.nested)
@@ -88,6 +103,37 @@ class StoreTests: XCTestCase {
         store.val = "qwert"
         
         waitForExpectations()
+    }
+    
+    func test_unwrap() {
+        func test(mergeIntoNil: Bool) {
+            let store = ValueStore<Pair<Int, String>?>(initialValue: .init(10, "q"))
+            let unwrapped = store.unwrap(default: .init(1, "w"), mergeIntoNil: mergeIntoNil)
+            
+            XCTAssertEqual(unwrapped.value.first, 10)
+            XCTAssertEqual(unwrapped.value.second, "q")
+            
+            unwrapped.second = "e"
+            XCTAssertEqual(unwrapped.value.second, "e")
+            XCTAssertEqual(store.value?.second, "e")
+            
+            store.update(nil)
+            XCTAssertEqual(unwrapped.value.second, "w")
+            XCTAssertEqual(store.value?.second, nil)
+            
+            unwrapped.second = "r"
+            if mergeIntoNil {
+                XCTAssertEqual(unwrapped.value.second, "r")
+                XCTAssertEqual(store.value?.first, 1)
+                XCTAssertEqual(store.value?.second, "r")
+            } else {
+                XCTAssertEqual(unwrapped.value.second, "w")
+                XCTAssertEqual(store.value, nil)
+            }
+        }
+        
+        test(mergeIntoNil: true)
+        test(mergeIntoNil: false)
     }
     
     func test_subscribe_retainCycle() {

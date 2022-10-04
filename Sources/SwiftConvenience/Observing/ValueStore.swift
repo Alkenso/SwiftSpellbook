@@ -53,6 +53,12 @@ public final class ValueStore<Value>: ValueObserving {
         update(context: context) { $0[keyPath: keyPath] = property }
     }
     
+    public func update<Property, Unwrapped>(
+        _ keyPath: WritableKeyPath<Unwrapped, Property>, _ property: Property, context: Any? = nil
+    ) where Value == Optional<Unwrapped> {
+        update(context: context) { $0?[keyPath: keyPath] = property }
+    }
+    
     /// This is designated implementation of value update.
     /// Prefer to avoid use of this method.
     /// 'body' closure is invoked under internal lock. Careless use may lead to performance problems or even deadlock
@@ -120,6 +126,23 @@ extension ValueStore {
             
             return scoped
         }
+    }
+    
+    /// Converts `ValueStore<Optional<T>>` into `ValueStore<T>`, unwrapping single level of optionality.
+    /// - Parameters:
+    ///     - default: the value returned used by new ValueStore if parent's value is `nil`.
+    ///     - mergeIntoNil: if `false`, any changes made through new `ValueStore`
+    ///                     will be **ignored** if parent's value is `nil`.
+    public func unwrap<Unwrapped>(default: Unwrapped, mergeIntoNil: Bool = false) -> ValueStore<Unwrapped>
+    where Value == Optional<Unwrapped> {
+        scope(
+            transform: { $0 ?? `default` },
+            merge: {
+                if $0 != nil || mergeIntoNil {
+                    $0 = $1
+                }
+            }
+        )
     }
 }
 
