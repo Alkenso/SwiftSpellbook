@@ -23,7 +23,7 @@
 import Foundation
 
 extension NSLocking {
-    public func withLock<R>(body: () throws -> R) rethrows -> R {
+    public func withLock<R>(_ body: () throws -> R) rethrows -> R {
         lock()
         defer { unlock() }
         return try body()
@@ -31,7 +31,7 @@ extension NSLocking {
 }
 
 extension os_unfair_lock {
-    public mutating func withLock<R>(body: () throws -> R) rethrows -> R {
+    public mutating func withLock<R>(_ body: () throws -> R) rethrows -> R {
         os_unfair_lock_lock(&self)
         defer { os_unfair_lock_unlock(&self) }
         return try body()
