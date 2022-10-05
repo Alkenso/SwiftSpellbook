@@ -29,3 +29,11 @@ extension NSLocking {
         return try body()
     }
 }
+
+extension os_unfair_lock {
+    public mutating func withLock<R>(body: () throws -> R) rethrows -> R {
+        os_unfair_lock_lock(&self)
+        defer { os_unfair_lock_unlock(&self) }
+        return try body()
+    }
+}
