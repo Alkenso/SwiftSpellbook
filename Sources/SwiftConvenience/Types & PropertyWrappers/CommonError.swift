@@ -42,6 +42,7 @@ extension CommonError {
         case invalidArgument
         case cast
         case notFound
+        case outOfRange
         case timedOut
     }
 }
@@ -85,7 +86,7 @@ extension CommonError {
     }
     
     public static func invalidArgument(arg: String, invalidValue: Any?, description: Any? = nil) -> Self {
-        let value = invalidValue.flatMap { "\($0)" } ?? "nil"
+        let value = invalidValue.flatMap { "\($0)" } ?? ""
         let additional = description.flatMap { ". \($0)" } ?? ""
         return .init(.invalidArgument, "Invalid value \(value) for argument \(arg)" + additional)
     }
@@ -110,6 +111,14 @@ extension CommonError {
         let whereString = `where`.flatMap { " in \($0)" } ?? ""
         let additional = description.flatMap { ". \($0)" } ?? ""
         return .init(.notFound, "\(what)\(valueString) not found \(whereString)" + additional)
+    }
+    
+    public static func outOfRange(what: String, value: Any? = nil, where: Any? = nil, limitValue: Any? = nil, description: Any? = nil) -> Self {
+        let valueString = value.flatMap { " = \($0)" } ?? ""
+        let whereString = `where`.flatMap { " in \($0)" } ?? ""
+        let limitValueString = limitValue.flatMap { " (limit = \($0))" } ?? ""
+        let additional = description.flatMap { ". \($0)" } ?? ""
+        return .init(.outOfRange, "\(what)\(valueString) is out of range\(limitValueString) in \(whereString)" + additional)
     }
     
     public static func timedOut(what: String, description: Any? = nil) -> Self {

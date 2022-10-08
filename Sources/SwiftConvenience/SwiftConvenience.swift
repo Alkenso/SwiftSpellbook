@@ -22,6 +22,8 @@
 
 import Foundation
 
+public var SwiftConvenienceErrorDomain = "SwiftConvenienceErrorDomain"
+
 public enum SwiftConvenienceLogSubsystem: SCLogSubsystem {
     case codable
 }

@@ -22,6 +22,9 @@
 
 import Foundation
 
+/// Custom Error key which value is object related to the failure.
+public let NSRelatedObjectErrorKey: String = "NSRelatedObjectErrorKey"
+
 // MARK: - NSError predefined domains
 
 extension NSError {
