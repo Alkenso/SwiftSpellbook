@@ -16,7 +16,7 @@ class DictionaryReaderTests: XCTestCase {
             ],
         ]
         var reader = DictionaryReader(person)
-        reader.contextDescription = "Parsing person properties from dict \(person)"
+        reader.context = "Parsing person properties from dict \(person)"
         
         // read
         XCTAssertNoThrow(try reader.read(key: "name"))
@@ -49,54 +49,46 @@ class DictionaryReaderTests: XCTestCase {
     }
     
     func test_errorTypes() throws {
-        // CommonError.invalidArgument
+        // DictionaryCodingError.invalidArgument
         do {
             _ = try DictionaryReader([:]).read(codingPath: [], as: String.self)
             XCTFail("Read should fail")
-        } catch let error as CommonError {
+        } catch let error as DictionaryCodingError {
             XCTAssertEqual(error.code, .invalidArgument)
         }
         do {
             _ = try DictionaryReader([:]).read(dotPath: "", as: String.self)
             XCTFail("Read should fail")
-        } catch let error as CommonError {
+        } catch let error as DictionaryCodingError {
             XCTAssertEqual(error.code, .invalidArgument)
         }
         
-        // DecodingError.typeMismatch
+        // DictionaryCodingError.typeMismatch
         do {
             _ = try DictionaryReader(["key": "value"]).read(codingPath: ["key"], as: Int.self)
             XCTFail("Read should fail")
-        } catch let error as DecodingError {
-            if case .typeMismatch = error {} else {
-                XCTFail("Error must be DecodingError.typeMismatch, but got \(error)")
-            }
+        } catch let error as DictionaryCodingError {
+            XCTAssertEqual(error.code, .typeMismatch)
         }
         do {
             _ = try DictionaryReader(["key": "value"]).read(dotPath: "key", as: Int.self)
             XCTFail("Read should fail")
-        } catch let error as DecodingError {
-            if case .typeMismatch = error {} else {
-                XCTFail("Error must be DecodingError.typeMismatch, but got \(error)")
-            }
+        } catch let error as DictionaryCodingError {
+            XCTAssertEqual(error.code, .typeMismatch)
         }
         
-        // DecodingError.keyNotFound
+        // DictionaryCodingError.keyNotFound
         do {
             _ = try DictionaryReader(["key": "value"]).read(codingPath: ["key_2"], as: Int.self)
             XCTFail("Read should fail")
-        } catch let error as DecodingError {
-            if case .keyNotFound = error {} else {
-                XCTFail("Error must be DecodingError.keyNotFound, but got \(error)")
-            }
+        } catch let error as DictionaryCodingError {
+            XCTAssertEqual(error.code, .keyNotFound)
         }
         do {
             _ = try DictionaryReader(["key": "value"]).read(dotPath: "key_2", as: Int.self)
             XCTFail("Read should fail")
-        } catch let error as DecodingError {
-            if case .keyNotFound = error {} else {
-                XCTFail("Error must be DecodingError.keyNotFound, but got \(error)")
-            }
+        } catch let error as DictionaryCodingError {
+            XCTAssertEqual(error.code, .keyNotFound)
         }
     }
 }
@@ -133,60 +125,52 @@ class DictionaryWriterTests: XCTestCase {
     }
     
     func test_errorTypes() throws {
-        // CommonError.invalidArgument
+        // DictionaryCodingError.invalidArgument
         do {
             var writer = DictionaryWriter([:])
             _ = try writer.insert(value: 10, codingPath: [])
             XCTFail("Insert should fail")
-        } catch let error as CommonError {
+        } catch let error as DictionaryCodingError {
             XCTAssertEqual(error.code, .invalidArgument)
         }
         do {
             var writer = DictionaryWriter([:])
             _ = try writer.insert(value: 10, dotPath: "")
             XCTFail("Insert should fail")
-        } catch let error as CommonError {
+        } catch let error as DictionaryCodingError {
             XCTAssertEqual(error.code, .invalidArgument)
         }
         
-        // DecodingError.typeMismatch
+        // DictionaryCodingError.typeMismatch
         do {
             var writer = DictionaryWriter(["key": "value"])
             _ = try writer.insert(value: 10, codingPath: ["key", "value", "q"])
             XCTFail("Insert should fail")
-        } catch let error as DecodingError {
-            if case .typeMismatch = error {} else {
-                XCTFail("Error must be DecodingError.typeMismatch, but got \(error)")
-            }
+        } catch let error as DictionaryCodingError {
+            XCTAssertEqual(error.code, .typeMismatch)
         }
         do {
             var writer = DictionaryWriter(["key": "value"])
             _ = try writer.insert(value: 10, dotPath: "key.value.[0]")
             XCTFail("Insert should fail")
-        } catch let error as DecodingError {
-            if case .typeMismatch = error {} else {
-                XCTFail("Error must be DecodingError.typeMismatch, but got \(error)")
-            }
+        } catch let error as DictionaryCodingError {
+            XCTAssertEqual(error.code, .typeMismatch)
         }
         
-        // DecodingError.keyNotFound
+        // DictionaryCodingError.keyNotFound
         do {
             var writer = DictionaryWriter(["key": [1, 2, 3]])
             _ = try writer.insert(value: 10, codingPath: ["key", .index(20)])
             XCTFail("Insert should fail")
-        } catch let error as DecodingError {
-            if case .keyNotFound = error {} else {
-                XCTFail("Error must be DecodingError.keyNotFound, but got \(error)")
-            }
+        } catch let error as DictionaryCodingError {
+            XCTAssertEqual(error.code, .keyNotFound)
         }
         do {
             var writer = DictionaryWriter(["key": [1, 2, 3]])
             _ = try writer.insert(value: 10, dotPath: "key.[20]")
             XCTFail("Insert should fail")
-        } catch let error as DecodingError {
-            if case .keyNotFound = error {} else {
-                XCTFail("Error must be DecodingError.keyNotFound, but got \(error)")
-            }
+        } catch let error as DictionaryCodingError {
+            XCTAssertEqual(error.code, .keyNotFound)
         }
     }
 }

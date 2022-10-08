@@ -45,8 +45,11 @@ import Foundation
 public struct DictionaryReader<Key: Hashable, Value> {
     public let dictionary: [Key: Value]
     
-    /// If set, context description is appended to any error thrown while reading the dictionary
-    public var contextDescription: String?
+    /// If set, context description is appended to any error thrown while reading the dictionary.
+    public var context: String?
+    
+    /// If set, the error will contain the whole dictionary inside.
+    public var errorContainsDictionary = false
     
     public init(_ dictionary: [Key: Value]) {
         self.dictionary = dictionary
@@ -59,7 +62,7 @@ public struct DictionaryReader<Key: Hashable, Value> {
     /// ```
     ///
     /// - Returns: Value for given key if it exists
-    /// - Throws: `DecodingError.keyNotFound`
+    /// - Throws: `DictionaryCodingError.keyNotFound`
     public func read(key: Key) throws -> Value {
         try read(key: key) { $0 }
     }
@@ -71,12 +74,12 @@ public struct DictionaryReader<Key: Hashable, Value> {
     /// ```
     ///
     /// - Returns: Value for given key
-    /// - Throws: `DecodingError.keyNotFound` if key does not exist
-    /// - Throws: `DecodingError.typeMismatch` if value for given key cannot be converted into desired type
+    /// - Throws: `DictionaryCodingError.keyNotFound` if key does not exist
+    /// - Throws: `DictionaryCodingError.typeMismatch` if value for given key cannot be converted into desired type
     public func read<R>(key: Key, transform: (Value) -> R?) throws -> R {
         let codingKey = DictionaryCodingKey.key(key)
         guard let value = dictionary[key] else {
-            try throwNotFound(for: codingKey, size: nil, codingPath: [codingKey])
+            try throwNotFound(for: codingKey, size: dictionary.count, codingPath: [codingKey])
         }
         guard let transformed = transform(value) else {
             try throwInvalidResultType(for: value, expectedType: R.self, codingPath: [codingKey])
@@ -91,8 +94,8 @@ public struct DictionaryReader<Key: Hashable, Value> {
     /// ```
     ///
     /// - Returns: Value for given key
-    /// - Throws: `DecodingError.keyNotFound` if key does not exist
-    /// - Throws: `DecodingError.typeMismatch` if value for given key cannot be converted into desired type
+    /// - Throws: `DictionaryCodingError.keyNotFound` if key does not exist
+    /// - Throws: `DictionaryCodingError.typeMismatch` if value for given key cannot be converted into desired type
     public func read<R>(key: Key, as: R.Type) throws -> R {
         try read(key: key) { $0 as? R }
     }
@@ -110,9 +113,9 @@ public struct DictionaryReader<Key: Hashable, Value> {
     ///       - last array index: "name.children.[*].name"
     ///     - transform: closure that optionally converts found value into desired type
     /// - Returns: Value for `dotPath`
-    /// - Throws: `CommonError.invalidArgument` if dotPath is empty
-    /// - Throws: `DecodingError.keyNotFound` if key does not exist
-    /// - Throws: `DecodingError.typeMismatch` if value for given key cannot be converted into resulting type
+    /// - Throws: `DictionaryCodingError.invalidArgument` if dotPath is empty
+    /// - Throws: `DictionaryCodingError.keyNotFound` if key does not exist
+    /// - Throws: `DictionaryCodingError.typeMismatch` if value for given key cannot be converted into resulting type
     public func read<R>(dotPath: String, transform: (Any) -> R?) throws -> R {
         let components = DictionaryCodingKey.parse(dotPath: dotPath)
         return try read(codingPath: components, transform: transform)
@@ -144,12 +147,18 @@ public struct DictionaryReader<Key: Hashable, Value> {
     ///     - transform: closure that optionally converts found value into desired type
     /// - Returns: Value for `codingPath`
     /// - Throws:
-    ///     - `CommonError.invalidArgument` if codingPath is empty
-    ///     - `DecodingError.keyNotFound` if key does not exist
-    ///     - `DecodingError.typeMismatch` if value for given key cannot be converted into resulting type
+    ///     - `DictionaryCodingError.invalidArgument` if codingPath is empty
+    ///     - `DictionaryCodingError.keyNotFound` if key does not exist
+    ///     - `DictionaryCodingError.typeMismatch` if value for given key cannot be converted into resulting type
     public func read<R>(codingPath: [DictionaryCodingKey], transform: (Any) -> R?) throws -> R {
         guard !codingPath.isEmpty else {
-            throw CommonError.invalidArgument(arg: "codingPath", invalidValue: codingPath, description: "Failed to get value at empty codingPath")
+            try throwError(
+                .invalidArgument, codingPath: codingPath,
+                error: CommonError.invalidArgument(
+                    arg: "codingPath", invalidValue: codingPath,
+                    description: "Failed to get value at empty codingPath"
+                )
+            )
         }
         
         var lastItem: Any = dictionary
@@ -163,7 +172,7 @@ public struct DictionaryReader<Key: Hashable, Value> {
                     try throwInvalidContainer(for: lastItem, expectedType: [AnyHashable: Any].self, codingPath: lastItemKeyPath)
                 }
                 guard let nestedItem = dict[key] else {
-                    try throwNotFound(for: keyPathComponent, size: nil, codingPath: lastItemKeyPath)
+                    try throwNotFound(for: keyPathComponent, size: dict.count, codingPath: lastItemKeyPath)
                 }
                 lastItem = nestedItem
             case .index(let index):
@@ -194,42 +203,44 @@ public struct DictionaryReader<Key: Hashable, Value> {
         try read(codingPath: codingPath) { $0 as? R }
     }
     
-    private func throwInvalidContainer<T>(for item: Any, expectedType: T.Type, codingPath: [CodingKey]) throws -> Never {
-        throw DecodingError.typeMismatch(
-            type(of: item),
-            DecodingError.Context(
-                codingPath: codingPath,
-                debugDescription: composeDebugDescription("Invalid container type"),
-                underlyingError: CommonError.cast(item, to: T.self)
-            )
-        )
+    private func throwInvalidContainer<T>(
+        for item: Any, expectedType: T.Type, codingPath: [DictionaryCodingKey]
+    ) throws -> Never {
+        let error = CommonError.cast(name: "Container type to read from", item, to: T.self)
+        try throwError(.typeMismatch, codingPath: codingPath, error: error)
     }
     
-    private func throwNotFound(for key: CodingKey, size: Int?, codingPath: [CodingKey]) throws -> Never {
-        let description: String
-        if let size = size {
-            description = "Index is out of range. Array size = \(size)"
-        } else {
-            description = "Value for key not found"
+    private func throwNotFound(
+        for key: DictionaryCodingKey, size: Int, codingPath: [DictionaryCodingKey]
+    ) throws -> Never {
+        let error: Error
+        switch key {
+        case .key(let key):
+            error = CommonError.notFound(what: "value for key", value: key)
+        case .index(let index):
+            error = CommonError.outOfRange(what: "Index", value: index, where: "array", limitValue: size)
         }
-        throw DecodingError.keyNotFound(
-            key,
-            DecodingError.Context(codingPath: codingPath, debugDescription: composeDebugDescription(description))
-        )
+        try throwError(.keyNotFound, codingPath: codingPath, error: error)
     }
     
-    private func throwInvalidResultType<T>(for item: Any, expectedType: T.Type, codingPath: [CodingKey]) throws -> Never {
-        throw DecodingError.typeMismatch(
-            expectedType,
-            DecodingError.Context(
-                codingPath: codingPath,
-                debugDescription: composeDebugDescription("Invalid resulting item type"),
-                underlyingError: CommonError.cast(item, to: T.self)
-            )
-        )
+    private func throwInvalidResultType<T>(
+        for item: Any, expectedType: T.Type, codingPath: [DictionaryCodingKey]
+    ) throws -> Never {
+        let error = CommonError.cast(name: "Result value", item, to: T.self)
+        try throwError(.typeMismatch, codingPath: codingPath, error: error)
     }
     
-    private func composeDebugDescription(_ description: String) -> String {
-        contextDescription.flatMap { "\($0). \(description)" } ?? description
+    private func throwError(
+        _ code: DictionaryCodingError.Code, codingPath: [DictionaryCodingKey], error underlyingError: Error
+    ) throws -> Never {
+        throw DictionaryCodingError(
+            code: code, codingPath: codingPath,
+            description: "Failed to read from dictionary",
+            underlyingError: underlyingError,
+            context: context,
+            relatedObject: errorContainsDictionary ? dictionary : nil
+        )
     }
 }
+
+extension DictionaryReader: ObjectBuilder {}

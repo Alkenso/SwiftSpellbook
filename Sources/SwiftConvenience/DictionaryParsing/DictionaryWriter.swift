@@ -53,7 +53,10 @@ public struct DictionaryWriter<Key: Hashable, Value> {
     public var onUpdate: (([Key: Value]) -> Void)?
     
     /// If set, context description is appended to any error thrown while inserting into the dictionary
-    public var contextDescription: String?
+    public var context: String?
+    
+    /// If set, the error will contain the whole dictionary inside.
+    public var errorContainsDictionary = false
     
     /// Creates `DictionaryWriter` with dictionary and update closure
     /// - Parameters:
@@ -73,9 +76,9 @@ public struct DictionaryWriter<Key: Hashable, Value> {
     ///       - usual strings: "name.address.city"
     ///       - array index: "name.children.[0].name"
     ///       - last array index: "name.children.[*].name"
-    /// - Throws: `CommonError.invalidArgument` if dotPath is empty
-    /// - Throws: `DecodingError.keyNotFound` if array index out of range
-    /// - Throws: `DecodingError.typeMismatch` if value for given key cannot be converted
+    /// - Throws: `DictionaryCodingError.invalidArgument` if dotPath is empty
+    /// - Throws: `DictionaryCodingError.keyNotFound` if array index out of range
+    /// - Throws: `DictionaryCodingError.typeMismatch` if value for given key cannot be converted
     /// - Note: If intermediate array is empty and dotPath component is `[0]` or `[*]`,
     ///         the array will be appended
     ///
@@ -96,9 +99,9 @@ public struct DictionaryWriter<Key: Hashable, Value> {
     ///       - `key`: path component representing key in the dictionary
     ///       - `index`: path component representing index in the array
     ///       - `index(.max)`: path component representing last index in the array
-    /// - Throws: `CommonError.invalidArgument` if codingPath is empty
-    /// - Throws: `DecodingError.keyNotFound` if array index out of range
-    /// - Throws: `DecodingError.typeMismatch` if value for given key cannot be converted
+    /// - Throws: `DictionaryCodingError.invalidArgument` if codingPath is empty
+    /// - Throws: `DictionaryCodingError.keyNotFound` if array index out of range
+    /// - Throws: `DictionaryCodingError.typeMismatch` if value for given key cannot be converted
     ///           into intermediate collection type
     ///
     /// - Note: If intermediate array is empty and coding path key is `.index(0)` or `.index(.max)`,
@@ -108,7 +111,13 @@ public struct DictionaryWriter<Key: Hashable, Value> {
     ///         they are created as [AnyHashable: Any] and [Any] respectively
     public mutating func insert(value: Any, codingPath: [DictionaryCodingKey]) throws {
         guard !codingPath.isEmpty else {
-            throw CommonError.invalidArgument(arg: "codingPath", invalidValue: codingPath, description: "Failed to insert value at empty codingPath")
+            try throwError(
+                .invalidArgument, codingPath: codingPath,
+                error: CommonError.invalidArgument(
+                    arg: "codingPath", invalidValue: codingPath,
+                    description: "Failed to insert value at empty codingPath"
+                )
+            )
         }
         
         let updated = try insert(into: dictionary, at: codingPath, value: value)
@@ -142,7 +151,7 @@ public struct DictionaryWriter<Key: Hashable, Value> {
             let isFirstOrLast = index == 0 || index == .max
             let existingItemAtIndex = index != .max ? array[safe: index] : array.last
             if existingItemAtIndex == nil, !isFirstOrLast {
-                try throwOutOfRange(size: array.count, codingPath: keyPath)
+                try throwOutOfRange(index: index, size: array.count, codingPath: keyPath)
             }
             
             let newItem: Any
@@ -161,28 +170,29 @@ public struct DictionaryWriter<Key: Hashable, Value> {
         }
     }
     
-    private func throwInvalidContainer<T>(actual: Any, expectedType: T.Type, codingPath: [CodingKey]) throws -> Never {
-        throw DecodingError.typeMismatch(
-            expectedType,
-            DecodingError.Context(
-                codingPath: codingPath,
-                debugDescription: composeDebugDescription("Invalid container type"),
-                underlyingError: CommonError.cast(actual, to: expectedType)
-            )
-        )
+    private func throwInvalidContainer<T>(
+        actual: Any, expectedType: T.Type, codingPath: [DictionaryCodingKey]
+    ) throws -> Never {
+        let error = CommonError.cast(name: "container", actual, to: expectedType)
+        try throwError(.typeMismatch, codingPath: codingPath, error: error)
     }
     
-    private func throwOutOfRange(size: Int, codingPath: [CodingKey]) throws -> Never {
-        throw DecodingError.keyNotFound(
-            codingPath[0],
-            DecodingError.Context(
-                codingPath: codingPath,
-                debugDescription: composeDebugDescription("Index out of range (size = \(size)")
-            )
-        )
+    private func throwOutOfRange(index: Int, size: Int, codingPath: [DictionaryCodingKey]) throws -> Never {
+        let error = CommonError.outOfRange(what: "index", value: index, limitValue: size)
+        try throwError(.keyNotFound, codingPath: codingPath, error: error)
     }
     
-    private func composeDebugDescription(_ description: String) -> String {
-        contextDescription.flatMap { "\($0). \(description)" } ?? description
+    private func throwError(
+        _ code: DictionaryCodingError.Code, codingPath: [DictionaryCodingKey], error underlyingError: Error
+    ) throws -> Never {
+        throw DictionaryCodingError(
+            code: code, codingPath: codingPath,
+            description: "Failed to write to dictionary",
+            underlyingError: underlyingError,
+            context: context,
+            relatedObject: errorContainsDictionary ? dictionary : nil
+        )
     }
 }
+
+extension DictionaryWriter: ObjectBuilder {}

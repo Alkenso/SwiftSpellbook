@@ -60,6 +60,17 @@ extension DictionaryCodingKey: ExpressibleByStringLiteral {
     }
 }
 
+extension DictionaryCodingKey: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .key(let key):
+            return "key(\(key))"
+        case .index(let index):
+            return "index(\(index))"
+        }
+    }
+}
+
 extension DictionaryCodingKey {
     internal static func parse(dotPath: String) -> [DictionaryCodingKey] {
         guard !dotPath.isEmpty else { return [] }
@@ -72,5 +83,53 @@ extension DictionaryCodingKey {
                 return .key($0)
             }
         }
+    }
+}
+
+public struct DictionaryCodingError: Error {
+    public var code: Code
+    public var codingPath: [DictionaryCodingKey]
+    public var description: String
+    public var underlyingError: Error?
+    public var context: String?
+    public var relatedObject: Any?
+    
+    public init(
+        code: Code, codingPath: [DictionaryCodingKey],
+        description: String, underlyingError: Error? = nil,
+        context: String? = nil, relatedObject: Any? = nil
+    ) {
+        self.code = code
+        self.codingPath = codingPath
+        self.description = description
+        self.underlyingError = underlyingError
+        self.context = context
+        self.relatedObject = relatedObject
+    }
+}
+
+extension DictionaryCodingError {
+    public enum Code: Int {
+        case invalidArgument
+        case keyNotFound
+        case typeMismatch
+    }
+}
+
+extension DictionaryCodingError: CustomNSError {
+    public var errorCode: Int { code.rawValue }
+    public static var errorDomain: String { SwiftConvenienceErrorDomain }
+    public var errorUserInfo: [String : Any] {
+        var userInfo: [String: Any] = [:]
+        
+        var fullDescription = description
+        fullDescription += context.flatMap { ". \($0)" } ?? ""
+        fullDescription += "Coding path = \(codingPath)"
+        userInfo[NSDebugDescriptionErrorKey] = fullDescription
+        
+        underlyingError.flatMap { userInfo[NSUnderlyingErrorKey] = $0 }
+        relatedObject.flatMap { userInfo[NSRelatedObjectErrorKey] = $0 }
+        
+        return userInfo
     }
 }
