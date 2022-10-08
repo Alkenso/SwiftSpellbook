@@ -24,7 +24,7 @@ import Foundation
 
 /// Executes synchronously the asynchronous method with completion handler.
 /// - Note: While this is not the best practice ever,
-///         real-world tasks time to time require the exact approach.
+///         real-world tasks time to time require exactly this.
 public struct SynchronousExecutor {
     public var name: String?
     public var timeout: TimeInterval?
@@ -34,8 +34,8 @@ public struct SynchronousExecutor {
         self.timeout = timeout
     }
     
-    public func callAsFunction<T>(_ action: @escaping (@escaping (Result<T, Error>) -> Void) -> Void) throws -> T {
-        @Atomic var result: Result<T, Error>!
+    public func callAsFunction<R>(_ action: @escaping (@escaping (Result<R, Error>) -> Void) -> Void) throws -> R {
+        @Atomic var result: Result<R, Error>!
         let group = DispatchGroup()
         group.enter()
         action {

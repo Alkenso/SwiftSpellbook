@@ -24,15 +24,15 @@ import Foundation
 
 public protocol ObjectBuilder {}
 
-public extension ObjectBuilder {
-    func set<T>(_ keyPath: WritableKeyPath<Self, T>, _ value: T?) -> Self {
+extension ObjectBuilder {
+    public func set<T>(_ keyPath: WritableKeyPath<Self, T>, _ value: T?) -> Self {
         guard let value = value else { return self }
         var copy = self
         copy[keyPath: keyPath] = value
         return copy
     }
     
-    func `if`(_ condition: Bool, body: (inout Self) -> Void) -> Self {
+    public func `if`(_ condition: Bool, body: (inout Self) -> Void) -> Self {
         guard condition else { return self }
         
         var copy = self
@@ -40,7 +40,7 @@ public extension ObjectBuilder {
         return copy
     }
     
-    func ifLet<T>(_ value: T?, body: (inout Self, T) -> Void) -> Self {
+    public func ifLet<T>(_ value: T?, body: (inout Self, T) -> Void) -> Self {
         guard let value = value else { return self }
         
         var copy = self
