@@ -55,7 +55,8 @@ extension Change {
 
 extension Change: Hashable where T: Hashable {}
 extension Change: Equatable where T: Equatable {}
-extension Change: Codable where T: Codable {}
+extension Change: Encodable where T: Encodable {}
+extension Change: Decodable where T: Decodable {}
 
 public struct Pair<First, Second> {
     public var first: First
@@ -79,7 +80,8 @@ extension Pair {
 
 extension Pair: Hashable where First: Hashable, Second: Hashable {}
 extension Pair: Equatable where First: Equatable, Second: Equatable {}
-extension Pair: Codable where First: Codable, Second: Codable {}
+extension Pair: Encodable where First: Encodable, Second: Encodable {}
+extension Pair: Decodable where First: Decodable, Second: Decodable {}
 
 public struct KeyValue<Key, Value> {
     public var key: Key
@@ -144,4 +146,36 @@ extension Either {
 
 extension Either: Hashable where First: Hashable, Second: Hashable {}
 extension Either: Equatable where First: Equatable, Second: Equatable {}
-extension Either: Codable where First: Codable, Second: Codable {}
+extension Either: Encodable where First: Encodable, Second: Encodable {}
+extension Either: Decodable where First: Decodable, Second: Decodable {}
+
+public struct EmptyCodable: Hashable, Codable {
+    public init() {}
+}
+
+/// Makes `@propertyWrapper` with Encodable Value to encode wrappedValue directly with encoder.
+public protocol PropertyWrapperEncodable: Encodable {
+    associatedtype T: Encodable
+    var wrappedValue: T { get }
+}
+
+extension PropertyWrapperEncodable {
+    public func encode(to encoder: Encoder) throws {
+        try wrappedValue.encode(to: encoder)
+    }
+}
+
+/// Makes `@propertyWrapper` with Decodable Value to decode wrappedValue directly with decoder.
+public protocol PropertyWrapperDecodable: Decodable {
+    associatedtype T: Decodable
+    init(wrappedValue: T)
+}
+
+extension PropertyWrapperDecodable {
+    public init(from decoder: Decoder) throws {
+        self.init(wrappedValue: try T(from: decoder))
+    }
+}
+
+/// Makes `@propertyWrapper` with Codable Value to encode/decode wrappedValue directly with coder.
+public typealias PropertyWrapperCodable = Codable & PropertyWrapperEncodable & PropertyWrapperDecodable

@@ -78,8 +78,8 @@ extension Box: Hashable where Value: Hashable {
     }
 }
 
-extension Box: Encodable where Value: Encodable {}
-extension Box: Decodable where Value: Decodable {}
+extension Box: Encodable, PropertyWrapperEncodable where Value: Encodable {}
+extension Box: Decodable, PropertyWrapperDecodable where Value: Decodable {}
 
 @available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension Box: Identifiable where Value: Identifiable {
@@ -92,6 +92,10 @@ public typealias WeakBox<Value: AnyObject> = Box<Weak<Value>>
 public enum Indirect<Value> {
     indirect case wrappedValue(Value)
     
+    public init(wrappedValue: Value) {
+        self = .wrappedValue(wrappedValue)
+    }
+    
     public var wrappedValue: Value {
         get { switch self { case .wrappedValue(let value): return value } }
         set { self = .wrappedValue(newValue) }
@@ -100,8 +104,8 @@ public enum Indirect<Value> {
 
 extension Indirect: Equatable where Value: Equatable {}
 extension Indirect: Hashable where Value: Hashable {}
-extension Indirect: Encodable where Value: Encodable {}
-extension Indirect: Decodable where Value: Decodable {}
+extension Indirect: Encodable, PropertyWrapperEncodable where Value: Encodable {}
+extension Indirect: Decodable, PropertyWrapperDecodable where Value: Decodable {}
 
 @available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension Indirect: Identifiable where Value: Identifiable {
