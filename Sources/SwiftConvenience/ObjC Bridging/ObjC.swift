@@ -23,7 +23,7 @@
 import Foundation
 @_implementationOnly import SwiftConvenienceObjC
 
-public struct NSExceptionError: Error {
+public struct NSExceptionError: Error, @unchecked Sendable {
     public var exception: NSException
     public init(exception: NSException) {
         self.exception = exception
