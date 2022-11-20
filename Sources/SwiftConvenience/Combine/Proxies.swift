@@ -65,7 +65,7 @@ public final class ProxySubscriber<S: Subscriber>: Subscriber {
 }
 
 @available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
-public final class ProxySubscription<Input>: Subscription {
+public final class ProxySubscription: Subscription {
     public var context: Any?
     
     public var onDemand: ((Subscribers.Demand) -> Void)?

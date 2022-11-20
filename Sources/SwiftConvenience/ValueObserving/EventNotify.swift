@@ -78,3 +78,9 @@ public final class EventNotify<T>: ValueObserving {
         }
     }
 }
+
+@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
+extension EventNotify: ValueObservingPublisher {
+    public typealias Output = (T, Any?)
+    public typealias Failure = Never
+}
