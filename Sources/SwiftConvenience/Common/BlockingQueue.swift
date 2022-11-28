@@ -102,3 +102,15 @@ public class BlockingQueue<Element> {
         pthread_cond_broadcast(&condition)
     }
 }
+
+extension BlockingQueue {
+    /// Current number of the elements in the queue.
+    /// Designed to be used only for debug purposes: the count may be changed from different threads,
+    /// so there is no guarantee that the value remains reliable after the method is executed.
+    public var approximateCount: Int {
+        pthread_mutex_lock(&mutex)
+        defer { pthread_mutex_unlock(&mutex) }
+        
+        return elements.count
+    }
+}

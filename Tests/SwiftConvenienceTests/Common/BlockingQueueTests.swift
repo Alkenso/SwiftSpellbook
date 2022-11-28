@@ -7,12 +7,18 @@ class BlockingQueueTests: XCTestCase {
         let queue = BlockingQueue<Int>()
         
         queue.enqueue(10)
+        XCTAssertEqual(queue.approximateCount, 1)
         queue.enqueue(20)
+        XCTAssertEqual(queue.approximateCount, 2)
         queue.enqueue(30)
+        XCTAssertEqual(queue.approximateCount, 3)
         
         XCTAssertEqual(queue.dequeue(), 10)
+        XCTAssertEqual(queue.approximateCount, 2)
         XCTAssertEqual(queue.dequeue(), 20)
+        XCTAssertEqual(queue.approximateCount, 1)
         XCTAssertEqual(queue.dequeue(), 30)
+        XCTAssertEqual(queue.approximateCount, 0)
     }
     
     func test_blocking() throws {
