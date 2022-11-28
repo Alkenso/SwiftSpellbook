@@ -78,6 +78,7 @@ extension Array {
         self = try mutatingMap(mutate: mutate)
     }
     
+    /// Creates new array by appending `newElement` to the end of current one.
     public func appending(_ newElement: Element) -> Self {
         var appended = self
         appended.append(newElement)
@@ -86,8 +87,17 @@ extension Array {
 }
 
 extension Array {
+    /// Bounds-safe access to the element at index.
     public subscript(safe index: Index) -> Element? {
         index < count ? self[index] : nil
+    }
+    
+    /// If exists, removes the first element from the array and returns it. Otherwise returns `nil`.
+    /// Simply combination of `first` + `removeFirst`.
+    public mutating func popFirst() -> Element? {
+        guard let first else { return nil }
+        removeFirst()
+        return first
     }
 }
 

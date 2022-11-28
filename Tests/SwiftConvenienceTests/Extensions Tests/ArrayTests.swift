@@ -21,4 +21,16 @@ class ArrayTests: XCTestCase {
         XCTAssertEqual([10][safe: 0], 10)
         XCTAssertEqual([10][safe: 1], nil)
     }
+    
+    func test_subscript_popFirst() {
+        var arr = [1, 2]
+        XCTAssertEqual(arr.popFirst(), 1)
+        XCTAssertEqual(arr, [2])
+        
+        XCTAssertEqual(arr.popFirst(), 2)
+        XCTAssertEqual(arr, [])
+        
+        XCTAssertEqual(arr.popFirst(), nil)
+        XCTAssertEqual(arr, [])
+    }
 }
