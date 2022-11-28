@@ -70,8 +70,8 @@ public class BlockingQueue<Element> {
         defer { pthread_mutex_unlock(&mutex) }
         
         while true {
-            guard !invalidated else { return nil }
             if elements.isEmpty {
+                guard !invalidated else { return nil }
                 pthread_cond_wait(&condition, &mutex)
             } else {
                 let next = elements.removeFirst()
@@ -91,12 +91,14 @@ public class BlockingQueue<Element> {
     
     /// Invalidates the queue.
     /// After this call, all elements are removed from the queue and `dequeue` methods return `nil`.
-    public func invalidate() {
+    public func invalidate(removeAll: Bool = true) {
         pthread_mutex_lock(&mutex)
         defer { pthread_mutex_unlock(&mutex) }
         
-        elements.removeAll()
         invalidated = true
+        if removeAll {
+            elements.removeAll()
+        }
         pthread_cond_broadcast(&condition)
     }
 }

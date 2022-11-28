@@ -15,6 +15,25 @@ class BlockingQueueTests: XCTestCase {
         XCTAssertEqual(queue.dequeue(), 30)
     }
     
+    func test_blocking() throws {
+        let queue = BlockingQueue<Int>()
+        
+        let beforeDequeueExp = expectation(description: "before dequeue")
+        var dequeueExp = expectation(description: "should not be dequeued")
+        dequeueExp.isInverted = true
+        DispatchQueue.global().async {
+            beforeDequeueExp.fulfill()
+            XCTAssertEqual(queue.dequeue(), 10)
+            dequeueExp.fulfill()
+        }
+        waitForExpectations(timeout: 0.1)
+        
+        dequeueExp = expectation(description: "dequeued after enqueue")
+        queue.enqueue(10)
+        
+        waitForExpectations()
+    }
+    
     func test_invalidate() throws {
         let emptyQueue = BlockingQueue<Int>()
         emptyQueue.invalidate()
@@ -28,6 +47,20 @@ class BlockingQueueTests: XCTestCase {
         queue.invalidate()
         
         XCTAssertNil(emptyQueue.dequeue())
+    }
+    
+    func test_invalidate_noRemoval() throws {
+        let queue = BlockingQueue<Int>()
+        queue.enqueue(10)
+        queue.enqueue(20)
+        queue.enqueue(30)
+        
+        queue.invalidate(removeAll: false)
+        
+        XCTAssertEqual(queue.dequeue(), 10)
+        XCTAssertEqual(queue.dequeue(), 20)
+        XCTAssertEqual(queue.dequeue(), 30)
+        XCTAssertNil(queue.dequeue())
     }
     
     func test_cancel() throws {
