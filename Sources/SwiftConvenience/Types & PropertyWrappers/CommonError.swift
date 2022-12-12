@@ -24,13 +24,13 @@ import Foundation
 
 /// Type representing error for common situations.
 public struct CommonError: Error {
+    public var code: Code
+    public var userInfo: [String: Any]
+    
     public init(_ code: Code, userInfo: [String: Any] = [:]) {
         self.code = code
         self.userInfo = userInfo
     }
-    
-    public var code: Code
-    public var userInfo: [String: Any]
 }
 
 extension CommonError {
@@ -56,22 +56,23 @@ extension CommonError: CustomNSError {
 }
 
 extension CommonError {
-    public init(_ code: Code, _ description: String? = nil) {
+    public init(_ code: Code, _ description: String? = nil, reason: Error? = nil) {
         var userInfo: [String: Any] = [:]
-        if let description = description {
+        if let description {
             userInfo[NSDebugDescriptionErrorKey] = description
+        }
+        if let reason {
+            userInfo[NSUnderlyingErrorKey] = reason
         }
         self = .init(code, userInfo: userInfo)
     }
     
-    public init(_ description: String) {
-        self.init(.general, description)
+    public init(_ description: String, reason: Error? = nil) {
+        self.init(.general, description, reason: reason)
     }
-    
-    public init(userInfo: [String: Any]) {
-        self.init(.general, userInfo: userInfo)
-    }
-    
+}
+
+extension CommonError {
     public static func fatal(_ description: String) -> Self {
         .init(.fatal, description)
     }
