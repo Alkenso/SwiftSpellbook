@@ -1,7 +1,6 @@
 import SwiftConvenience
 
 import Foundation
-
 import XCTest
 
 class PropertyWrapperTests: XCTestCase {
