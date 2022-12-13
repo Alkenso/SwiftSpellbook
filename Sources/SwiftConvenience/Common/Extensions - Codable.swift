@@ -107,3 +107,152 @@ extension ObjectDecoder {
         .init(formatName: "plist", decode: decoder.decode)
     }
 }
+
+// MARK: Any + Codable
+
+/// Property wrapper around object compatible with PropertyListSerialization routines.
+///
+/// Assume we have some struct we want to be Codable:
+/// ```
+/// struct Foo: Codable {
+///     var name: String
+///     var attributes: [String: Any] // NOT Codable-compatible
+/// }
+/// ```
+/// [String: Any] is not Codable compatible because Any is not Codable.
+/// But in some situations we as developers are sure that all `attributes` content is plist-compatible type.
+/// In such case we can use `PropertyListSerializable` property wrapper:
+/// ```
+/// struct Foo: Codable {
+///     var name: String
+///     @PropertyListSerializable var attributes: [String: Any] // OK
+/// }
+/// ```
+/// Under the hood, `PropertyListSerializable` stores the `attributes` as Data
+/// using `PropertyListSerialization` functions to perform data<->object convertions.
+@propertyWrapper
+public struct PropertyListSerializable<T> {
+    public var wrappedValue: T
+    
+    public init(wrappedValue: T) {
+        self.wrappedValue = wrappedValue
+    }
+}
+
+extension PropertyListSerializable: Serializable {
+    fileprivate static var formatName: String { "plist" }
+    
+    fileprivate static func isValidObject(_ object: Any) -> Bool {
+        PropertyListSerialization.propertyList(object, isValidFor: .xml)
+    }
+    
+    fileprivate static func objectToData(_ object: Any) throws -> Data {
+        try PropertyListSerialization.data(fromPropertyList: object, format: .xml, options: 0)
+    }
+    
+    fileprivate static func dataToObject(_ data: Data) throws -> Any {
+        try PropertyListSerialization.propertyList(from: data, format: nil)
+    }
+}
+
+/// Property wrapper around object compatible with JSONSerialization routines.
+///
+/// Assume we have some struct we want to be Codable:
+/// ```
+/// struct Foo: Codable {
+///     var name: String
+///     var attributes: [String: Any] // NOT Codable-compatible
+/// }
+/// ```
+/// [String: Any] is not Codable compatible because Any is not Codable.
+/// But in some situations we as developers are sure that all `attributes` content is JSON-compatible type.
+/// In such case we can use `JSONSerializable` property wrapper:
+/// ```
+/// struct Foo: Codable {
+///     var name: String
+///     @JSONSerializable var attributes: [String: Any] // OK
+/// }
+/// ```
+/// Under the hood, `JSONSerializable` stores the `attributes` as Data
+/// using `JSONSerialization` functions to perform data<->object convertions.
+@propertyWrapper
+public struct JSONSerializable<T> {
+    public var wrappedValue: T
+    
+    public init(wrappedValue: T) {
+        self.wrappedValue = wrappedValue
+    }
+}
+
+extension JSONSerializable: Serializable {
+    fileprivate static var formatName: String { "json" }
+    
+    fileprivate static func isValidObject(_ object: Any) -> Bool {
+        JSONSerialization.isValidJSONObject(object)
+    }
+    
+    fileprivate static func objectToData(_ object: Any) throws -> Data {
+        try JSONSerialization.data(withJSONObject: object)
+    }
+    
+    fileprivate static func dataToObject(_ data: Data) throws -> Any {
+        try JSONSerialization.jsonObject(with: data)
+    }
+}
+
+private protocol Serializable: Codable {
+    associatedtype T
+    var wrappedValue: T { get set }
+    init(wrappedValue: T)
+    
+    static var formatName: String { get }
+    static func isValidObject(_ object: Any) -> Bool
+    static func objectToData(_ object: Any) throws -> Data
+    static func dataToObject(_ data: Data) throws -> Any
+}
+
+extension Serializable {
+    public init(from decoder: Decoder) throws {
+        let data = try Data(from: decoder)
+        do {
+            let any = try Self.dataToObject(data)
+            guard let value = any as? T else { throw CommonError.cast(any, to: T.self) }
+            self.init(wrappedValue: value)
+        } catch {
+            throw DecodingError.dataCorrupted(
+                DecodingError.Context(
+                    codingPath: decoder.codingPath,
+                    debugDescription: "Invalid \(Self.formatName) data",
+                    underlyingError: error
+                )
+            )
+        }
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        guard Self.isValidObject(wrappedValue) else {
+            throw EncodingError.invalidValue(
+                wrappedValue,
+                EncodingError.Context(
+                    codingPath: [],
+                    debugDescription: "Value of type \(T.self) is not valid for \(Self.formatName) encoding"
+                )
+            )
+        }
+        
+        let data: Data
+        do {
+            data = try Self.objectToData(wrappedValue)
+        } catch {
+            throw EncodingError.invalidValue(
+                wrappedValue,
+                EncodingError.Context(
+                    codingPath: encoder.codingPath,
+                    debugDescription: "Invalid \(Self.formatName) data",
+                    underlyingError: error
+                )
+            )
+        }
+        try data.encode(to: encoder)
+    }
+}
