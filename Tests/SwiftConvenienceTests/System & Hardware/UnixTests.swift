@@ -33,9 +33,9 @@ class UnixUserTests: XCTestCase {
         }
         
         let groups = user.allGroups
-        XCTAssertTrue(groups.contains(0))
-        XCTAssertTrue(groups.contains(1))
-        XCTAssertTrue(groups.contains(80))
+        XCTAssertTrue(groups.contains(.wheel))
+        XCTAssertTrue(groups.contains(where: { $0.gid == 1 }))
+        XCTAssertTrue(groups.contains(.admin))
     }
 }
 

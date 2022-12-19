@@ -78,7 +78,7 @@ extension UnixUser {
 }
 
 extension UnixUser {
-    public var allGroups: [gid_t] {
+    public var allGroups: [UnixGroup] {
         let maxAttempts: Int32 = 100
         for i in 1...maxAttempts {
             var count = i * 100
@@ -87,7 +87,9 @@ extension UnixUser {
                 getgrouplist(name, Int32(gid), $0.baseAddress, &count)
             }
             if status != -1 {
-                return groups[0..<Int(count)].map { gid_t($0) }
+                return groups[0..<Int(count)].map { gid_t($0) }.map {
+                    UnixGroup(gid: $0) ?? UnixGroup(name: "<unknown>", gid: $0)
+                }
             }
         }
         return []
