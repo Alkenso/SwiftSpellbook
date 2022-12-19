@@ -70,6 +70,10 @@ extension CommonError {
     public init(_ description: String, reason: Error? = nil) {
         self.init(.general, description, reason: reason)
     }
+    
+    public init(_ userInfo: [String: Any]) {
+        self.init(.general, userInfo: userInfo)
+    }
 }
 
 extension CommonError {
