@@ -38,7 +38,7 @@ extension UnixGroup {
         self.init(native: native.pointee)
     }
     
-    public init?(gid: uid_t) {
+    public init?(gid: gid_t) {
         guard let native = getgrgid(gid) else { return nil }
         self.init(native: native.pointee)
     }
@@ -47,3 +47,17 @@ extension UnixGroup {
         self.init(name: String(cString: native.gr_name), gid: native.gr_gid)
     }
 }
+
+extension UnixGroup: CustomStringConvertible {
+    public var description: String {
+        "\(name)|\(gid)"
+    }
+}
+
+#if canImport(Darwin) // Apple world only.
+extension UnixGroup {
+    public static let wheel = UnixGroup(name: "wheel", gid: 0)
+    public static let staff = UnixGroup(name: "staff", gid: 20)
+    public static let admin = UnixGroup(name: "admin", gid: 80)
+}
+#endif

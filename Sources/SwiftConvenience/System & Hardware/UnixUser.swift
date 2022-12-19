@@ -94,6 +94,12 @@ extension UnixUser {
     }
 }
 
+extension UnixUser: CustomStringConvertible {
+    public var description: String {
+        "\(name)|\(uid)/\(gid)"
+    }
+}
+
 #if os(macOS)
 import SystemConfiguration
 
