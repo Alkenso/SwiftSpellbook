@@ -24,6 +24,8 @@ import CoreGraphics
 import Foundation
 
 extension CGRect {
+    /// Center given rect relative to another one.
+    /// - returns: New CGRect which center is the same with given one.
     public func centered(against rect: CGRect) -> CGRect {
         var centeredOrigin = origin
         centeredOrigin.x = rect.origin.x + (rect.width / 2) - (width / 2)
@@ -32,12 +34,33 @@ extension CGRect {
         return CGRect(origin: centeredOrigin, size: size)
     }
     
+    /// Center given rect relative to another one.
     public mutating func center(against rect: CGRect) {
         self = centered(against: rect)
+    }
+    
+    internal func invertCoordinates(height: CGFloat) -> CGRect {
+        CGRect(x: origin.x, y: height - (origin.y + size.height), width: size.width, height: size.height)
     }
 }
 
 #if os(macOS)
+
+import AppKit
+
+extension CGRect {
+    /// Converts rect between bottom-left and upper-left coordinate systems.
+    ///
+    /// macOS usually operates in two coordinate systems: Cocoa (0;0 at bottom-left) and
+    /// Quartz/CoreGraphics (0;0 at upper-left).
+    /// This method converts the coordinates between these coordinate systems using NSScreen.screens.first
+    /// as the coordinate system basis.
+    /// - Note: the method makes no coversion if there is no available displays in the system (all monitors disconnected).
+    public var invertedCoordinates: CGRect {
+        guard let screen = NSScreen.screens.first else { return self }
+        return invertCoordinates(height: screen.frame.height)
+    }
+}
 
 public struct CGWindowInfo {
     /// The window ID, a unique value within the user session representing the window (kCGWindowNumber).
