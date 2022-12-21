@@ -106,7 +106,7 @@ extension UnixUser: CustomStringConvertible {
 import SystemConfiguration
 
 extension UnixUser {
-    public var currentlyLoggedIn: UnixUser? {
+    public static var currentlyLoggedIn: UnixUser? {
         var uid: uid_t = 0
         guard SCDynamicStoreCopyConsoleUser(nil, &uid, nil) != nil else { return nil }
         guard let user = UnixUser(uid: uid) else { return nil }
