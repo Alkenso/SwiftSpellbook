@@ -93,11 +93,10 @@ extension Array {
     }
     
     /// If exists, removes the first element from the array and returns it. Otherwise returns `nil`.
-    /// Simply combination of `first` + `removeFirst`.
+    /// Simply combination of `isEmpty` + `removeFirst`.
     public mutating func popFirst() -> Element? {
-        guard let first else { return nil }
-        removeFirst()
-        return first
+        guard !isEmpty else { return nil }
+        return removeFirst()
     }
 }
 
