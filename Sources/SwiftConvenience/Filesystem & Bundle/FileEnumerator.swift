@@ -80,8 +80,8 @@ extension FileEnumerator: Sequence, IteratorProtocol {
         guard !filters.isEmpty else { return nextUnfiltered() }
         
         while let next = nextUnfiltered() {
-            let included = filters.contains(where: { $0(isIncluded: next) })
-            if included {
+            let excluded = filters.contains(where: { !$0(isIncluded: next) })
+            if !excluded {
                 return next
             }
         }
