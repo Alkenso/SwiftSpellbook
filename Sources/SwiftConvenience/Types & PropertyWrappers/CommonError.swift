@@ -55,6 +55,30 @@ extension CommonError: CustomNSError {
     public var errorUserInfo: [String: Any] { userInfo }
 }
 
+extension CommonError: CustomStringConvertible {
+    public var description: String {
+        var components = userInfo.map { "\($0.key)=\($0.value)" }
+        components.insert("CommonError: \(code.description)(\(code.rawValue))", at: 0)
+        return components.joined(separator: ". ")
+    }
+}
+
+extension CommonError.Code: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .general: return "General"
+        case .fatal: return "Fatal"
+        case .unexpected: return "Unexpected"
+        case .unwrapNil: return "UnwrapNil"
+        case .invalidArgument: return "InvalidArgument"
+        case .cast: return "Cast"
+        case .notFound: return "NotFound"
+        case .outOfRange: return "OutOfRange"
+        case .timedOut: return "TimedOut"
+        }
+    }
+}
+
 extension CommonError {
     public init(_ code: Code, _ description: String? = nil, reason: Error? = nil) {
         var userInfo: [String: Any] = [:]
@@ -91,9 +115,9 @@ extension CommonError {
     }
     
     public static func invalidArgument(arg: String, invalidValue: Any?, description: Any? = nil) -> Self {
-        let value = invalidValue.flatMap { "\($0)" } ?? ""
+        let value = invalidValue.flatMap { " '\($0)'" } ?? ""
         let additional = description.flatMap { ". \($0)" } ?? ""
-        return .init(.invalidArgument, "Invalid value \(value) for argument \(arg)" + additional)
+        return .init(.invalidArgument, "Invalid value\(value) for argument '\(arg)'" + additional)
     }
     
     public static func cast<From, To>(name: String? = nil, _ from: From, to: To.Type, description: Any? = nil) -> Self {
