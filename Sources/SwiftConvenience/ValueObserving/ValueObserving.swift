@@ -25,40 +25,20 @@ import Foundation
 
 public protocol ValueObserving {
     associatedtype T
-    func subscribe(receiveValue: @escaping (T, _ context: Any?) -> Void) -> SubscriptionToken
+    func subscribe(initialNotify: Bool, receiveValue: @escaping (T, _ context: Any?) -> Void) -> SubscriptionToken
 }
 
-public struct AnyValueObserving<T>: ValueObserving {
-    public init<VO: ValueObserving>(observing: VO) where VO.T == T {
-        subscribe = observing.subscribe
+extension ValueObserving {
+    public func subscribe(receiveValue: @escaping (T, _ context: Any?) -> Void) -> SubscriptionToken {
+        subscribe(initialNotify: true, receiveValue: receiveValue)
     }
     
-    public init(subscribe: @escaping (@escaping (T, Any?) -> Void) -> SubscriptionToken) {
-        self.subscribe = subscribe
-    }
-    
-    private let subscribe: (@escaping (T, Any?) -> Void) -> SubscriptionToken
-    
-    public func subscribe(receiveValue: @escaping (T, Any?) -> Void) -> SubscriptionToken {
-        subscribe(receiveValue)
+    public func subscribe(initialNotify: Bool = true, receiveValue: @escaping (T) -> Void) -> SubscriptionToken {
+        subscribe(initialNotify: initialNotify) { value, _ in receiveValue(value) }
     }
 }
 
 extension ValueObserving {
-    public func receive(onQueue queue: DispatchQueue) -> AnyValueObserving<T> {
-        .init { receiveValue in
-            self.subscribe { value, context in
-                queue.async { receiveValue(value, context) }
-            }
-        }
-    }
-}
-
-extension ValueObserving {
-    public func subscribe(receiveValue: @escaping (T) -> Void) -> SubscriptionToken {
-        subscribe { value, _ in receiveValue(value) }
-    }
-    
     /// Publishes value changes in order it receives the values
     /// - Warning: When using `subscribeReceiveChange`, be sure it receives the input in right order.
     /// Avoid use `receive(on:)` with concurrent queues in upstream `ValueObserving`.
@@ -73,6 +53,32 @@ extension ValueObserving {
     
     public func subscribeChange(receiveChange: @escaping (Change<T>) -> Void) -> SubscriptionToken where T: Equatable {
         subscribeChange { change, _ in receiveChange(change) }
+    }
+}
+
+extension ValueObserving {
+    public func receive(onQueue queue: DispatchQueue) -> AnyValueObserving<T> {
+        .init { initialNotify, receiveValue in
+            self.subscribe(initialNotify: initialNotify) { value, context in
+                queue.async { receiveValue(value, context) }
+            }
+        }
+    }
+}
+
+public struct AnyValueObserving<T>: ValueObserving {
+    public init<VO: ValueObserving>(observing: VO) where VO.T == T {
+        subscribe = observing.subscribe
+    }
+    
+    public init(subscribe: @escaping (Bool, @escaping (T, Any?) -> Void) -> SubscriptionToken) {
+        self.subscribe = subscribe
+    }
+    
+    private let subscribe: (Bool, @escaping (T, Any?) -> Void) -> SubscriptionToken
+    
+    public func subscribe(initialNotify: Bool, receiveValue: @escaping (T, Any?) -> Void) -> SubscriptionToken {
+        subscribe(initialNotify, receiveValue)
     }
 }
 

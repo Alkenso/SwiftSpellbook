@@ -46,11 +46,11 @@ public final class EventNotify<T>: ValueObserving {
         self.lastValue = initialValue
     }
     
-    public func subscribe(receiveValue: @escaping (T, _ context: Any?) -> Void) -> SubscriptionToken {
+    public func subscribe(initialNotify: Bool, receiveValue: @escaping (T, _ context: Any?) -> Void) -> SubscriptionToken {
         let id = UUID()
         lock.withLock {
             subscriptions[id] = receiveValue
-            if let lastValue = lastValue {
+            if let lastValue = lastValue, initialNotify {
                 notifyOne(lastValue, nil, action: receiveValue)
             }
         }

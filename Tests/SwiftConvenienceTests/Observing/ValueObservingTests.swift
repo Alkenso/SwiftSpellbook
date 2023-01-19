@@ -3,16 +3,23 @@ import SwiftConvenience
 import Combine
 import XCTest
 
-private struct ValueWrapper<T>: ValueObserving {
-    var value: T {
-        willSet { subscriptions.notify(newValue) }
+private class ValueWrapper<T>: ValueObserving {
+    private var subscriptions: [(initialNotify: Bool, receiveValue: (T, Any?) -> Void)] = []
+    
+    init(value: T) {
+        self.value = value
     }
     
-    private let subscriptions = EventNotify<T>()
-    func subscribe(receiveValue: @escaping (T, Any?) -> Void) -> SubscriptionToken {
-        let token = subscriptions.subscribe(receiveValue: receiveValue)
-        receiveValue(value, nil)
-        return token
+    var value: T {
+        didSet { subscriptions.forEach { $0.receiveValue(value, nil) } }
+    }
+    
+    func subscribe(initialNotify: Bool, receiveValue: @escaping (T, Any?) -> Void) -> SubscriptionToken {
+        subscriptions.append((initialNotify, receiveValue))
+        if initialNotify {
+            receiveValue(value, nil)
+        }
+        return .stub(())
     }
 }
 
@@ -20,7 +27,7 @@ class ValueObservingTests: XCTestCase {
     private var cancellables: [AnyCancellable] = []
     
     func test_receiveValue() {
-        var wrapper = ValueWrapper(value: 10)
+        let wrapper = ValueStore(initialValue: 10)
         XCTAssertEqual(wrapper.value, 10)
         
         var receivedValue: Int?
@@ -30,15 +37,15 @@ class ValueObservingTests: XCTestCase {
         
         XCTAssertEqual(receivedValue, 10)
         
-        wrapper.value = 20
+        wrapper.update(20)
         XCTAssertEqual(receivedValue, 20)
         
-        wrapper.value = 30
+        wrapper.update(30)
         XCTAssertEqual(receivedValue, 30)
     }
     
     func test_receiveChange() {
-        var wrapper = ValueWrapper(value: 10)
+        let wrapper = ValueWrapper(value: 10)
         XCTAssertEqual(wrapper.value, 10)
         
         var receivedChange: Change<Int>?

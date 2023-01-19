@@ -10,8 +10,8 @@ class ObservableTests: XCTestCase {
         let observable = Observable<Int>(
             valueRef: .init { value },
             subscribeReceiveValue: {
-                let token = event.subscribe(receiveValue: $0)
-                $0(value, nil)
+                let token = event.subscribe(receiveValue: $1)
+                $1(value, nil)
                 return token
             }
         )
@@ -42,8 +42,8 @@ class ObservableTests: XCTestCase {
         let observable = Observable<Int>(
             valueRef: .init { value },
             subscribeReceiveValue: {
-                let token = event.subscribe(receiveValue: $0)
-                $0(value, nil)
+                let token = event.subscribe(receiveValue: $1)
+                $1(value, nil)
                 return token
             }
         )

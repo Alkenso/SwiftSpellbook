@@ -10,16 +10,20 @@ class EventNotifyTests: XCTestCase {
         
         var expectedValues = [10, 20, 30]
         
-        let expectation = expectation(description: "notify called")
-        expectation.expectedFulfillmentCount = expectedValues.count
+        let exp = expectation(description: "notify called")
+        exp.expectedFulfillmentCount = expectedValues.count
         
-        event.subscribe {
-            guard !expectedValues.isEmpty else {
-                XCTFail("Excepted values empty")
-                return
-            }
-            XCTAssertEqual($0, expectedValues.removeFirst())
-            expectation.fulfill()
+        event.subscribe(initialNotify: true) {
+            XCTAssertEqual($0, expectedValues.popFirst())
+            exp.fulfill()
+        }.store(in: &subscriptions)
+        
+        /// No matter of `initialNotify` value, if `initialValue` not provided,
+        /// `receiveValue` is called only on value update.
+        let exp2 = expectation(description: "notify called 2")
+        exp2.expectedFulfillmentCount = expectedValues.count
+        event.subscribe(initialNotify: false) { _ in
+            exp2.fulfill()
         }.store(in: &subscriptions)
         
         for value in expectedValues {
@@ -37,16 +41,20 @@ class EventNotifyTests: XCTestCase {
         let testValues = [10, 20, 30]
         var expectedValues = [0] + testValues // include `initialValue`.
         
-        let expectation = expectation(description: "notify called")
-        expectation.expectedFulfillmentCount = expectedValues.count
+        let exp = expectation(description: "notify called")
+        exp.expectedFulfillmentCount = expectedValues.count
         
-        event.subscribe {
-            guard !expectedValues.isEmpty else {
-                XCTFail("Excepted values empty")
-                return
-            }
-            XCTAssertEqual($0, expectedValues.removeFirst())
-            expectation.fulfill()
+        event.subscribe(initialNotify: true) {
+            XCTAssertEqual($0, expectedValues.popFirst())
+            exp.fulfill()
+        }.store(in: &subscriptions)
+        
+        /// Because `initialValue` is provided, number of `receiveValue` calls depends on
+        /// `initialNotify` parameter.
+        let exp2 = expectation(description: "notify called 2")
+        exp2.expectedFulfillmentCount = testValues.count
+        event.subscribe(initialNotify: false) { _ in
+            exp2.fulfill()
         }.store(in: &subscriptions)
         
         for value in testValues {

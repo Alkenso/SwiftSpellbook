@@ -25,9 +25,9 @@ import Foundation
 @dynamicMemberLookup
 public final class Observable<Value>: ValueObserving {
     private let valueRef: ValueView<Value>
-    private let subscribeReceive: (@escaping (Value, Any?) -> Void) -> SubscriptionToken
+    private let subscribeReceive: (Bool, @escaping (Value, Any?) -> Void) -> SubscriptionToken
     
-    public init(valueRef: ValueView<Value>, subscribeReceiveValue: @escaping (@escaping (Value, _ context: Any?) -> Void) -> SubscriptionToken) {
+    public init(valueRef: ValueView<Value>, subscribeReceiveValue: @escaping (Bool, @escaping (Value, _ context: Any?) -> Void) -> SubscriptionToken) {
         self.valueRef = valueRef
         subscribeReceive = subscribeReceiveValue
     }
@@ -38,8 +38,8 @@ public final class Observable<Value>: ValueObserving {
         value[keyPath: keyPath]
     }
     
-    public func subscribe(receiveValue: @escaping (Value, _ context: Any?) -> Void) -> SubscriptionToken {
-        subscribeReceive(receiveValue)
+    public func subscribe(initialNotify: Bool, receiveValue: @escaping (Value, _ context: Any?) -> Void) -> SubscriptionToken {
+        subscribeReceive(initialNotify, receiveValue)
     }
 }
 
@@ -51,8 +51,8 @@ extension Observable {
     public func scope<U>(_ transform: @escaping (Value) -> U) -> Observable<U> {
         Observable<U>(
             valueRef: .init { transform(self.value) },
-            subscribeReceiveValue: { localNotify in
-                self.subscribe { globalValue, context in
+            subscribeReceiveValue: { initialNotify, localNotify in
+                self.subscribe(initialNotify: initialNotify) { globalValue, context in
                     localNotify(transform(globalValue), context)
                 }
             }
