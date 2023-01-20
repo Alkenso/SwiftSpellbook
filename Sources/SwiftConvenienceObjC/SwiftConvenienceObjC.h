@@ -21,7 +21,7 @@
 //  SOFTWARE.
 
 #import <Foundation/Foundation.h>
-
+#import <TargetConditionals.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -29,7 +29,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (nullable NSException *)NSException_catching:(void(NS_NOESCAPE ^)(void))block;
 
+#if TARGET_OS_OSX == 1
 + (audit_token_t)NSXPCConnection_auditToken:(NSXPCConnection *)connection;
+#endif
 
 @end
 

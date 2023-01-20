@@ -22,9 +22,11 @@
 
 #import "SwiftConvenienceObjC.h"
 
+#if TARGET_OS_OSX == 1
 @interface NSXPCConnection (SwiftConveniencePrivate)
 @property (nonatomic, readonly) audit_token_t auditToken;
 @end
+#endif
 
 @implementation SwiftConvenienceObjC
 
@@ -41,9 +43,11 @@
     }
 }
 
+#if TARGET_OS_OSX == 1
 + (audit_token_t)NSXPCConnection_auditToken:(NSXPCConnection *)connection
 {
     return connection.auditToken;
 }
+#endif
 
 @end

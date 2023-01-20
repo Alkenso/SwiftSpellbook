@@ -79,7 +79,6 @@ public protocol UnsafePOD: PODUnsafeHashable {}
 
 // MARK: - Oftenly used POD types
 
-extension audit_token_t: SafePOD, UnsafePOD {}
 extension timespec: SafePOD, UnsafePOD {}
 extension fsid_t: SafePOD, UnsafePOD {}
 extension attrlist: SafePOD, UnsafePOD {}

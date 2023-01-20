@@ -57,9 +57,3 @@ extension NSException {
         }.get().get()
     }
 }
-
-extension NSXPCConnection {
-    public var auditToken: audit_token_t {
-        SwiftConvenienceObjC.nsxpcConnection_auditToken(self)
-    }
-}
