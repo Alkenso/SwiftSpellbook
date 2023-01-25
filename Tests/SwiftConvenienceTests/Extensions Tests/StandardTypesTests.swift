@@ -96,16 +96,24 @@ class StandardTypesExtensionsTests: XCTestCase {
     }
     
     func test_Error_xpcCompatible() {
+        let compatibleError = NSError(domain: "test", code: 1, userInfo: [
+            "compatible_key": "compatible_value",
+            "compatible_key2": ["value1", "value2"],
+        ])
+        // No conversion.
+        XCTAssertTrue(compatibleError === (compatibleError.xpcCompatible() as NSError))
+        
         struct SwiftType {}
         let error = NSError(domain: "test", code: 1, userInfo: [
             "compatible_key": "compatible_value",
             "incompatible_key": SwiftType(),
+            "maybe_incompatible_key": UUID(),
         ])
         
-        XCTAssertThrowsError(try NSKeyedArchiver.archivedData(withRootObject: error, requiringSecureCoding: false))
+        XCTAssertThrowsError(try NSKeyedArchiver.archivedData(withRootObject: error, requiringSecureCoding: true))
         
         let xpcCompatible = error.xpcCompatible()
-        XCTAssertNoThrow(try NSKeyedArchiver.archivedData(withRootObject: xpcCompatible, requiringSecureCoding: false))
+        XCTAssertNoThrow(try NSKeyedArchiver.archivedData(withRootObject: xpcCompatible, requiringSecureCoding: true))
     }
     
     func test_Comparable_clamped() {

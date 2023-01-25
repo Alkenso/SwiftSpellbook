@@ -248,7 +248,9 @@ extension Error {
     /// into most close-to-original but compatible form.
     public func xpcCompatible() -> Error {
         let nsError = self as NSError
-        guard !JSONSerialization.isValidJSONObject(nsError.userInfo) else { return self }
+        guard (try? NSKeyedArchiver.archivedData(withRootObject: nsError, requiringSecureCoding: true)) == nil else {
+            return self
+        }
         
         let compatibleError = NSError(
             domain: nsError.domain,
