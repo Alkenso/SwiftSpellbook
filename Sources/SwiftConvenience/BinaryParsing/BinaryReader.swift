@@ -100,6 +100,26 @@ public extension BinaryReader {
         return data
     }
     
+    /// Peek some amount of data using `while` closure to determine when to stop.
+    /// The data is stopped to be collected if `while` returns `false` or there is no more data.
+    func peek(offset: Int = 0, while shouldProceed: (UInt8) -> Bool) throws -> Data {
+        let size = try _input.size()
+        
+        var data = Data()
+        var pos = offset
+        let buffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: 1)
+        defer { buffer.deallocate() }
+        while pos < size {
+            try _input.readBytes(to: buffer, offset: pos)
+            let value = buffer[0]
+            guard shouldProceed(value) else { break }
+            data.append(value)
+            pos += 1
+        }
+        
+        return data
+    }
+    
     func peek<T>(_ type: T.Type, offset: Int) throws -> T {
         try ensureTrivial(T.self)
         
@@ -168,6 +188,14 @@ public extension BinaryReader {
             let count = min(maxCount, size)
             return try read(count: count)
         }
+    }
+    
+    /// Read some amount of data using `while` closure to determine when to stop.
+    /// The data is stopped to be collected if `while` returns `false` or there is no more data.
+    mutating func read(offset: Int = 0, while shouldProceed: (UInt8) -> Bool) throws -> Data {
+        let data = try peek(offset: offset, while: shouldProceed)
+        try seek(offset + data.count)
+        return data
     }
     
     mutating func read<T>(_ type: T.Type) throws -> T {

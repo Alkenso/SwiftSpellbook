@@ -15,6 +15,12 @@ class BinaryReaderTests: XCTestCase {
         
         XCTAssertEqual(try reader.peekInt8(offset: 2), 0x03)
         XCTAssertEqual(try reader.peek(at: Range(offset: 1, length: 3)), Data([0x02, 0x03, 0x04]))
+        
+        XCTAssertEqual(try reader.peek(offset: 2, while: { $0 != 0xcc }), Data([0x03, 0x04, 0xaa, 0xbb]))
+        
+        var resetted = try reader.resetted()
+        XCTAssertEqual(try resetted.read(offset: 2, while: { $0 != 0xcc }), Data([0x03, 0x04, 0xaa, 0xbb]))
+        XCTAssertEqual(try resetted.readUInt8(), 0xcc)
     }
 }
 
