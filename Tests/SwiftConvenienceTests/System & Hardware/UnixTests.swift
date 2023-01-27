@@ -15,6 +15,8 @@ class UnixUserTests: XCTestCase {
         XCTAssertGreaterThan(user.name.count, 0)
         XCTAssertGreaterThan(user.dir.count, 0)
         XCTAssertGreaterThan(user.shell.count, 0)
+        
+        XCTAssertTrue(UnixUser.loginUsers(loggedIn: true).contains { $0.uid == getuid() })
     }
     
     func test_currentUserGroups() throws {
@@ -33,7 +35,7 @@ class UnixUserTests: XCTestCase {
         }
         
         let groups = user.allGroups
-        XCTAssertTrue(groups.contains(.wheel))
+        XCTAssertTrue(groups.contains )
         XCTAssertTrue(groups.contains(where: { $0.gid == 1 }))
         XCTAssertTrue(groups.contains(.admin))
     }

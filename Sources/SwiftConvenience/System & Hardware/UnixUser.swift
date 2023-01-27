@@ -20,7 +20,10 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+#if os(macOS)
+
 import Foundation
+import SystemConfiguration
 
 public struct UnixUser: Equatable, Codable {
     /// User's login name.
@@ -60,10 +63,24 @@ extension UnixUser {
             dir:  String(cString: native.pw_dir), shell:  String(cString: native.pw_shell)
         )
     }
+}
+
+extension UnixUser {
+    public static var currentlyLoggedIn: UnixUser? {
+        var uid: uid_t = 0
+        guard SCDynamicStoreCopyConsoleUser(nil, &uid, nil) != nil else { return nil }
+        guard let user = UnixUser(uid: uid) else { return nil }
+        return user
+    }
     
-    public static var loginUsers: [UnixUser] {
+    public static func loginUsers(loggedIn: Bool? = nil) -> [UnixUser] {
         let usersDir = FileManager.default.urls(for: .userDirectory, in: .localDomainMask)[0].path
-        let users = passwdUsers.filter { $0.dir.starts(with: usersDir) }
+        var users = passwdUsers.filter { $0.dir.starts(with: usersDir) }
+        if let loggedIn {
+            let loggedInNames = loggedInUsernames().map { $0.lowercased() }
+            users = users.filter { loggedInNames.contains($0.name.lowercased()) == loggedIn }
+        }
+        
         return users
     }
     
@@ -72,6 +89,24 @@ extension UnixUser {
         let users = AnySequence { AnyIterator(getpwent) }
             .compactMap { UnixUser(native: $0.pointee) }
         endpwent()
+        
+        return users
+    }
+    
+    private static func loggedInUsernames() -> Set<String> {
+        // Details at https://man7.org/linux/man-pages/man5/utmp.5.html
+        setutxent()
+        defer { endutxent() }
+        
+        var users = Set<String>()
+        for utxPtr in AnySequence({ AnyIterator(getutxent) }) {
+            guard utxPtr.pointee.ut_type == USER_PROCESS else { continue }
+            guard let offset = MemoryLayout<utmpx>.offset(of: \.ut_user) else { continue }
+            let userPtr = (UnsafeRawPointer(utxPtr) + offset).assumingMemoryBound(to: CChar.self)
+            let userBuffer = UnsafeBufferPointer(start: userPtr, count: MemoryLayout.size(ofValue: utxPtr.pointee.ut_user))
+            guard let user = String(cString: Array(userBuffer), encoding: .utf8) else { continue }
+            users.insert(user)
+        }
         
         return users
     }
@@ -102,15 +137,4 @@ extension UnixUser: CustomStringConvertible {
     }
 }
 
-#if os(macOS)
-import SystemConfiguration
-
-extension UnixUser {
-    public static var currentlyLoggedIn: UnixUser? {
-        var uid: uid_t = 0
-        guard SCDynamicStoreCopyConsoleUser(nil, &uid, nil) != nil else { return nil }
-        guard let user = UnixUser(uid: uid) else { return nil }
-        return user
-    }
-}
 #endif
