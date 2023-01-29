@@ -3,7 +3,7 @@ import XCTest
 
 final class EventAskTests: XCTestCase {
     func test_emptyHandlers() {
-        let transformer = EventAskMany<String, Int>()
+        let transformer = EventAsk<String, Int>()
         let exp = expectation(description: "Evaluated.")
         transformer.askAsync("some event") {
             XCTAssertTrue($0.isEmpty)
@@ -16,7 +16,7 @@ final class EventAskTests: XCTestCase {
     func test_oneToMany_multipleHandlers() {
         var disposables: [Any] = []
         let postedEvent = "some event"
-        let transformer = EventAskMany<String, Int>()
+        let transformer = EventAsk<String, Int>()
         disposables.append(transformer.subscribe { event in
             XCTAssertEqual(event, postedEvent)
             return 1

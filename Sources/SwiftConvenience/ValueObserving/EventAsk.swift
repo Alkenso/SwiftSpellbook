@@ -23,15 +23,15 @@
 import Combine
 import Foundation
 
-public typealias EventAskOne<Input, Output> = EventAsk<Input, Output, Output>
-public typealias EventAskMany<Input, Output> = EventAsk<Input, Output, [Output]>
+public typealias EventAskCombined<Input, Output> = EventAskEx<Input, Output, Output>
+public typealias EventAsk<Input, Output> = EventAskEx<Input, Output, [Output]>
 
-public class EventAsk<Input, Transformed, Output> {
+public class EventAskEx<Input, Transformed, Output> {
     public typealias AsyncTransform = (Input, @escaping (Transformed) -> Void) -> Void
     public typealias SyncTransform = (Input) -> Transformed
     
-    public init(combine: @escaping ([Transformed]) -> Output) {
-        _combine = combine
+    public init(transform: @escaping ([Transformed]) -> Output) {
+        _combine = transform
     }
     
     public convenience init() where Output == [Transformed] {
