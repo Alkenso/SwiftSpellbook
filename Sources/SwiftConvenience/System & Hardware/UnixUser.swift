@@ -25,24 +25,36 @@
 import Foundation
 import SystemConfiguration
 
-public struct UnixUser: Equatable, Codable {
+public struct UnixUser: Codable {
     /// User's login name.
     public var name: String
+    
     /// Numerical user ID.
     public var uid: uid_t
+    
     /// Numerical group ID.
     public var gid: gid_t
+    
     /// Initial working directory.
     public var dir: String
+    
     /// Program to use as shell.
     public var shell: String
     
-    public init(name: String, uid: uid_t, gid: gid_t, dir: String, shell: String) {
+    /// If the user is logged in (appears in `utmpx file`).
+    public var isLoggedIn: Bool
+    
+    /// If the user has GUI account.
+    public var hasAccount: Bool
+    
+    public init(name: String, uid: uid_t, gid: gid_t, dir: String, shell: String, isLoggedIn: Bool, hasAccount: Bool) {
         self.name = name
         self.uid = uid
         self.gid = gid
         self.dir = dir
         self.shell = shell
+        self.isLoggedIn = isLoggedIn
+        self.hasAccount = hasAccount
     }
 }
 
@@ -58,42 +70,44 @@ extension UnixUser {
     }
     
     public init(native: passwd) {
+        self.init(native: native, loggedInUsernames: nil)
+    }
+    
+    private init(native: passwd, loggedInUsernames: Set<String>?) {
         self.init(
             name: String(cString: native.pw_name), uid: native.pw_uid, gid: native.pw_gid,
-            dir:  String(cString: native.pw_dir), shell:  String(cString: native.pw_shell)
+            dir: String(cString: native.pw_dir), shell: String(cString: native.pw_shell),
+            isLoggedIn: false, hasAccount: false
         )
+        let loggedInUsernames = loggedInUsernames ?? Self.readLoggedInUsernames()
+        self.isLoggedIn = loggedInUsernames.contains(name)
+        self.hasAccount = dir.starts(with: Self.allUsersDir)
     }
+    
+    private static let allUsersDir = FileManager.default.urls(for: .userDirectory, in: .localDomainMask)[0].path
 }
 
 extension UnixUser {
-    public static var currentlyLoggedIn: UnixUser? {
+    /// User associated with current GUI session.
+    public static var currentSession: UnixUser? {
         var uid: uid_t = 0
         guard SCDynamicStoreCopyConsoleUser(nil, &uid, nil) != nil else { return nil }
         guard let user = UnixUser(uid: uid) else { return nil }
         return user
     }
     
-    public static func loginUsers(loggedIn: Bool? = nil) -> [UnixUser] {
-        let usersDir = FileManager.default.urls(for: .userDirectory, in: .localDomainMask)[0].path
-        var users = passwdUsers.filter { $0.dir.starts(with: usersDir) }
-        if let loggedIn {
-            let loggedInNames = loggedInUsernames().map { $0.lowercased() }
-            users = users.filter { loggedInNames.contains($0.name.lowercased()) == loggedIn }
-        }
+    public static var allUsers: [UnixUser] {
+        let loggedInUsernames = readLoggedInUsernames()
         
-        return users
-    }
-    
-    public static var passwdUsers: [UnixUser] {
         setpwent()
         let users = AnySequence { AnyIterator(getpwent) }
-            .compactMap { UnixUser(native: $0.pointee) }
+            .compactMap { UnixUser(native: $0.pointee, loggedInUsernames: loggedInUsernames) }
         endpwent()
         
         return users
     }
     
-    private static func loggedInUsernames() -> Set<String> {
+    private static func readLoggedInUsernames() -> Set<String> {
         // Details at https://man7.org/linux/man-pages/man5/utmp.5.html
         setutxent()
         defer { endutxent() }
@@ -113,7 +127,7 @@ extension UnixUser {
 }
 
 extension UnixUser {
-    public var allGroups: [UnixGroup] {
+    public func allGroups() throws -> [UnixGroup] {
         let maxAttempts: Int32 = 100
         for i in 1...maxAttempts {
             var count = i * 100
@@ -121,13 +135,17 @@ extension UnixUser {
             let status = groups.withUnsafeMutableBufferPointer {
                 getgrouplist(name, Int32(gid), $0.baseAddress, &count)
             }
-            if status != -1 {
-                return groups[0..<Int(count)].map { gid_t($0) }.map {
-                    UnixGroup(gid: $0) ?? UnixGroup(name: "<unknown>", gid: $0)
-                }
+            guard status != -1 else { continue }
+            
+            let userGroups = groups[0..<Int(count)]
+            guard !userGroups.contains(-1) else { throw CommonError.notFound(what: "groups for user", value: self) }
+ 
+            return userGroups.map { gid_t($0) }.map {
+                UnixGroup(gid: $0) ?? UnixGroup(name: "<unknown>", gid: $0)
             }
         }
-        return []
+        
+        throw CommonError.unexpected("Unexpectedly large number of groups for user \(self)")
     }
 }
 

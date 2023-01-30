@@ -20,9 +20,11 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+#if os(macOS)
+
 import Foundation
 
-public struct UnixGroup: Equatable, Codable {
+public struct UnixGroup: Codable {
     public var name: String
     public var gid: gid_t
     
@@ -39,12 +41,24 @@ extension UnixGroup {
     }
     
     public init?(gid: gid_t) {
+        setgrent()
         guard let native = getgrgid(gid) else { return nil }
         self.init(native: native.pointee)
     }
     
     public init(native: group) {
         self.init(name: String(cString: native.gr_name), gid: native.gr_gid)
+    }
+}
+
+extension UnixGroup {
+    public static var allGroups: [UnixGroup] {
+        setgrent()
+        let groups = AnySequence { AnyIterator(getgrent) }
+            .compactMap { UnixGroup(native: $0.pointee) }
+        endgrent()
+        
+        return groups
     }
 }
 
@@ -60,4 +74,6 @@ extension UnixGroup {
     public static let staff = UnixGroup(name: "staff", gid: 20)
     public static let admin = UnixGroup(name: "admin", gid: 80)
 }
+#endif
+
 #endif
