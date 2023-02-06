@@ -28,6 +28,9 @@ NS_ASSUME_NONNULL_BEGIN
 @interface SwiftConvenienceObjC : NSObject
 
 + (nullable NSException *)NSException_catching:(void(NS_NOESCAPE ^)(void))block;
++ (nullable NSString *)CppException_catching:(void(NS_NOESCAPE ^)(void))block;
+
++ (void) __attribute__((noreturn)) throwCppRuntineErrorException:(NSString *)reason;
 
 #if TARGET_OS_OSX == 1
 + (audit_token_t)NSXPCConnection_auditToken:(NSXPCConnection *)connection;

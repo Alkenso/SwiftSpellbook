@@ -22,6 +22,8 @@
 
 #import "SwiftConvenienceObjC.h"
 
+#include <stdexcept>
+
 #if TARGET_OS_OSX == 1
 @interface NSXPCConnection (SwiftConveniencePrivate)
 @property (nonatomic, readonly) audit_token_t auditToken;
@@ -41,6 +43,29 @@
     {
         return exception;
     }
+}
+
++ (nullable NSString *)CppException_catching:(void(NS_NOESCAPE ^)(void))block
+{
+    try
+    {
+        block();
+        return nil;
+    }
+    catch (const std::exception& ex)
+    {
+        const char* reason = ex.what();
+        return reason ? @(reason) : @"unknown std::exception";
+    }
+    catch (...)
+    {
+        return @"unknown C++ exception";
+    }
+}
+
++ (void)throwCppRuntineErrorException:(NSString *)reason
+{
+    throw std::runtime_error(reason.UTF8String ?: "");
 }
 
 #if TARGET_OS_OSX == 1

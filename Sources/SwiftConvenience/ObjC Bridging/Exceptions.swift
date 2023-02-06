@@ -23,6 +23,7 @@
 import Foundation
 @_implementationOnly import SwiftConvenienceObjC
 
+/// Error-like wrapper around Objective-C `NSException` to make it Swift.Error compatible.
 public struct NSExceptionError: Error, @unchecked Sendable {
     public var exception: NSException
     public init(exception: NSException) {
@@ -35,14 +36,54 @@ extension NSExceptionError: CustomStringConvertible, CustomDebugStringConvertibl
     public var debugDescription: String { exception.debugDescription }
 }
 
-extension NSException {
-    public static func catching<R>(_ body: () -> R) -> Result<R, NSExceptionError> {
-        var result: Result<R, NSExceptionError>!
-        if let exception = SwiftConvenienceObjC.nsException_catching({
+extension NSException: NonSwiftException {
+    public static func evaluate(_ body: () -> Void) -> NSException? {
+        SwiftConvenienceObjC.nsException_catching(body)
+    }
+    
+    public static func create(with nonSwiftError: NSException) -> NSExceptionError {
+        NSExceptionError(exception: nonSwiftError)
+    }
+}
+
+/// Error-like wrapper around C++ `std::exception` to make it Swift.Error compatible.
+public struct StdException: Error {
+    public var what: String
+    
+    public init(what: String) {
+        self.what = what
+    }
+    
+    public func raise() -> Never {
+        SwiftConvenienceObjC.throwCppRuntineErrorException(what)
+    }
+}
+
+extension StdException: NonSwiftException {
+    public static func evaluate(_ body: () -> Void) -> String? {
+        SwiftConvenienceObjC.cppException_catching(body)
+    }
+    
+    public static func create(with nonSwiftError: String) -> Self {
+        StdException(what: nonSwiftError)
+    }
+}
+
+public protocol NonSwiftException {
+    associatedtype NonSwiftError
+    associatedtype SwiftError: Error
+    static func evaluate(_ body: () -> Void) -> NonSwiftError?
+    static func create(with nonSwiftError: NonSwiftError) -> SwiftError
+}
+
+extension NonSwiftException {
+    public static func catching<R>(_ body: () -> R) -> Result<R, SwiftError> {
+        var result: Result<R, SwiftError>!
+        if let reason = evaluate({
             let value = body()
             result = .success(value)
         }) {
-            result = .failure(NSExceptionError(exception: exception))
+            result = .failure(create(with: reason))
         }
         return result
     }
@@ -55,5 +96,15 @@ extension NSException {
                 return .failure(error)
             }
         }.get().get()
+    }
+}
+
+/// Convenient wrapper to catch Swift, Objective-C and C++ exceptions
+/// that may be thrown from the `body` closure.
+/// - Warning: Use it reasonably, catching code related to
+/// Objective-C and C++ exceptions may affect the performance.
+public func catchingAny<R>(_ body: () throws -> R) throws -> R {
+    try StdException.catchingAll {
+        try NSException.catchingAll(body)
     }
 }

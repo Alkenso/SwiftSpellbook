@@ -22,7 +22,10 @@ let package = Package(
         .target(
             name: "SwiftConvenience",
             dependencies: ["SwiftConvenienceObjC"],
-            linkerSettings: [.linkedLibrary("bsm", .when(platforms: [.macOS]))]
+            linkerSettings: [
+                .linkedLibrary("bsm", .when(platforms: [.macOS])),
+                .linkedLibrary("c++"),
+            ]
         ),
         .target(
             name: "SwiftConvenienceObjC",
