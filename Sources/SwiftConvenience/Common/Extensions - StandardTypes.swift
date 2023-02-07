@@ -307,3 +307,20 @@ extension Optional where Wrapped: Error {
         self ?? CommonError.unexpected("Unexpected nil when unwrapping logically non-nil error.")
     }
 }
+
+// MARK: - TimeInterval & Date
+
+extension TimeInterval {
+    /// Creates `TimeInverval` from `timespec` structure.
+    public init(ts: timespec) {
+        self = TimeInterval(ts.tv_sec) + (TimeInterval(ts.tv_nsec) / TimeInterval(NSEC_PER_SEC))
+    }
+}
+
+extension Date {
+    /// Creates `TimeInverval` from `timespec` structure.
+    /// - Note: Expected accuracy of resulting `Date` is ~100 nanoseconds.
+    public init(ts: timespec) {
+        self.init(timeIntervalSince1970: TimeInterval(ts: ts))
+    }
+}

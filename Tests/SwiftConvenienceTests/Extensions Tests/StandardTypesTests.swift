@@ -161,4 +161,26 @@ class StandardTypesExtensionsTests: XCTestCase {
             [KeyValue("key1", "value1"), KeyValue("key1", "value2"), KeyValue("key3", "value3")]
         )
     }
+    
+    func test_TimeInterval_fromTimespec() {
+        let ts = timespec(tv_sec: 123, tv_nsec: 456)
+        XCTAssertEqual(TimeInterval(ts: ts), 123.000000456, accuracy: 1 / Double(NSEC_PER_SEC))
+        
+        let ts2 = timespec(tv_sec: 5_000_000_000, tv_nsec: 456)
+        XCTAssertEqual(TimeInterval(ts: ts2), 5_000_000_000.000000456, accuracy: 1 / Double(NSEC_PER_SEC))
+        
+        let ts3 = timespec(tv_sec: 123, tv_nsec: 990_000_000)
+        XCTAssertEqual(TimeInterval(ts: ts3), 123.990000000, accuracy: 1 / Double(NSEC_PER_SEC))
+    }
+    
+    func test_Date_fromTimespec() {
+        let ts = timespec(tv_sec: 123, tv_nsec: 456)
+        XCTAssertEqual(Date(ts: ts).timeIntervalSince1970, 123.000000456, accuracy: 100 / Double(NSEC_PER_SEC))
+        
+        let ts2 = timespec(tv_sec: 5_000_000_000, tv_nsec: 456)
+        XCTAssertEqual(Date(ts: ts2).timeIntervalSince1970, 5_000_000_000.000000456, accuracy: 100 / Double(NSEC_PER_SEC))
+        
+        let ts3 = timespec(tv_sec: 123, tv_nsec: 990_000_000)
+        XCTAssertEqual(Date(ts: ts3).timeIntervalSince1970, 123.990000000, accuracy: 100 / Double(NSEC_PER_SEC))
+    }
 }
