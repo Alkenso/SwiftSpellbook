@@ -24,7 +24,7 @@ class PropertyWrapperTests: XCTestCase {
         }
         let data = try JSONEncoder().encode(Test())
         let string = try String(data: data, encoding: .utf8).get()
-        XCTAssertEqual(string, "{\"value\":123}")
+        XCTAssertEqual(string, #"{"value":123}"#)
         
         XCTAssertEqual(try JSONDecoder().decode(Test.self, from: data).value, 123)
     }
@@ -35,8 +35,19 @@ class PropertyWrapperTests: XCTestCase {
         }
         let data = try JSONEncoder().encode(Test())
         let string = try String(data: data, encoding: .utf8).get()
-        XCTAssertEqual(string, "{\"value\":123}")
+        XCTAssertEqual(string, #"{"value":123}"#)
         
         XCTAssertEqual(try JSONDecoder().decode(Test.self, from: data).value, 123)
+    }
+    
+    func test_Indirect_codable_optional() throws {
+        struct Test: Codable {
+            @Indirect var value: Int?
+        }
+        let jsonValue = "{}"
+        XCTAssertEqual(try JSONDecoder().decode(Test.self, from: Data(jsonValue.utf8)).value, nil)
+        
+        let jsonArray = #"[{},{},{}]"#
+        XCTAssertEqual(try JSONDecoder().decode([Test].self, from: Data(jsonArray.utf8)).count, 3)
     }
 }

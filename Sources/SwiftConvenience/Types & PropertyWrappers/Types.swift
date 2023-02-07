@@ -177,5 +177,16 @@ extension PropertyWrapperDecodable {
     }
 }
 
+extension KeyedDecodingContainer {
+    public func decode<T: ExpressibleByNilLiteral, Wrapper: PropertyWrapperDecodable>(
+        _ type: Wrapper.Type, forKey key: K
+    ) throws -> Wrapper where Wrapper.T == T {
+        if let value = try self.decodeIfPresent(type, forKey: key) {
+            return value
+        }
+        return Wrapper(wrappedValue: nil)
+    }
+}
+
 /// Makes `@propertyWrapper` with Codable Value to encode/decode wrappedValue directly with coder.
 public typealias PropertyWrapperCodable = Codable & PropertyWrapperEncodable & PropertyWrapperDecodable
