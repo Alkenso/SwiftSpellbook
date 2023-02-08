@@ -46,8 +46,10 @@ class PropertyWrapperTests: XCTestCase {
         }
         let jsonValue = "{}"
         XCTAssertEqual(try JSONDecoder().decode(Test.self, from: Data(jsonValue.utf8)).value, nil)
+        XCTAssertEqual(try JSONEncoder().encode(Test()), Data(jsonValue.utf8))
         
         let jsonArray = #"[{},{},{}]"#
         XCTAssertEqual(try JSONDecoder().decode([Test].self, from: Data(jsonArray.utf8)).count, 3)
+        XCTAssertEqual(try JSONEncoder().encode([Test](repeating: Test(), count: 3)), Data(jsonArray.utf8))
     }
 }

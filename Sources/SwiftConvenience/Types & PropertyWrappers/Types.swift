@@ -165,6 +165,14 @@ extension PropertyWrapperEncodable {
     }
 }
 
+extension KeyedEncodingContainer {
+    public mutating func encode<T, Wrapper: PropertyWrapperEncodable>(
+        _ value: Wrapper, forKey key: Key
+    ) throws where Wrapper.T == T? {
+        try encodeIfPresent(value.wrappedValue, forKey: key)
+    }
+}
+
 /// Makes `@propertyWrapper` with Decodable Value to decode wrappedValue directly with decoder.
 public protocol PropertyWrapperDecodable: Decodable {
     associatedtype T: Decodable
