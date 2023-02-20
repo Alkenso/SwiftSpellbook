@@ -98,6 +98,26 @@ extension Array {
         guard !isEmpty else { return nil }
         return removeFirst()
     }
+    
+    /// Removes the all elements from the array and returns them.
+    public mutating func popAll(keepingCapacity: Bool = false) -> [Element] {
+        guard !isEmpty else { return [] }
+        let removed = self
+        removeAll(keepingCapacity: keepingCapacity)
+        return removed
+    }
+    
+    /// Removes the all elements from the array and returns them.
+    public mutating func popAll(where: (Element) -> Bool) -> [Element] {
+        guard !isEmpty else { return [] }
+        var removed: [Element] = []
+        for (offset, element) in enumerated().reversed() {
+            if `where`(element) {
+                removed.append(remove(at: offset))
+            }
+        }
+        return removed.reversed()
+    }
 }
 
 // MARK: - Collection

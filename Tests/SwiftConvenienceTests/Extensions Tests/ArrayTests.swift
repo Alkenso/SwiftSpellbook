@@ -33,4 +33,22 @@ class ArrayTests: XCTestCase {
         XCTAssertEqual(arr.popFirst(), nil)
         XCTAssertEqual(arr, [])
     }
+    
+    func test_subscript_popAll() {
+        var arr = [1, 2]
+        XCTAssertEqual(arr.popAll(), [1, 2])
+        XCTAssertEqual(arr, [])
+    }
+    
+    func test_subscript_popAll_where() {
+        var arr = [1, 2, 3, 4]
+        XCTAssertEqual(arr.popAll { $0 < 3 }, [1, 2])
+        XCTAssertEqual(arr, [3, 4])
+        
+        XCTAssertEqual(arr.popAll { _ in false }, [])
+        XCTAssertEqual(arr, [3, 4])
+        
+        XCTAssertEqual(arr.popAll { _ in true }, [3, 4])
+        XCTAssertEqual(arr, [])
+    }
 }
