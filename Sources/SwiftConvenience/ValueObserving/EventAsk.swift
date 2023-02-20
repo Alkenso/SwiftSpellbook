@@ -30,8 +30,8 @@ public class EventAskEx<Input, Transformed, Output> {
     public typealias AsyncTransform = (Input, @escaping (Transformed) -> Void) -> Void
     public typealias SyncTransform = (Input) -> Transformed
     
-    public init(transform: @escaping ([Transformed]) -> Output) {
-        _combine = transform
+    public init(combine: @escaping ([Transformed]) -> Output) {
+        _combine = combine
     }
     
     public convenience init() where Output == [Transformed] {
