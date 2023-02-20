@@ -24,12 +24,14 @@ let package = Package(
             dependencies: ["SwiftConvenienceObjC"],
             linkerSettings: [
                 .linkedLibrary("bsm", .when(platforms: [.macOS])),
-                .linkedLibrary("c++"),
             ]
         ),
         .target(
             name: "SwiftConvenienceObjC",
-            publicHeadersPath: "."
+            publicHeadersPath: ".",
+            linkerSettings: [
+                .linkedLibrary("c++"),
+            ]
         ),
         .target(
             name: "SwiftConvenienceTestUtils",
