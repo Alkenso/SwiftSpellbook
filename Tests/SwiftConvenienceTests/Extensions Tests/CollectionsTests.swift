@@ -52,3 +52,23 @@ class ArrayTests: XCTestCase {
         XCTAssertEqual(arr, [])
     }
 }
+
+class DictionaryTests: XCTestCase {
+    func test_subscript_popAll() {
+        var dict = [1: "q", 2: "w"]
+        XCTAssertEqual(dict.popAll(), [1: "q", 2: "w"])
+        XCTAssertEqual(dict, [:])
+    }
+    
+    func test_subscript_popAll_where() {
+        var dict = [1: "q", 2: "w", 3: "e", 4: "r"]
+        XCTAssertEqual(dict.popAll { $0.key == 1 || $0.value == "w" }, [1: "q", 2: "w"])
+        XCTAssertEqual(dict, [3: "e", 4: "r"])
+        
+        XCTAssertEqual(dict.popAll { _ in false }, [:])
+        XCTAssertEqual(dict, [3: "e", 4: "r"])
+        
+        XCTAssertEqual(dict.popAll { _ in true }, [3: "e", 4: "r"])
+        XCTAssertEqual(dict, [:])
+    }
+}

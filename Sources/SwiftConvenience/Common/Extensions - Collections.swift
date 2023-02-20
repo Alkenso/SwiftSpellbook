@@ -71,6 +71,29 @@ extension Dictionary {
     }
 }
 
+extension Dictionary {
+    /// Removes the all elements from the array and returns them.
+    public mutating func popAll(keepingCapacity: Bool = false) -> Self {
+        guard !isEmpty else { return [:] }
+        let removed = self
+        removeAll(keepingCapacity: keepingCapacity)
+        return removed
+    }
+    
+    /// Removes the all elements from the array and returns them.
+    public mutating func popAll(where: (Element) -> Bool) -> Self {
+        guard !isEmpty else { return [:] }
+        var removed: [Key: Value] = [:]
+        for element in self {
+            if `where`(element) {
+                removeValue(forKey: element.key)
+                removed[element.key] = element.value
+            }
+        }
+        return removed
+    }
+}
+
 // MARK: - Array
 
 extension Array {
@@ -100,7 +123,7 @@ extension Array {
     }
     
     /// Removes the all elements from the array and returns them.
-    public mutating func popAll(keepingCapacity: Bool = false) -> [Element] {
+    public mutating func popAll(keepingCapacity: Bool = false) -> Self {
         guard !isEmpty else { return [] }
         let removed = self
         removeAll(keepingCapacity: keepingCapacity)
@@ -108,7 +131,7 @@ extension Array {
     }
     
     /// Removes the all elements from the array and returns them.
-    public mutating func popAll(where: (Element) -> Bool) -> [Element] {
+    public mutating func popAll(where: (Element) -> Bool) -> Self {
         guard !isEmpty else { return [] }
         var removed: [Element] = []
         for (offset, element) in enumerated().reversed() {
