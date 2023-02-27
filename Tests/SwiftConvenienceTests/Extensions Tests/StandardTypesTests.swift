@@ -14,6 +14,27 @@ class StandardTypesExtensionsTests: XCTestCase {
         XCTAssertNotNil(unwrappedNil as? CommonError)
     }
     
+    func test_Error_xpcCompatible() {
+        let compatibleError = NSError(domain: "test", code: 1, userInfo: [
+            "compatible_key": "compatible_value",
+            "compatible_key2": ["value1", "value2"],
+        ])
+        // No conversion.
+        XCTAssertTrue(compatibleError === (compatibleError.xpcCompatible() as NSError))
+        
+        struct SwiftType {}
+        let error = NSError(domain: "test", code: 1, userInfo: [
+            "compatible_key": "compatible_value",
+            "incompatible_key": SwiftType(),
+            "maybe_incompatible_key": UUID(),
+        ])
+        
+        XCTAssertThrowsError(try NSKeyedArchiver.archivedData(withRootObject: error, requiringSecureCoding: true))
+        
+        let xpcCompatible = error.xpcCompatible()
+        XCTAssertNoThrow(try NSKeyedArchiver.archivedData(withRootObject: xpcCompatible, requiringSecureCoding: true))
+    }
+    
     func test_Result_success_failure() {
         let resultWithValue: Result<Bool, Error> = .success(true)
         XCTAssertEqual(resultWithValue.success, true)
@@ -22,6 +43,19 @@ class StandardTypesExtensionsTests: XCTestCase {
         let resultWithError: Result<Bool, Error> = .failure(TestError())
         XCTAssertNil(resultWithError.success)
         XCTAssertNotNil(resultWithError.failure)
+    }
+    
+    func test_Result_initSuccessFailure() {
+        XCTAssertEqual(Result<Int, Error>(success: 10, failure: nil).success, 10)
+        XCTAssertNotNil(Result<Int, Error>(success: nil, failure: TestError()).failure)
+        XCTAssertNotNil(Result<Int, Error>(success: nil, failure: nil).failure)
+        
+        XCTAssertEqual(Result<Int, Error>(success: 10, failure: TestError()).success, 10)
+        
+        //  Special case when Success == Optional
+        XCTAssertEqual(Result<Int?, Error>(success: nil, failure: nil).success, nil)
+        XCTAssertEqual(Result<Int?, Error>(success: nil, failure: TestError()).success, nil)
+        XCTAssertNotNil(Result<Int?, Error>(success: nil as Int??, failure: TestError()).failure)
     }
     
     func test_Data_PODTypes_toData() {
@@ -80,40 +114,6 @@ class StandardTypesExtensionsTests: XCTestCase {
             Data().hexString,
             ""
         )
-    }
-    
-    func test_Result_initSuccessFailure() {
-        XCTAssertEqual(Result<Int, Error>(success: 10, failure: nil).success, 10)
-        XCTAssertNotNil(Result<Int, Error>(success: nil, failure: TestError()).failure)
-        XCTAssertNotNil(Result<Int, Error>(success: nil, failure: nil).failure)
-        
-        XCTAssertEqual(Result<Int, Error>(success: 10, failure: TestError()).success, 10)
-        
-        //  Special case when Success == Optional
-        XCTAssertEqual(Result<Int?, Error>(success: nil, failure: nil).success, nil)
-        XCTAssertEqual(Result<Int?, Error>(success: nil, failure: TestError()).success, nil)
-        XCTAssertNotNil(Result<Int?, Error>(success: nil as Int??, failure: TestError()).failure)
-    }
-    
-    func test_Error_xpcCompatible() {
-        let compatibleError = NSError(domain: "test", code: 1, userInfo: [
-            "compatible_key": "compatible_value",
-            "compatible_key2": ["value1", "value2"],
-        ])
-        // No conversion.
-        XCTAssertTrue(compatibleError === (compatibleError.xpcCompatible() as NSError))
-        
-        struct SwiftType {}
-        let error = NSError(domain: "test", code: 1, userInfo: [
-            "compatible_key": "compatible_value",
-            "incompatible_key": SwiftType(),
-            "maybe_incompatible_key": UUID(),
-        ])
-        
-        XCTAssertThrowsError(try NSKeyedArchiver.archivedData(withRootObject: error, requiringSecureCoding: true))
-        
-        let xpcCompatible = error.xpcCompatible()
-        XCTAssertNoThrow(try NSKeyedArchiver.archivedData(withRootObject: xpcCompatible, requiringSecureCoding: true))
     }
     
     func test_Comparable_clamped() {
@@ -182,5 +182,20 @@ class StandardTypesExtensionsTests: XCTestCase {
         
         let ts3 = timespec(tv_sec: 123, tv_nsec: 990_000_000)
         XCTAssertEqual(Date(ts: ts3).timeIntervalSince1970, 123.990000000, accuracy: 100 / Double(NSEC_PER_SEC))
+    }
+    
+    func test_Optional_default() {
+        var value: Int? = nil
+        XCTAssertEqual(value[default: 10], 10)
+        
+        value[default: 10] = 5
+        XCTAssertEqual(value[default: 10], 5)
+        
+        struct Stru {
+            var value: Int?
+        }
+        var dict: [String: Stru] = ["key": Stru()]
+        dict["key"]?.value[default: 10] += 1
+        XCTAssertEqual(dict["key"]?.value, 11)
     }
 }

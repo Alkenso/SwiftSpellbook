@@ -308,6 +308,35 @@ extension Optional where Wrapped: Error {
     }
 }
 
+extension Optional {
+    /// Provides convenient way of mutating optional values.
+    ///
+    /// ```
+    /// // Case 1
+    /// var value: Int? = nil
+    /// value[default: 10] += 1 // value contains `11`
+    ///
+    /// // Case 2
+    /// struct Stru {
+    ///     var value: Int?
+    /// }
+    /// var dict: [String: Stru] = ["key": Stru()]
+    /// dict["key"]?.value[default: 10] += 1 // ["key": Stru(value: 11)]
+    /// ```
+    public subscript(default defaultValue: @autoclosure () -> Wrapped) -> Wrapped {
+        get {
+            if let value = self {
+                return value
+            } else {
+                return defaultValue()
+            }
+        }
+        set {
+            self = newValue
+        }
+    }
+}
+
 // MARK: - TimeInterval & Date
 
 extension TimeInterval {
