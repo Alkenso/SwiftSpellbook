@@ -127,7 +127,9 @@ extension String {
     }
     
     public var deletingPathExtension: String { (self as NSString).deletingPathExtension }
-    
+}
+
+extension StringProtocol {
     /// Parse string consisted of key-value pairs.
     ///
     /// Example:
@@ -154,7 +156,7 @@ extension String {
         }
         
         let pairs = components(separatedBy: pairsSeparator)
-        return try pairs.map { try $0.parseKeyValuePair(separatedBy: keyValueSeparator) }
+        return try pairs.map { try $0.parseKeyValuePair(separator: keyValueSeparator) }
     }
     
     /// Parse key-value pair string.
@@ -168,9 +170,11 @@ extension String {
     ///
     /// - Parameters:
     ///     - separatedBy: separator used to split key from value.
+    ///     - allowSeparatorsInValue: if true, then it is legal for the value to contain separator.
+    ///     For example, "key=value=1" will be parsed as "key" + "value=1".
     /// - returns: key-value pair.
     /// - throws: error if string is not valid key-value pair string or if `separator` is empty.
-    public func parseKeyValuePair(separatedBy separator: String) throws -> KeyValue<String, String> {
+    public func parseKeyValuePair(separator: String, allowSeparatorsInValue: Bool = false) throws -> KeyValue<String, String> {
         guard !separator.isEmpty else {
             throw CommonError.invalidArgument(
                 arg: "keyValueSeparator", invalidValue: separator, description: "empty separator"
@@ -178,14 +182,14 @@ extension String {
         }
         
         let keyValue = components(separatedBy: separator)
-        guard keyValue.count == 2 else {
+        guard keyValue.count == 2 || (2 < keyValue.count && allowSeparatorsInValue) else {
             throw CommonError.invalidArgument(
                 arg: "key-value pair", invalidValue: self,
                 description: "not a key-value pair separated by '\(separator)'"
             )
         }
         
-        return KeyValue(keyValue[0], keyValue[1])
+        return KeyValue(keyValue[0], keyValue.dropFirst().joined(separator: separator))
     }
 }
 

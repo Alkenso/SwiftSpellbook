@@ -144,11 +144,17 @@ class StandardTypesExtensionsTests: XCTestCase {
         XCTAssertEqual(UUID.zero.uuidString, "00000000-0000-0000-0000-000000000000")
     }
     
-    func test_String_parseKeyValuePairs() throws {
-        XCTAssertThrowsError(try "".parseKeyValuePair(separatedBy: ""))
-        XCTAssertThrowsError(try "keyvalue".parseKeyValuePair(separatedBy: "="))
-        XCTAssertEqual(try "key=value".parseKeyValuePair(separatedBy: "="), KeyValue("key", "value"))
+    func test_String_parseKeyValuePair() throws {
+        XCTAssertThrowsError(try "".parseKeyValuePair(separator: ""))
+        XCTAssertThrowsError(try "keyvalue".parseKeyValuePair(separator: "="))
+        XCTAssertEqual(try "key=value".parseKeyValuePair(separator: "="), KeyValue("key", "value"))
         
+        XCTAssertThrowsError(try "key=value=1".parseKeyValuePair(separator: "="))
+        XCTAssertEqual(try "key=value=1".parseKeyValuePair(separator: "=", allowSeparatorsInValue: true), KeyValue("key", "value=1"))
+        XCTAssertThrowsError(try "keyvalue".parseKeyValuePair(separator: "=", allowSeparatorsInValue: true))
+    }
+    
+    func test_String_parseKeyValuePairs() throws {
         XCTAssertThrowsError(try "".parseKeyValuePairs(keyValue: "", pairs: ""))
         XCTAssertThrowsError(try "".parseKeyValuePairs(keyValue: "=", pairs: ""))
         XCTAssertThrowsError(try "".parseKeyValuePairs(keyValue: "", pairs: "="))
