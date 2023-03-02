@@ -91,7 +91,7 @@ public extension UnsafeMutableRawPointer {
 
 public extension UnsafeMutableBufferPointer {
     func bzero() {
-        baseAddress?.bzero()
+        UnsafeMutableRawBufferPointer(self).bzero()
     }
 }
 
