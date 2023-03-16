@@ -20,8 +20,9 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-import Foundation
 @_implementationOnly import SwiftConvenienceObjC
+
+import Foundation
 
 /// Error-like wrapper around Objective-C `NSException` to make it Swift.Error compatible.
 public struct NSExceptionError: Error, @unchecked Sendable {

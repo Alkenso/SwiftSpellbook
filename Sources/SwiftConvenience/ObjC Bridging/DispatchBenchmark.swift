@@ -20,24 +20,15 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-#import <Foundation/Foundation.h>
-#import <TargetConditionals.h>
+@_implementationOnly import SwiftConvenienceObjC
 
-NS_ASSUME_NONNULL_BEGIN
+import Foundation
 
-@interface SwiftConvenienceObjC : NSObject
-
-+ (nullable NSException *)NSException_catching:(void(NS_NOESCAPE ^)(void))block;
-+ (nullable NSString *)CppException_catching:(void(NS_NOESCAPE ^)(void))block;
-
-+ (void) __attribute__((noreturn)) throwCppRuntineErrorException:(NSString *)reason;
-
-#if TARGET_OS_OSX == 1
-+ (audit_token_t)NSXPCConnection_auditToken:(NSXPCConnection *)connection;
-#endif
-
-@end
-
-extern uint64_t dispatch_benchmark(size_t count, void (NS_NOESCAPE ^block)(void));
-
-NS_ASSUME_NONNULL_END
+/// Executes the given block multiple times according to the count variable
+/// and then returns the average number of nanoseconds per execution.
+/// This function is for debugging and performance analysis work.
+/// For the best results, pass a high `count` value.
+/// Calls `dispatch_benchmark` under the hood.
+public func dispatchBenchmark(count: Int = 1, measure: () -> Void) -> UInt64 {
+    dispatch_benchmark(count, measure)
+}
