@@ -1,6 +1,6 @@
 //  MIT License
 //
-//  Copyright (c) 2022 Alkenso (Vladimir Vashurkin)
+//  Copyright (c) 2023 Alkenso (Vladimir Vashurkin)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -22,32 +22,8 @@
 
 import Foundation
 
-extension NSLocking {
-    public func withLock<R>(_ body: () throws -> R) rethrows -> R {
-        lock()
-        defer { unlock() }
-        return try body()
-    }
-}
-
-extension os_unfair_lock {
-    public mutating func withLock<R>(_ body: () throws -> R) rethrows -> R {
-        os_unfair_lock_lock(&self)
-        defer { os_unfair_lock_unlock(&self) }
-        return try body()
-    }
-}
-
-extension pthread_rwlock_t {
-    public mutating func withReadLock<R>(_ body: () throws -> R) rethrows -> R {
-        pthread_rwlock_rdlock(&self)
-        defer { pthread_rwlock_unlock(&self) }
-        return try body()
-    }
-    
-    public mutating func withWriteLock<R>(_ body: () throws -> R) rethrows -> R {
-        pthread_rwlock_wrlock(&self)
-        defer { pthread_rwlock_unlock(&self) }
-        return try body()
-    }
+public func updateSwap<T>(_ a: inout T, _ b: T) -> T {
+    let copy = a
+    a = b
+    return copy
 }

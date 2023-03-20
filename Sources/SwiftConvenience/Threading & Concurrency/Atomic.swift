@@ -27,19 +27,38 @@ import Foundation
 /// For reacher thread-safe functionality consider using 'Synchronized' class.
 @propertyWrapper
 public final class Atomic<Value> {
-    private var storage: Synchronized<Value>
+    public enum Synchronization {
+        case unfair
+        case rwlock
+        case queue(SynchronizationType)
+    }
     
-    public init(wrappedValue: Value, synchronization: SynchronizationType = .serial) {
-        storage = .init(wrappedValue, synchronization: synchronization)
+    private let storage: Impl<Value>
+    
+    public init(wrappedValue: Value, _ synchronization: Synchronization = .unfair) {
+        switch synchronization {
+        case .unfair:
+            storage = .unfair(.init(lock: os_unfair_lock(), value: wrappedValue))
+        case .rwlock:
+            storage = .rwlock(.init(lock: pthread_rwlock_t(), value: wrappedValue))
+        case .queue(let type):
+            storage = .queue(.init(wrappedValue, synchronization: type))
+        }
     }
     
     public var wrappedValue: Value {
-        get { storage.read { $0 } }
+        get { storage.read() }
         set { storage.write { $0 = newValue } }
     }
     
+    public var projectedValue: Atomic<Value> { self }
+    
     public func exchange(_ value: Value) -> Value {
-        storage.exchange(value)
+        storage.write { updateSwap(&$0, value) }
+    }
+    
+    public func modify<R>(_ body: (inout  Value) throws -> R) rethrows -> R {
+        try storage.write(body)
     }
     
     public func initialize<T>(_ initialize: @autoclosure () -> T) -> T where Value == T? {
@@ -51,6 +70,46 @@ public final class Atomic<Value> {
                 $0 = newValue
                 return newValue
             }
+        }
+    }
+}
+
+private enum Impl<Value> {
+    case unfair(LockAndValue<os_unfair_lock, Value>)
+    case rwlock(LockAndValue<pthread_rwlock_t, Value>)
+    case queue(Synchronized<Value>)
+}
+
+private class LockAndValue<Lock, Value> {
+    var lock: Lock
+    var value: Value
+    
+    init(lock: Lock, value: Value) {
+        self.lock = lock
+        self.value = value
+    }
+}
+
+extension Impl {
+    func read() -> Value {
+        switch self {
+        case .unfair(let instance):
+            return instance.lock.withLock { return instance.value }
+        case .rwlock(let instance):
+            return instance.lock.withReadLock { return instance.value }
+        case .queue(let store):
+            return store.read()
+        }
+    }
+    
+    func write<R>(_ writer: (inout Value) throws -> R) rethrows -> R {
+        switch self {
+        case .unfair(let instance):
+            return try instance.lock.withLock { try writer(&instance.value) }
+        case .rwlock(let instance):
+            return try instance.lock.withWriteLock { try writer(&instance.value) }
+        case .queue(let store):
+            return try store.write(writer)
         }
     }
 }
