@@ -62,7 +62,7 @@ extension Sysctl {
         // The algorithm here was picked from the Darwin source for `ps`.
         // <https://opensource.apple.com/source/adv_cmds/adv_cmds-176/ps/print.c.auto.html>
         
-        var remaining = data
+        var remaining = data[...]
         guard remaining.count >= 6 else {
             throw CommonError.unexpected("sysctl (KERN_PROCARGS2) for pid \(pid) failed: empty executable and args")
         }
