@@ -45,11 +45,11 @@ extension Comparable {
 }
 
 public enum ComparisonRelation: String, Hashable, CaseIterable {
-    case equal = "=="
     case lessThan = "<"
     case lessThanOrEqual = "<="
-    case greaterThan = ">"
+    case equal = "=="
     case greaterThanOrEqual = ">="
+    case greaterThan = ">"
 }
 
 extension Comparable {
