@@ -132,6 +132,28 @@ class StandardTypesExtensionsTests: XCTestCase {
         XCTAssertEqual(1.1.clamped(to: 0 ... 1.0), 1)
     }
     
+    func test_Comparable_relation() {
+        XCTAssertFalse(10.compare(to: 9, relation: .equal))
+        XCTAssertTrue(10.compare(to: 10, relation: .equal))
+        XCTAssertFalse(10.compare(to: 11, relation: .equal))
+        
+        XCTAssertFalse(10.compare(to: 9, relation: .lessThan))
+        XCTAssertFalse(10.compare(to: 10, relation: .lessThan))
+        XCTAssertTrue(10.compare(to: 11, relation: .lessThan))
+        
+        XCTAssertFalse(10.compare(to: 9, relation: .lessThanOrEqual))
+        XCTAssertTrue(10.compare(to: 10, relation: .lessThanOrEqual))
+        XCTAssertTrue(10.compare(to: 11, relation: .lessThanOrEqual))
+        
+        XCTAssertTrue(10.compare(to: 9, relation: .greaterThan))
+        XCTAssertFalse(10.compare(to: 10, relation: .greaterThan))
+        XCTAssertFalse(10.compare(to: 11, relation: .greaterThan))
+        
+        XCTAssertTrue(10.compare(to: 9, relation: .greaterThanOrEqual))
+        XCTAssertTrue(10.compare(to: 10, relation: .greaterThanOrEqual))
+        XCTAssertFalse(10.compare(to: 11, relation: .greaterThanOrEqual))
+    }
+    
     func test_URL_ensureFileURL() throws {
         XCTAssertNoThrow(try URL(fileURLWithPath: "relative").ensureFileURL())
         XCTAssertNoThrow(try URL(fileURLWithPath: "/absolute").ensureFileURL())

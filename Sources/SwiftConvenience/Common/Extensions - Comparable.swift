@@ -43,3 +43,28 @@ extension Comparable {
         return min(max(self, limits.lowerBound), limits.upperBound)
     }
 }
+
+public enum ComparisonRelation: String, Hashable, CaseIterable {
+    case equal = "=="
+    case lessThan = "<"
+    case lessThanOrEqual = "<="
+    case greaterThan = ">"
+    case greaterThanOrEqual = ">="
+}
+
+extension Comparable {
+    public func compare(to rhs: Self, relation: ComparisonRelation) -> Bool {
+        switch relation {
+        case .equal:
+            return self == rhs
+        case .lessThan:
+            return self < rhs
+        case .lessThanOrEqual:
+            return self <= rhs
+        case .greaterThan:
+            return self > rhs
+        case .greaterThanOrEqual:
+            return self >= rhs
+        }
+    }
+}
