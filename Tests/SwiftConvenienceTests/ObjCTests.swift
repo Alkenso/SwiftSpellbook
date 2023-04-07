@@ -37,6 +37,6 @@ class ObjCTests: XCTestCase {
     }
     
     func test_dispatchBenchbark() {
-        XCTAssertGreaterThan(dispatchBenchmark(count: 10, measure: { var k = 0; k += 1 }), 0)
+        XCTAssertGreaterThan(dispatchBenchmark(count: 10, measure: { var s = ""; s += "test_string" }), 0)
     }
 }
