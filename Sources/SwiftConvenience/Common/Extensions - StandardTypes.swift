@@ -357,3 +357,16 @@ extension Date {
         self.init(timeIntervalSince1970: TimeInterval(ts: ts))
     }
 }
+
+extension Calendar {
+    public static let iso8601UTC: Calendar = {
+        var calendar = Calendar(identifier: .iso8601)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        return calendar
+    }()
+    
+    /// The last moment of the given date. 1ms less than next day start.
+    public func endOfDay(for date: Date) -> Date {
+        startOfDay(for: date).addingTimeInterval(24 * 60 * 60 - 0.001)
+    }
+}

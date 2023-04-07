@@ -212,6 +212,22 @@ class StandardTypesExtensionsTests: XCTestCase {
         XCTAssertEqual(Date(ts: ts3).timeIntervalSince1970, 123.990000000, accuracy: 100 / Double(NSEC_PER_SEC))
     }
     
+    func test_Calendar_endOfDay() {
+        // GMT: Friday, 7 April 2023 y., 10:46:19
+        let date = Date(timeIntervalSince1970: 1680864379)
+        let dayEnd = Calendar.iso8601UTC.endOfDay(for: date)
+        
+        // GMT: Friday, 7 April 2023 y., 23:59:59.999
+        XCTAssertEqual(
+            dayEnd.timeIntervalSince1970,
+            Date(timeIntervalSince1970: 1680911999.999).timeIntervalSince1970,
+            accuracy: 0.0001
+        )
+        
+        // GMT: Saturday, 8 April 2023 y., 00:00:00
+        XCTAssertLessThan(dayEnd, Date(timeIntervalSince1970: 1680912000))
+    }
+    
     func test_Optional_default() {
         var value: Int? = nil
         XCTAssertEqual(value[default: 10], 10)
