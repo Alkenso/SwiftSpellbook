@@ -34,11 +34,11 @@ public struct SynchronousExecutor {
         self.timeout = timeout
     }
     
-    public func callAsFunction<R>(_ action: (@escaping (Result<R, Error>) -> Void) -> Void) throws -> R {
+    public func callAsFunction<R>(_ action: (@escaping (Result<R, Error>) -> Void) throws -> Void) throws -> R {
         @Atomic var result: Result<R, Error>!
         let group = DispatchGroup()
         group.enter()
-        action {
+        try action {
             result = $0
             group.leave()
         }
@@ -56,9 +56,9 @@ public struct SynchronousExecutor {
 }
 
 extension SynchronousExecutor {
-    public func callAsFunction(_ action: (@escaping (Error?) -> Void) -> Void) throws {
+    public func callAsFunction(_ action: (@escaping (Error?) -> Void) throws -> Void) throws {
         try callAsFunction { (reply: @escaping (Result<(), Error>) -> Void) in
-            action {
+            try action {
                 if let error = $0 {
                     reply(.failure(error))
                 } else {
@@ -68,9 +68,9 @@ extension SynchronousExecutor {
         }
     }
     
-    public func callAsFunction<T>(_ action: (@escaping (T?) -> Void) -> Void) throws -> T {
+    public func callAsFunction<T>(_ action: (@escaping (T?) -> Void) throws -> Void) throws -> T {
         try callAsFunction { (reply: @escaping (Result<T, Error>) -> Void) in
-            action { optionalValue in
+            try action { optionalValue in
                 reply(Result { try optionalValue.get() })
             }
         }
