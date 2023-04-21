@@ -191,3 +191,9 @@ extension ValueView {
         (get())?[keyPath: keyPath]
     }
 }
+
+extension ValueView {
+    public static func constant(_ value: Value) -> ValueView {
+        .init { value }
+    }
+}

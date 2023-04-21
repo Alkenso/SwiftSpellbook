@@ -60,6 +60,12 @@ extension Observable {
     }
 }
 
+extension Observable {
+    public static func constant(_ value: Value) -> Observable {
+        .init(valueRef: .constant(value)) { _, _ in .stub(()) }
+    }
+}
+
 @available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension Observable: ValueObservingPublisher {
     public typealias Output = (Value, Any?)
