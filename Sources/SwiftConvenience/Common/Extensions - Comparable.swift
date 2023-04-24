@@ -68,3 +68,13 @@ extension Comparable {
         }
     }
 }
+
+public protocol RawComparable: Comparable {
+    associatedtype RawValue
+}
+
+extension RawComparable where Self: RawRepresentable, Self.RawValue: Comparable {
+    public static func < (lhs: Self, rhs: Self) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
+}
