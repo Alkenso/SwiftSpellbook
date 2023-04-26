@@ -38,6 +38,22 @@ extension TimeInterval {
     }
 }
 
+extension Date {
+    public init?(machTime: UInt64) {
+        guard let machSeconds = TimeInterval(machTime: machTime) else { return nil }
+        self = ProcessInfo.processInfo.systemBootDate.addingTimeInterval(machSeconds)
+    }
+    
+    public var machTime: UInt64? {
+        guard let timebase = try? mach_timebase_info.system() else { return nil }
+        
+        let seconds = timeIntervalSince(ProcessInfo.processInfo.systemBootDate)
+        let nanos = seconds * TimeInterval(NSEC_PER_SEC)
+        let machTime =  nanos * TimeInterval(timebase.denom) / TimeInterval(timebase.numer)
+        return UInt64(machTime)
+    }
+}
+
 extension mach_timebase_info {
     public static func system() throws -> mach_timebase_info {
         var info = mach_timebase_info()
