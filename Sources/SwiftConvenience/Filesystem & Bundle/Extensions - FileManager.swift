@@ -57,6 +57,22 @@ extension FileManager {
         return exists
     }
     
+    /// Removes the file or directory at the specified URL only if it exists.
+    /// Just combination of `fileExists` and `removeItem`.
+    public func removeItemIfExists(at url: URL) throws {
+        if fileExists(at: url) {
+            try removeItem(at: url)
+        }
+    }
+    
+    /// Removes the file or directory at the specified path only if it exists.
+    /// Just combination of `fileExists` and `removeItem`.
+    public func removeItemIfExists(atPath path: String) throws {
+        if fileExists(atPath: path) {
+            try removeItem(atPath: path)
+        }
+    }
+    
     /// Copies contents of given directory to other directory.
     public func copyContents(ofDirectory src: URL, to target: URL, createTarget: Bool = false) throws {
         if !fileExists(at: target), createTarget {
