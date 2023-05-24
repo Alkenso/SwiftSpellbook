@@ -58,6 +58,33 @@ extension Change: Equatable where T: Equatable {}
 extension Change: Encodable where T: Encodable {}
 extension Change: Decodable where T: Decodable {}
 
+public struct ProgressValue {
+    public var current: Int
+    public var total: Int
+    
+    public init(current: Int, total: Int) {
+        self.current = current
+        self.total = total
+    }
+}
+
+extension ProgressValue {
+    public var unsafeRatio: Double { Double(current) / Double(total) }
+    public var ratio: Double { unsafeRatio.clamped(to: 0...1) }
+    
+    public mutating func increment(by value: Int = 1, unsafe: Bool = false) {
+        current += value
+        if !unsafe {
+            current = max(0, min(current, total))
+        }
+    }
+}
+
+extension ProgressValue: Hashable {}
+extension ProgressValue: Equatable {}
+extension ProgressValue: Encodable {}
+extension ProgressValue: Decodable {}
+
 public struct Pair<First, Second> {
     public var first: First
     public var second: Second
