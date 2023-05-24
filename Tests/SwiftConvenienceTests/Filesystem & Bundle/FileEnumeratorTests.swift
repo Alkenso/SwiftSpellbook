@@ -4,7 +4,7 @@ import SwiftConvenienceTestUtils
 import XCTest
 
 class FileEnumeratorTests: XCTestCase {
-    let tempDir = TestTemporaryDirectory(prefix: "MHT-Tests")
+    let tempDir = TestTemporaryDirectory(prefix: "SCTests")
     
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -27,8 +27,7 @@ class FileEnumeratorTests: XCTestCase {
         try expectedFiles.append(tempDir.createSubdirectory("subdir/nested"))
         try expectedFiles.append(tempDir.createFile("subdir/nested/file4"))
         
-        let enumeratedFiles = FileEnumerator(tempDir.url)
-            .reduce(into: [URL]()) { $0.append($1) }
+        let enumeratedFiles = Array(FileEnumerator(tempDir.url))
         XCTAssertEqual(
             Set(enumeratedFiles.map { $0.resolvingSymlinksInPath() }),
             Set(expectedFiles.map { $0.resolvingSymlinksInPath() })
@@ -44,8 +43,7 @@ class FileEnumeratorTests: XCTestCase {
         _ = try tempDir.createSubdirectory("subdir/nested")
         try expectedFiles.append(tempDir.createFile("subdir/nested/file4"))
         
-        let enumeratedFiles = FileEnumerator(types: [.regular], tempDir.url)
-            .reduce(into: [URL]()) { $0.append($1) }
+        let enumeratedFiles = Array(FileEnumerator(types: [.regular], tempDir.url))
         XCTAssertEqual(
             Set(enumeratedFiles.map { $0.resolvingSymlinksInPath() }),
             Set(expectedFiles.map { $0.resolvingSymlinksInPath() })
@@ -54,15 +52,27 @@ class FileEnumeratorTests: XCTestCase {
     
     func test_enumerateFiles_filter() throws {
         var expectedFiles = [tempDir.url]
-        _ = try tempDir.createFile("file1")
-        try expectedFiles.append(tempDir.createSubdirectory("subdir"))
-        _ = try tempDir.createFile("subdir/file3")
-        try expectedFiles.append(tempDir.createSubdirectory("subdir/nested"))
+        try expectedFiles.append(tempDir.createFile("file1"))
+        
+        _ = try tempDir.createSubdirectory("subdir")
+        try expectedFiles.append(tempDir.createSubdirectory("subdir/folder1"))
+        try expectedFiles.append(tempDir.createFile("subdir/file3"))
+        
+        _ = try tempDir.createSubdirectory("subdir/nested")
         _ = try tempDir.createFile("subdir/nested/file4")
         
         let enumerator = FileEnumerator(tempDir.url)
-        enumerator.filters.append(.types([.directory]))
-        let enumeratedFiles = enumerator.reduce(into: [URL]()) { $0.append($1) }
+        enumerator.locationFilter = {
+            switch $0.lastPathComponent {
+            case "subdir":
+                return .skip
+            case "nested":
+                return .skipRecursive
+            default:
+                return .proceed
+            }
+        }
+        let enumeratedFiles = Array(enumerator)
         XCTAssertEqual(
             Set(enumeratedFiles.map { $0.resolvingSymlinksInPath() }),
             Set(expectedFiles.map { $0.resolvingSymlinksInPath() })

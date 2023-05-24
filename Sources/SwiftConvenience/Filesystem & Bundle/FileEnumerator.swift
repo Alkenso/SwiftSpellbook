@@ -25,9 +25,15 @@ import Foundation
 /// Performs convenient enumeration of filesystem items at given location(s).
 public final class FileEnumerator {
     private var locations: [URL]
-    private var enumerator: NSEnumerator?
+    private var enumerator: FileManager.DirectoryEnumerator?
     
-    public var filters: [Filter] = []
+    /// If not empty, only specified URL types will be enumerated.
+    public var types: Set<URLFileResourceType> = []
+    
+    /// If set, the filter is applied to every URL while enumeration.
+    public var locationFilter: ((URL) -> FilterVerdict)?
+    
+    /// Forward flags to underlying `FileManager.DirectoryEnumerator`.
     public var options: FileManager.DirectoryEnumerationOptions = []
     
     /// Creates `FileEnumerator` that enumerates given locations recursively
@@ -36,9 +42,20 @@ public final class FileEnumerator {
     ///     - locations: Array of locations enumerated recursively
     public init(types: Set<URLFileResourceType> = [], locations: [URL]) {
         self.locations = locations.reversed()
-        if !types.isEmpty {
-            filters.append(.types(types))
-        }
+        self.types = types
+    }
+}
+
+extension FileEnumerator {
+    public enum FilterVerdict {
+        /// URL is included into results.
+        case proceed
+        
+        /// URL is excluded from results.
+        case skip
+        
+        /// URL and all descendants are excluded from results.
+        case skipRecursive
     }
 }
 
@@ -68,22 +85,32 @@ extension FileEnumerator {
     }
 }
 
-extension FileEnumerator {
-    public enum Filter {
-        case function(_ isIncluded: (URL) -> Bool)
-        case types(Set<URLFileResourceType>)
-    }
-}
-
 extension FileEnumerator: Sequence, IteratorProtocol {
     public func next() -> URL? {
-        guard !filters.isEmpty else { return nextUnfiltered() }
-        
         while let next = nextUnfiltered() {
-            let excluded = filters.contains(where: { !$0(isIncluded: next) })
-            if !excluded {
-                return next
+            let type = try? next.resourceValues(forKeys: [.fileResourceTypeKey]).fileResourceType
+            var filterVerdict: FilterVerdict?
+            
+            //  If directory is not interested, skip whole content.
+            if type == .directory {
+                filterVerdict = locationFilter?(next)
+                if filterVerdict == .skipRecursive {
+                    enumerator?.skipDescendants()
+                }
             }
+            
+            //  Check if `next` is interested according to its type.
+            if !types.isEmpty {
+                guard let type else { continue }
+                guard types.contains(type) else { continue }
+            }
+            
+            //  Check if `next` is interested according to its URL.
+            if let verdict = filterVerdict ?? locationFilter?(next), verdict != .proceed {
+                continue
+            }
+            
+            return next
         }
         
         return nil
@@ -108,21 +135,9 @@ extension FileEnumerator: Sequence, IteratorProtocol {
         
         //  If location is directory, update enumerator.
         if isDirectory {
-            enumerator = FileManager.default.enumerator(at: nextLocation, includingPropertiesForKeys: nil, options: options)
+            enumerator = FileManager.default.enumerator(at: nextLocation, includingPropertiesForKeys: [.fileResourceTypeKey], options: options)
         }
         
         return nextLocation
-    }
-}
-
-private extension FileEnumerator.Filter {
-    func callAsFunction(isIncluded url: URL) -> Bool {
-        switch self {
-        case .function(let isIncluded):
-            return isIncluded(url)
-        case .types(let types):
-            guard let fileType = try? FileManager.default.statItem(at: url).fileType else { return false }
-            return types.contains(fileType)
-        }
     }
 }
