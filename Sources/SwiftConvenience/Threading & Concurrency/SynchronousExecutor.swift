@@ -68,10 +68,10 @@ extension SynchronousExecutor {
         }
     }
     
-    public func callAsFunction<T>(_ action: (@escaping (T?) -> Void) throws -> Void) throws -> T {
+    public func callAsFunction<T>(_ action: (@escaping (T) -> Void) throws -> Void) throws -> T {
         try callAsFunction { (reply: @escaping (Result<T, Error>) -> Void) in
-            try action { optionalValue in
-                reply(Result { try optionalValue.get() })
+            try action {
+                reply(.success($0))
             }
         }
     }

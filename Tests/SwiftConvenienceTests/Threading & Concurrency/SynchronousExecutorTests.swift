@@ -14,7 +14,7 @@ class SynchronousExecutorTests: XCTestCase {
         let dummyError = Dummy<Int>(value: nil, timeout: 0.05)
         XCTAssertThrowsError(try infiniteExecutor(dummyError.error))
         XCTAssertThrowsError(try infiniteExecutor(dummyError.resultValue))
-        XCTAssertThrowsError(try infiniteExecutor(dummyError.optionalValue))
+        XCTAssertEqual(try infiniteExecutor(dummyError.optionalValue), nil)
     }
     
     func test_timeout() throws {
