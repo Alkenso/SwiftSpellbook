@@ -47,4 +47,10 @@ extension ObjectBuilder {
         body(&copy, value)
         return copy
     }
+    
+    public func update(body: (inout Self) -> Void) -> Self {
+        var copy = self
+        body(&copy)
+        return copy
+    }
 }
