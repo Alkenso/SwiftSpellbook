@@ -38,6 +38,4 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-extern uint64_t dispatch_benchmark(size_t count, void (NS_NOESCAPE ^block)(void));
-
 NS_ASSUME_NONNULL_END

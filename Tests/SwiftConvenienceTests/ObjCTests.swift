@@ -35,8 +35,4 @@ class ObjCTests: XCTestCase {
         XCTAssertEqual(nsEx?.exception.reason, objcExeption.reason)
         XCTAssertEqual(stdEx?.what, cppException.what)
     }
-    
-    func test_dispatchBenchbark() {
-        XCTAssertGreaterThan(dispatchBenchmark(count: 10, measure: { var s = ""; s += "test_string" }), 0)
-    }
 }
