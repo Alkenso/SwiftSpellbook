@@ -201,11 +201,38 @@ extension NSError.TryBuilder where Tag == NSError.OSStatusTryTag {
         try osError(status, underlying: error)?.throw()
     }
     
+    public func `try`<T>(
+        body: (UnsafeMutablePointer<Unmanaged<CFError>?>?) -> T?
+    ) throws -> T {
+        var error: Unmanaged<CFError>?
+        let result = body(&error)
+        
+        try osError(error?.takeRetainedValue())?.throw()
+        
+        return try result.get()
+    }
+    
+    public func `try`<T>(
+        body: (UnsafeMutablePointer<CFError?>?) -> T?
+    ) throws -> T {
+        var error: CFError?
+        let result = body(&error)
+        
+        try osError(error)?.throw()
+        
+        return try result.get()
+    }
+    
     private func osError(_ status: OSStatus, underlying: Error? = nil) -> NSError? {
         guard status != noErr else { return nil }
         var error = NSError(osStatus: status)
         underlying.flatMap { error = error.appendingUnderlyingError($0) }
         return error.withUserInfo(userInfo)
+    }
+    
+    private func osError(_ error: Error?) -> NSError? {
+        guard let error else { return nil }
+        return osError(OSStatus((error as NSError).code), underlying: error)
     }
 }
 
