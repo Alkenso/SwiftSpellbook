@@ -128,7 +128,7 @@ extension DictionaryCodingError: CustomNSError {
         userInfo[NSDebugDescriptionErrorKey] = fullDescription
         
         underlyingError.flatMap { userInfo[NSUnderlyingErrorKey] = $0 }
-        relatedObject.flatMap { userInfo[NSRelatedObjectErrorKey] = $0 }
+        relatedObject.flatMap { userInfo[SCRelatedObjectErrorKey] = $0 }
         
         return userInfo
     }

@@ -23,7 +23,10 @@
 import Foundation
 
 /// Custom Error key which value is object related to the failure.
-public let NSRelatedObjectErrorKey: String = "NSRelatedObjectErrorKey"
+public let SCRelatedObjectErrorKey: String = "SCRelatedObjectErrorKey"
+
+/// Custom Error key which value is name of some entity the error is about.
+public let SCNameErrorKey: String = "SCNameErrorKey"
 
 // MARK: - NSError predefined domains
 
@@ -94,11 +97,6 @@ extension NSError {
             default:
                 merged[$0.key] = $0.value
             }
-            
-            guard [NSUnderlyingErrorKey, Self.multipleUnderlyingErrorsKey].contains($0.key) else {
-                merged[$0.key] = $0.value
-                return
-            }
         }
         return merged
     }
@@ -137,6 +135,10 @@ extension NSError.TryBuilder {
     
     public func debugDescription(_ debugDescription: String) -> Self {
         userInfo(debugDescription, for: NSDebugDescriptionErrorKey)
+    }
+    
+    public func named(_ name: String) -> Self {
+        userInfo(name, for: SCNameErrorKey)
     }
 }
 
@@ -225,14 +227,11 @@ extension NSError.TryBuilder where Tag == NSError.OSStatusTryTag {
     
     private func osError(_ status: OSStatus, underlying: Error? = nil) -> NSError? {
         guard status != noErr else { return nil }
-        var error = NSError(osStatus: status)
-        underlying.flatMap { error = error.appendingUnderlyingError($0) }
-        return error.withUserInfo(userInfo)
+        return osError(underlying ?? NSError(osStatus: status))
     }
     
     private func osError(_ error: Error?) -> NSError? {
-        guard let error else { return nil }
-        return osError(OSStatus((error as NSError).code), underlying: error)
+        (error as NSError?)?.withUserInfo(userInfo)
     }
 }
 
