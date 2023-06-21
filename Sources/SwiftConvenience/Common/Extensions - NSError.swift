@@ -101,13 +101,13 @@ extension NSError {
         return merged
     }
     
-    public static var multipleUnderlyingErrorsKey: String {
+    public static let multipleUnderlyingErrorsKey: String = {
         if #available(macOS 11.3, iOS 14.5, tvOS 14.5, watchOS 7.4, *) {
             return NSMultipleUnderlyingErrorsKey
         } else {
             return "NSMultipleUnderlyingErrorsKey"
         }
-    }
+    }()
 }
 
 // MARK: - NSError Try
