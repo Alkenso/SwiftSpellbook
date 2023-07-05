@@ -72,3 +72,12 @@ class DictionaryTests: XCTestCase {
         XCTAssertEqual(dict, [:])
     }
 }
+
+class CollectionTests: XCTestCase {
+    func test_removeFirst() {
+        var arr = [1, 2, 20, 30]
+        XCTAssertEqual(arr.removeFirst { $0 < 10 }, 1)
+        XCTAssertEqual(arr.removeFirst { $0 < 10 }, 2)
+        XCTAssertEqual(arr.removeFirst { $0 < 10 }, nil)
+    }
+}

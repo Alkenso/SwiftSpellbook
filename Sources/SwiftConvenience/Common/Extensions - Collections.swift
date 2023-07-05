@@ -154,3 +154,13 @@ extension Collection {
         }
     }
 }
+
+extension RangeReplaceableCollection {
+    @discardableResult
+    public mutating func removeFirst(where predicate: (Element) throws -> Bool) rethrows -> Element? {
+        guard let idx = try firstIndex(where: predicate) else { return nil }
+        let element = self[idx]
+        remove(at: idx)
+        return element
+    }
+}
