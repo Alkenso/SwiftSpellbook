@@ -358,6 +358,18 @@ extension Date {
     }
 }
 
+extension Date {
+    /// Indicates whether **this** Date is in the past related to **now**.
+    public var isInPast: Bool {
+        self < Date()
+    }
+    
+    /// Indicates whether **this** Date is in the future related to **now**.
+    public var isInFuture: Bool {
+        Date() < self
+    }
+}
+
 extension Calendar {
     public static let iso8601UTC: Calendar = {
         var calendar = Calendar(identifier: .iso8601)
