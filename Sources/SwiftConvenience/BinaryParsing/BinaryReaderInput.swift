@@ -29,11 +29,11 @@ public protocol BinaryReaderInput {
 
 public struct AnyBinaryReaderInput: BinaryReaderInput {
     private var _readBytes: (_ to: UnsafeMutableBufferPointer<UInt8>, _ offset: Int) throws -> Void
-    private var _size: () -> Int
+    private var _size: () throws -> Int
     
     public init(
         readBytes: @escaping (UnsafeMutableBufferPointer<UInt8>, Int) throws -> Void,
-        size: @escaping () -> Int
+        size: @escaping () throws -> Int
     ) {
         _readBytes = readBytes
         _size = size
@@ -44,12 +44,12 @@ public struct AnyBinaryReaderInput: BinaryReaderInput {
     }
     
     public func size() throws -> Int {
-        _size()
+        try _size()
     }
 }
 
-public extension BinaryReader {
-    init(data: Data) {
+extension BinaryReader {
+    public init(data: Data) {
         self.init(
             AnyBinaryReaderInput(
                 readBytes: { dstPtr, offset in

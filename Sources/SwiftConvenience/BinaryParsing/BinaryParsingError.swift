@@ -27,6 +27,6 @@ public enum BinaryParsingError: Error {
     case notTrivial(String)
 }
 
-func ensureTrivial<T>(_ type: T.Type) throws {
+internal func ensureTrivial<T>(_ type: T.Type) throws {
     if !_isPOD(T.self) { throw BinaryParsingError.notTrivial("\(T.self)") }
 }

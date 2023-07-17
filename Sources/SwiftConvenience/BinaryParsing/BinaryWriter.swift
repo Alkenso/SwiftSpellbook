@@ -45,7 +45,7 @@ public struct BinaryWriter {
         try _output.writeBytes(from: buffer.bindMemory(to: UInt8.self), at: offset)
     }
     
-    public mutating func seek(_ offset: Int) throws {
+    public mutating func seek(_ offset: Int) {
         self.offset = offset
     }
 }
@@ -172,7 +172,7 @@ public extension BinaryWriter {
 
 public extension BinaryWriter {
     mutating func reset() {
-        try? seek(0)
+        seek(0)
     }
     
     func resetted() -> Self {
