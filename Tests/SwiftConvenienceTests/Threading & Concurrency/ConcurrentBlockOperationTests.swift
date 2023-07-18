@@ -38,7 +38,7 @@ class ConcurrentBlockOperationTests: XCTestCase {
         let queue = OperationQueue()
         queue.addOperation(op)
         
-        DispatchQueue.global().asyncAfter(interval: 0.1) {
+        DispatchQueue.global().asyncAfter(delay: 0.1) {
             op.cancel()
         }
         

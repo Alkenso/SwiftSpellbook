@@ -48,15 +48,15 @@ public class DebounceContext {
 
 extension DispatchQueue {
     public func asyncAfter(
-        interval: TimeInterval,
+        delay: TimeInterval,
         qos: DispatchQoS = .unspecified,
         flags: DispatchWorkItemFlags = [],
         execute work: @escaping @convention(block) () -> Void
     ) {
-        asyncAfter(deadline: .now() + interval, qos: qos, flags: flags, execute: work)
+        asyncAfter(deadline: .now() + delay, qos: qos, flags: flags, execute: work)
     }
     
-    public func asyncAfter(interval: TimeInterval, execute: DispatchWorkItem) {
-        asyncAfter(deadline: .now() + interval, execute: execute)
+    public func asyncAfter(delay: TimeInterval, execute: DispatchWorkItem) {
+        asyncAfter(deadline: .now() + delay, execute: execute)
     }
 }
