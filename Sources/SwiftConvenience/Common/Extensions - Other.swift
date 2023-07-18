@@ -27,18 +27,3 @@ extension ProcessInfo {
         Date().addingTimeInterval(-systemUptime)
     }
 }
-
-extension DispatchQueue {
-    public func asyncAfter(
-        interval: TimeInterval,
-        qos: DispatchQoS = .unspecified,
-        flags: DispatchWorkItemFlags = [],
-        execute work: @escaping @convention(block) () -> Void
-    ) {
-        asyncAfter(deadline: .now() + interval, qos: qos, flags: flags, execute: work)
-    }
-    
-    public func asyncAfter(interval: TimeInterval, execute: DispatchWorkItem) {
-        asyncAfter(deadline: .now() + interval, execute: execute)
-    }
-}
