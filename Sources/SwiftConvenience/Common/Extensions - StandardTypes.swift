@@ -360,12 +360,12 @@ extension Date {
 
 extension Date {
     /// Indicates whether **this** Date is in the past related to **now**.
-    public var isInPast: Bool {
+    public var inPast: Bool {
         self < Date()
     }
     
     /// Indicates whether **this** Date is in the future related to **now**.
-    public var isInFuture: Bool {
+    public var inFuture: Bool {
         Date() < self
     }
 }
