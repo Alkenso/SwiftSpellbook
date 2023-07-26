@@ -60,3 +60,15 @@ extension DispatchQueue {
         asyncAfter(deadline: .now() + delay, execute: execute)
     }
 }
+
+extension DispatchQueue {
+    /// Performs `work` on the main thread.
+    /// Usual `sync` method with check that the caller context is already main queue.
+    public static func syncOnMain<T>(execute work: () throws -> T) rethrows -> T {
+        if Thread.isMainThread {
+            return try work()
+        } else {
+            return try main.sync(execute: work)
+        }
+    }
+}
