@@ -108,4 +108,22 @@ final class EventAskTests: XCTestCase {
         }
         waitForExpectations()
     }
+    
+    func test_extraReply() {
+        var subscriptions: [SubscriptionToken] = []
+        let event = EventAsk<String, Int>()
+        let exp = expectation(description: "late subscribe call")
+        event.subscribe {
+            $1(1)
+            $1(2)
+            $1(3)
+            exp.fulfill()
+        }
+        .store(in: &subscriptions)
+        
+        let r = event.askSync("q")
+        XCTAssertEqual(r.count, 1)
+        
+        waitForExpectations()
+    }
 }

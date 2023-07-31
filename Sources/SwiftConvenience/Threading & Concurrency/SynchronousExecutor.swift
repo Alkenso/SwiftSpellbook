@@ -38,7 +38,10 @@ public struct SynchronousExecutor {
         @Atomic var result: Result<R, Error>!
         let group = DispatchGroup()
         group.enter()
+        
+        var once = atomic_flag()
         try action {
+            guard !atomic_flag_test_and_set(&once) else { return }
             result = $0
             group.leave()
         }

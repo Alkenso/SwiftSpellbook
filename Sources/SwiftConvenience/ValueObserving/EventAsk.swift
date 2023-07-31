@@ -62,7 +62,9 @@ public class EventAskEx<Input, Transformed, Output> {
         for (idx, entry) in transforms.enumerated() {
             group.enter()
             entry.queue.async {
+                var once = atomic_flag()
                 entry.transform(value) { singleResult in
+                    guard !atomic_flag_test_and_set(&once) else { return }
                     values.set(value: singleResult, at: idx)
                     group.leave()
                 }

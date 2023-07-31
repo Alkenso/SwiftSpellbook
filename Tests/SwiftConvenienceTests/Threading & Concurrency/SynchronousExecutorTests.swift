@@ -10,6 +10,7 @@ class SynchronousExecutorTests: XCTestCase {
         XCTAssertEqual(try infiniteExecutor(dummyValue.value), 10)
         XCTAssertEqual(try infiniteExecutor(dummyValue.resultValue), 10)
         XCTAssertEqual(try infiniteExecutor(dummyValue.optionalValue), 10)
+        XCTAssertEqual(try infiniteExecutor { dummyValue.multiReplyValue(count: 10, reply: $0) }, 10)
         
         let dummyError = Dummy<Int>(value: nil, timeout: 0.05)
         XCTAssertThrowsError(try infiniteExecutor(dummyError.error))
@@ -49,7 +50,14 @@ private struct Dummy<T> {
     
     func error(reply: @escaping (Error?) -> Void) {
         execute { reply(Result { try value.get() }.failure) }
-        
+    }
+    
+    func multiReplyValue(count: Int, reply: @escaping (T) -> Void) {
+        execute {
+            for _ in 0..<count {
+                reply(value)
+            }
+        }
     }
     
     private func execute(_ action: @escaping () -> Void) {
