@@ -64,7 +64,12 @@ public class EventAskEx<Input, Transformed, Output> {
             entry.queue.async {
                 var once = atomic_flag()
                 entry.transform(value) { singleResult in
-                    guard !atomic_flag_test_and_set(&once) else { return }
+                    guard !atomic_flag_test_and_set(&once) else {
+                        if !ProcessEnvironment.isXCTesting {
+                            assertionFailure("\(Self.self) transform action called multiple times")
+                        }
+                        return
+                    }
                     values.set(value: singleResult, at: idx)
                     group.leave()
                 }
