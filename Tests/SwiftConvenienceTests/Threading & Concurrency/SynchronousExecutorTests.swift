@@ -16,6 +16,11 @@ class SynchronousExecutorTests: XCTestCase {
         XCTAssertThrowsError(try infiniteExecutor(dummyError.error))
         XCTAssertThrowsError(try infiniteExecutor(dummyError.resultValue))
         XCTAssertEqual(try infiniteExecutor(dummyError.optionalValue), nil)
+        
+        if #available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *) {
+            XCTAssertEqual(try infiniteExecutor(dummyValue.asyncValue), 10)
+            XCTAssertThrowsError(try infiniteExecutor(dummyError.asyncError))
+        }
     }
     
     func test_timeout() throws {
@@ -29,6 +34,11 @@ class SynchronousExecutorTests: XCTestCase {
         XCTAssertThrowsError(try timedExecutor(dummyError.error))
         XCTAssertThrowsError(try timedExecutor(dummyError.resultValue))
         XCTAssertThrowsError(try timedExecutor(dummyError.optionalValue))
+        
+        if #available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *) {
+            XCTAssertThrowsError(try timedExecutor(dummyValue.asyncValue))
+            XCTAssertThrowsError(try timedExecutor(dummyError.asyncError))
+        }
     }
 }
 
@@ -64,6 +74,27 @@ private struct Dummy<T> {
         DispatchQueue.global().async {
             timeout.flatMap(Thread.sleep(forTimeInterval:))
             action()
+        }
+    }
+}
+
+@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
+extension Dummy {
+    func asyncValue() async -> T {
+        await withCheckedContinuation { continuation in
+            value(reply: continuation.resume(returning:))
+        }
+    }
+    
+    func asyncError() async throws {
+        let _: Void = try await withCheckedThrowingContinuation { continuation in
+            error {
+                if let error = $0 {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: ())
+                }
+            }
         }
     }
 }

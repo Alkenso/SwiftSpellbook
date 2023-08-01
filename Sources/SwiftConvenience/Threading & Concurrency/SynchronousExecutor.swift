@@ -29,7 +29,7 @@ public struct SynchronousExecutor {
     public var name: String?
     public var timeout: TimeInterval?
     
-    public init(_ name: String? = nil, timeout: TimeInterval?) {
+    public init(_ name: String? = nil, timeout: TimeInterval? = nil) {
         self.name = name
         self.timeout = timeout
     }
@@ -41,7 +41,12 @@ public struct SynchronousExecutor {
         
         var once = atomic_flag()
         try action {
-            guard !atomic_flag_test_and_set(&once) else { return }
+            guard !atomic_flag_test_and_set(&once) else {
+                if !ProcessEnvironment.isXCTesting {
+                    assertionFailure("\(Self.self) async action called multiple times")
+                }
+                return
+            }
             result = $0
             group.leave()
         }
@@ -75,6 +80,22 @@ extension SynchronousExecutor {
         try callAsFunction { (reply: @escaping (Result<T, Error>) -> Void) in
             try action {
                 reply(.success($0))
+            }
+        }
+    }
+}
+
+@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
+extension SynchronousExecutor {
+    public func callAsFunction<R>(_ action: @escaping () async throws -> R) throws -> R {
+        try callAsFunction { completion in
+            Task {
+                do {
+                    let success = try await action()
+                    completion(.success(success))
+                } catch {
+                    completion(.failure(error))
+                }
             }
         }
     }
