@@ -29,7 +29,7 @@ extension Encodable {
     /// Log failure to SwiftConvenience.Log
     public func encode(
         with encoder: ObjectEncoder<Self>,
-        file: String = #file, _ function: String = #function, line: Int = #line, log: SCLog? = nil
+        file: StaticString = #file, _ function: StaticString = #function, line: Int = #line, log: SCLog? = nil
     ) -> Data? {
         do {
             return try encoder.encode(self)
@@ -77,7 +77,7 @@ extension Decodable {
     /// Log failure to SwiftConvenience.Log
     public init?(
         from data: Data, decoder: ObjectDecoder<Self>,
-        file: String = #file, _ function: String = #function, line: Int = #line, log: SCLog? = nil
+        file: StaticString = #file, _ function: StaticString = #function, line: Int = #line, log: SCLog? = nil
     ) {
         do {
             self = try decoder.decode(Self.self, data)

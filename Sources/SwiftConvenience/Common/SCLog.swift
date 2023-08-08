@@ -23,39 +23,39 @@
 import Foundation
 
 public protocol SCLog {
-    func custom(level: SCLogLevel, message: @autoclosure () -> Any, file: String, function: String, line: Int)
+    func custom(level: SCLogLevel, message: @autoclosure () -> Any, assert: Bool, file: StaticString, function: StaticString, line: Int)
 }
 
 extension SCLog {
-    public func verbose(_ message: @autoclosure () -> Any, _ file: String = #file, _ function: String = #function, line: Int = #line) {
-        custom(level: .verbose, message: message(), file, function, line)
+    public func verbose(_ message: @autoclosure () -> Any, _ file: StaticString = #file, _ function: StaticString = #function, line: Int = #line) {
+        custom(level: .verbose, message: message(), assert: false, file, function, line)
     }
     
-    public func debug(_ message: @autoclosure () -> Any, _ file: String = #file, _ function: String = #function, line: Int = #line) {
-        custom(level: .debug, message: message(), file, function, line)
+    public func debug(_ message: @autoclosure () -> Any, _ file: StaticString = #file, _ function: StaticString = #function, line: Int = #line) {
+        custom(level: .debug, message: message(), assert: false, file, function, line)
     }
     
-    public func info(_ message: @autoclosure () -> Any, _ file: String = #file, _ function: String = #function, line: Int = #line) {
-        custom(level: .info, message: message(), file, function, line)
+    public func info(_ message: @autoclosure () -> Any, _ file: StaticString = #file, _ function: StaticString = #function, line: Int = #line) {
+        custom(level: .info, message: message(), assert: false, file, function, line)
     }
     
-    public func warning(_ message: @autoclosure () -> Any, _ file: String = #file, _ function: String = #function, line: Int = #line) {
-        custom(level: .warning, message: message(), file, function, line)
+    public func warning(_ message: @autoclosure () -> Any, _ file: StaticString = #file, _ function: StaticString = #function, line: Int = #line) {
+        custom(level: .warning, message: message(), assert: false, file, function, line)
     }
     
-    public func error(_ message: @autoclosure () -> Any, _ file: String = #file, _ function: String = #function, line: Int = #line) {
-        custom(level: .error, message: message(), file, function, line)
+    public func error(_ message: @autoclosure () -> Any, assert: Bool = false, _ file: StaticString = #file, _ function: StaticString = #function, line: Int = #line) {
+        custom(level: .error, message: message(), assert: assert, file, function, line)
     }
     
-    public func fatal(_ message: @autoclosure () -> Any, _ file: String = #file, _ function: String = #function, line: Int = #line) {
-        custom(level: .fatal, message: message(), file, function, line)
+    public func fatal(_ message: @autoclosure () -> Any, assert: Bool = false, _ file: StaticString = #file, _ function: StaticString = #function, line: Int = #line) {
+        custom(level: .fatal, message: message(), assert: assert, file, function, line)
     }
     
     public func custom(
-        level: SCLogLevel, message: @autoclosure () -> Any,
-        _ file: String = #file, _ function: String = #function, _ line: Int = #line
+        level: SCLogLevel, message: @autoclosure () -> Any, assert: Bool,
+        _ file: StaticString = #file, _ function: StaticString = #function, _ line: Int = #line
     ) {
-        custom(level: level, message: message(), file: file, function: function, line: line)
+        custom(level: level, message: message(), assert: assert, file: file, function: function, line: line)
     }
 }
 
@@ -78,11 +78,11 @@ public struct SCLogRecord {
     public var subsystem: SCLogSubsystem?
     public var level: SCLogLevel
     public var message: Any
-    public var file: String
-    public var function: String
+    public var file: StaticString
+    public var function: StaticString
     public var line: Int
     
-    public init(subsystem: SCLogSubsystem?, level: SCLogLevel, message: Any, file: String, function: String, line: Int) {
+    public init(subsystem: SCLogSubsystem?, level: SCLogLevel, message: Any, file: StaticString, function: StaticString, line: Int) {
         self.subsystem = subsystem
         self.level = level
         self.message = message
@@ -107,23 +107,30 @@ public class SCLogger {
     
     public var minLevel: SCLogLevel = .info
     
+    /// If log messages with `assert = true` should really produce asserts.
+    public var isAssertsEnabled = true
+    
     public func withSubsystem(_ subsystem: SCLogSubsystem) -> SCLog {
         SCSubsystemLogger {
-            self.custom(subsystem: subsystem, level: $1, message: $2(), file: $3, function: $4, line: $5)
+            self.custom(subsystem: subsystem, level: $1, message: $2(), assert: $3, file: $4, function: $5, line: $6)
         }
     }
 }
 
 extension SCLogger: SCLog {
-    public func custom(level: SCLogLevel, message: @autoclosure () -> Any, file: String, function: String, line: Int) {
-        custom(subsystem: nil, level: level, message: message(), file: file, function: function, line: line)
+    public func custom(level: SCLogLevel, message: @autoclosure () -> Any, assert: Bool, file: StaticString, function: StaticString, line: Int) {
+        custom(subsystem: nil, level: level, message: message(), assert: assert, file: file, function: function, line: line)
     }
     
     private func custom(
-        subsystem: SCLogSubsystem?, level: SCLogLevel, message: @autoclosure () -> Any,
-        file: String, function: String, line: Int
+        subsystem: SCLogSubsystem?, level: SCLogLevel, message: @autoclosure () -> Any, assert: Bool,
+        file: StaticString, function: StaticString, line: Int
     ) {
         guard level >= minLevel else { return }
+        
+        if assert && isAssertsEnabled {
+            assertionFailure("\(message())", file: file, line: UInt(line))
+        }
         
         let record = SCLogRecord(
             subsystem: subsystem, level: level, message: message(),
@@ -136,9 +143,9 @@ extension SCLogger: SCLog {
 }
 
 private struct SCSubsystemLogger: SCLog {
-    let logImpl: (_ subsystemPath: [SCLogSubsystem], _ level: SCLogLevel, _ message: @autoclosure () -> Any, _ file: String, _ function: String, _ line: Int) -> Void
+    let logImpl: (_ subsystemPath: [SCLogSubsystem], _ level: SCLogLevel, _ message: @autoclosure () -> Any, _ assert: Bool, _ file: StaticString, _ function: StaticString, _ line: Int) -> Void
     
-    func custom(level: SCLogLevel, message: @autoclosure () -> Any, file: String, function: String, line: Int) {
-        logImpl([], level, message(), file, function, line)
+    func custom(level: SCLogLevel, message: @autoclosure () -> Any, assert: Bool, file: StaticString, function: StaticString, line: Int) {
+        logImpl([], level, message(), assert, file, function, line)
     }
 }
