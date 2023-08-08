@@ -75,15 +75,15 @@ extension SCLogLevel: Comparable {
 }
 
 public struct SCLogRecord {
-    public var subsystem: SCLogSubsystem
+    public var source: SCLogSource
     public var level: SCLogLevel
     public var message: Any
     public var file: StaticString
     public var function: StaticString
     public var line: Int
     
-    public init(subsystem: SCLogSubsystem, level: SCLogLevel, message: Any, file: StaticString, function: StaticString, line: Int) {
-        self.subsystem = subsystem
+    public init(source: SCLogSource, level: SCLogLevel, message: Any, file: StaticString, function: StaticString, line: Int) {
+        self.source = source
         self.level = level
         self.message = message
         self.file = file
@@ -92,12 +92,29 @@ public struct SCLogRecord {
     }
 }
 
-public protocol SCLogSubsystem: CustomStringConvertible {}
+public struct SCLogSource {
+    public var subsystem: String
+    public var category: String
+    public var context: Any?
+    
+    public init(subsystem: String, category: String, context: Any? = nil) {
+        self.subsystem = subsystem
+        self.category = category
+        self.context = context
+    }
+}
 
-/// Simple log subsystem.
-public struct SCNamedLogSubsystem: SCLogSubsystem {
-    public var description: String
-    public init(description: String) { self.description = description }
+extension SCLogSource {
+    public static func `default`(category: String = "Generic") -> Self {
+        SCLogSource(
+            subsystem: Bundle.main.bundleIdentifier ?? "Generic",
+            category: category
+        )
+    }
+}
+
+extension SCLogSource: CustomStringConvertible {
+    public var description: String { "\(subsystem)/\(category)" }
 }
 
 public final class SCLogger {
@@ -109,8 +126,7 @@ public final class SCLogger {
     
     public static let `default` = SCLogger(name: "default")
     
-    /// Subsystem used by default.
-    public var subsystem: SCLogSubsystem = SCNamedLogSubsystem(description: "SCDefaultLog")
+    public var source = SCLogSource.default()
     
     public var destinations: [(SCLogRecord) -> Void] = []
     
@@ -119,22 +135,41 @@ public final class SCLogger {
     /// If log messages with `assert = true` should really produce asserts.
     public var isAssertsEnabled = true
     
+    /// Create child instance, replacing log source.
+    /// Children perform log facilities through their parent.
+    public func withSource(_ source: SCLogSource) -> SCLog {
+        SCSubsystemLogger {
+            self.custom(source: source, level: $0, message: $1(), assert: $2, file: $3, function: $4, line: $5)
+        }
+    }
+    
     /// Create child instance, replacing log subsystem.
     /// Children perform log facilities through their parent.
-    public func withSubsystem(_ subsystem: SCLogSubsystem) -> SCLog {
-        SCSubsystemLogger {
-            self.custom(subsystem: subsystem, level: $0, message: $1(), assert: $2, file: $3, function: $4, line: $5)
-        }
+    public func with(subsystem: String? = nil, category: String) -> SCLog {
+        var source = source
+        subsystem.flatMap { source.subsystem = $0 }
+        source.category = category
+        
+        return withSource(source)
+    }
+}
+
+extension SCLogger {
+    /// Subsystem name used by default.
+    public static var internalSubsystem = "SwiftConvenience"
+    
+    internal static func `internal`(category: String) -> SCLog {
+        `default`.with(subsystem: internalSubsystem, category: category)
     }
 }
 
 extension SCLogger: SCLog {
     public func custom(level: SCLogLevel, message: @autoclosure () -> Any, assert: Bool, file: StaticString, function: StaticString, line: Int) {
-        custom(subsystem: subsystem, level: level, message: message(), assert: assert, file: file, function: function, line: line)
+        custom(source: source, level: level, message: message(), assert: assert, file: file, function: function, line: line)
     }
     
     private func custom(
-        subsystem: SCLogSubsystem, level: SCLogLevel, message: @autoclosure () -> Any, assert: Bool,
+        source: SCLogSource, level: SCLogLevel, message: @autoclosure () -> Any, assert: Bool,
         file: StaticString, function: StaticString, line: Int
     ) {
         guard level >= minLevel else { return }
@@ -144,7 +179,7 @@ extension SCLogger: SCLog {
         }
         
         let record = SCLogRecord(
-            subsystem: subsystem, level: level, message: message(),
+            source: source, level: level, message: message(),
             file: file, function: function, line: line
         )
         queue.async {

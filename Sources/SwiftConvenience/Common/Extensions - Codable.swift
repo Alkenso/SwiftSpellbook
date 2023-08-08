@@ -22,7 +22,7 @@
 
 import Foundation
 
-private let codableLogger = SCLogger.default(.codable)
+private let codableLogger = SCLogger.internal(category: "Codable")
 
 extension Encodable {
     /// Encode value to json using specified encoder.

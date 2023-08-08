@@ -78,38 +78,41 @@ final class SCLogTests: XCTestCase {
     }
     
     func test_subsystem() {
-        enum TestSubsystem: String, SCLogSubsystem {
-            case a, b
-            var description: String { rawValue }
-        }
-        
         let log = SCLogger(name: "test")
         
-        let expNoSubsystem = expectation(description: "none log subsystem")
-        let expASubsystem = expectation(description: "a log subsystem")
-        let expBSubsystem = expectation(description: "b log subsystem")
+        let exp0 = expectation(description: "default log subsystem")
+        let exp1 = expectation(description: "custom log category")
+        let exp2 = expectation(description: "custom log subsystem and category")
+        let exp3 = expectation(description: "custom context")
+        let expUnsupported = expectation(description: "unsupported subsystem")
+        expUnsupported.isInverted = true
         
         log.destinations.append { logRecord in
-            switch logRecord.subsystem as? TestSubsystem {
-            case .a:
-                XCTAssertEqual(logRecord.level, .warning)
-                expASubsystem.fulfill()
-            case .b:
-                XCTAssertEqual(logRecord.level, .error)
-                expBSubsystem.fulfill()
-            case .none:
-                XCTAssertEqual(logRecord.level, .info)
-                expNoSubsystem.fulfill()
+            switch logRecord.source.subsystem {
+            case SCLogSource.default().subsystem:
+                if logRecord.source.category != "w2" {
+                    XCTAssertEqual(logRecord.source.category, "Generic")
+                    exp0.fulfill()
+                } else {
+                    exp2.fulfill()
+                }
+            case "q1":
+                XCTAssertEqual(logRecord.source.category, "w1")
+                exp1.fulfill()
+            case "q3":
+                XCTAssertEqual(logRecord.source.category, "w3")
+                XCTAssertEqual(logRecord.source.context as? Int, 10)
+                exp3.fulfill()
+            default:
+                XCTFail("Unsupported subsystem")
             }
         }
         
-        let aSubsystemLog = log.withSubsystem(TestSubsystem.a)
-        let bSubsystemLog = log.withSubsystem(TestSubsystem.b)
-        
-        aSubsystemLog.warning("")
-        bSubsystemLog.error("")
         log.info("")
+        log.with(subsystem: "q1", category: "w1").info("")
+        log.with(category: "w2").info("")
+        log.withSource(.init(subsystem: "q3", category: "w3", context: 10)).info("")
         
-        waitForExpectations()
+        waitForExpectations(timeout: 0.1)
     }
 }

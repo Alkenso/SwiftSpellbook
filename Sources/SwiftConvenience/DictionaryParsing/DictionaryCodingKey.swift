@@ -118,7 +118,7 @@ extension DictionaryCodingError {
 
 extension DictionaryCodingError: CustomNSError {
     public var errorCode: Int { code.rawValue }
-    public static var errorDomain: String { SwiftConvenienceErrorDomain }
+    public static var errorDomain: String { "DictionaryCodingErrorDomain" }
     public var errorUserInfo: [String : Any] {
         var userInfo: [String: Any] = [:]
         
