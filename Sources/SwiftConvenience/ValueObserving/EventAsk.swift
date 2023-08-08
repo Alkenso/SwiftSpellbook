@@ -65,7 +65,7 @@ public class EventAskEx<Input, Transformed, Output> {
                 var once = atomic_flag()
                 entry.transform(value) { singleResult in
                     guard !atomic_flag_test_and_set(&once) else {
-                        if !ProcessEnvironment.isXCTesting {
+                        if !RunEnvironment.isXCTesting {
                             assertionFailure("\(Self.self) transform action called multiple times")
                         }
                         return

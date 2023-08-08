@@ -42,7 +42,7 @@ public struct SynchronousExecutor {
         var once = atomic_flag()
         try action {
             guard !atomic_flag_test_and_set(&once) else {
-                if !ProcessEnvironment.isXCTesting {
+                if !RunEnvironment.isXCTesting {
                     assertionFailure("\(Self.self) async action called multiple times")
                 }
                 return

@@ -35,7 +35,7 @@ public enum BuildEnvironment {
 }
 
 /// Different indicators related to Application environment.
-public enum ProcessEnvironment {
+public enum RunEnvironment {
     /// Runtime check if run inside XCTest bundle.
     public static let isXCTesting: Bool = NSClassFromString("XCTestProbe") != nil
     
