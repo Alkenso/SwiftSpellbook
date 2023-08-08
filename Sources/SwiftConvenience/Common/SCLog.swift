@@ -60,12 +60,12 @@ extension SCLog {
 }
 
 public enum SCLogLevel: Int, Hashable {
-    case verbose = 0 /// something generally unimportant
-    case debug = 1 /// something which help during debugging
-    case info = 2 /// something which you are really interested but which is not an issue or error
-    case warning = 3 /// something which may cause big trouble soon
-    case error = 4 /// something which already get in trouble
-    case fatal = 5 /// something which will keep you awake at night
+    case verbose = 0 /// something generally unimportant.
+    case debug = 1 /// something which help during debugging.
+    case info = 2 /// something which you are really interested but which is not an issue or error.
+    case warning = 3 /// something which may cause big trouble soon.
+    case error = 4 /// something which already get in trouble.
+    case fatal = 5 /// something which will keep you awake at night.
 }
 
 extension SCLogLevel: Comparable {
@@ -75,14 +75,14 @@ extension SCLogLevel: Comparable {
 }
 
 public struct SCLogRecord {
-    public var subsystem: SCLogSubsystem?
+    public var subsystem: SCLogSubsystem
     public var level: SCLogLevel
     public var message: Any
     public var file: StaticString
     public var function: StaticString
     public var line: Int
     
-    public init(subsystem: SCLogSubsystem?, level: SCLogLevel, message: Any, file: StaticString, function: StaticString, line: Int) {
+    public init(subsystem: SCLogSubsystem, level: SCLogLevel, message: Any, file: StaticString, function: StaticString, line: Int) {
         self.subsystem = subsystem
         self.level = level
         self.message = message
@@ -94,7 +94,13 @@ public struct SCLogRecord {
 
 public protocol SCLogSubsystem: CustomStringConvertible {}
 
-public class SCLogger {
+/// Simple log subsystem.
+public struct SCNamedLogSubsystem: SCLogSubsystem {
+    public var description: String
+    public init(description: String) { self.description = description }
+}
+
+public final class SCLogger {
     private let queue: DispatchQueue
     
     public init(name: String) {
@@ -103,6 +109,9 @@ public class SCLogger {
     
     public static let `default` = SCLogger(name: "default")
     
+    /// Subsystem used by default.
+    public var subsystem: SCLogSubsystem = SCNamedLogSubsystem(description: "SCDefaultLog")
+    
     public var destinations: [(SCLogRecord) -> Void] = []
     
     public var minLevel: SCLogLevel = .info
@@ -110,20 +119,22 @@ public class SCLogger {
     /// If log messages with `assert = true` should really produce asserts.
     public var isAssertsEnabled = true
     
+    /// Create child instance, replacing log subsystem.
+    /// Children perform log facilities through their parent.
     public func withSubsystem(_ subsystem: SCLogSubsystem) -> SCLog {
         SCSubsystemLogger {
-            self.custom(subsystem: subsystem, level: $1, message: $2(), assert: $3, file: $4, function: $5, line: $6)
+            self.custom(subsystem: subsystem, level: $0, message: $1(), assert: $2, file: $3, function: $4, line: $5)
         }
     }
 }
 
 extension SCLogger: SCLog {
     public func custom(level: SCLogLevel, message: @autoclosure () -> Any, assert: Bool, file: StaticString, function: StaticString, line: Int) {
-        custom(subsystem: nil, level: level, message: message(), assert: assert, file: file, function: function, line: line)
+        custom(subsystem: subsystem, level: level, message: message(), assert: assert, file: file, function: function, line: line)
     }
     
     private func custom(
-        subsystem: SCLogSubsystem?, level: SCLogLevel, message: @autoclosure () -> Any, assert: Bool,
+        subsystem: SCLogSubsystem, level: SCLogLevel, message: @autoclosure () -> Any, assert: Bool,
         file: StaticString, function: StaticString, line: Int
     ) {
         guard level >= minLevel else { return }
@@ -143,9 +154,9 @@ extension SCLogger: SCLog {
 }
 
 private struct SCSubsystemLogger: SCLog {
-    let logImpl: (_ subsystemPath: [SCLogSubsystem], _ level: SCLogLevel, _ message: @autoclosure () -> Any, _ assert: Bool, _ file: StaticString, _ function: StaticString, _ line: Int) -> Void
+    let logImpl: (_ level: SCLogLevel, _ message: @autoclosure () -> Any, _ assert: Bool, _ file: StaticString, _ function: StaticString, _ line: Int) -> Void
     
     func custom(level: SCLogLevel, message: @autoclosure () -> Any, assert: Bool, file: StaticString, function: StaticString, line: Int) {
-        logImpl([], level, message(), assert, file, function, line)
+        logImpl(level, message(), assert, file, function, line)
     }
 }
