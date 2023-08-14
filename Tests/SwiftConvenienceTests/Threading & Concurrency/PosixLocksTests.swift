@@ -6,7 +6,7 @@ import XCTest
 
 class ExtensionsLocksTests: XCTestCase {
     func test_os_unfair_lock() throws {
-        var lock = os_unfair_lock()
+        let lock = UnfairLock()
         let count = 1000
         let expFinished = expectation(description: "finished")
         expFinished.expectedFulfillmentCount = count

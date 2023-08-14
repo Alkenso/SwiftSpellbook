@@ -38,9 +38,9 @@ public final class Atomic<Value> {
     public init(wrappedValue: Value, _ synchronization: Synchronization = .unfair) {
         switch synchronization {
         case .unfair:
-            storage = .unfair(.init(lock: os_unfair_lock(), value: wrappedValue))
+            storage = .unfair(.init(lock: UnfairLock(), value: wrappedValue))
         case .rwlock:
-            storage = .rwlock(.init(lock: pthread_rwlock_t(), value: wrappedValue))
+            storage = .rwlock(.init(lock: RWLock(), value: wrappedValue))
         case .queue(let type):
             storage = .queue(.init(wrappedValue, synchronization: type))
         }
@@ -75,8 +75,8 @@ public final class Atomic<Value> {
 }
 
 private enum Impl<Value> {
-    case unfair(LockAndValue<os_unfair_lock, Value>)
-    case rwlock(LockAndValue<pthread_rwlock_t, Value>)
+    case unfair(LockAndValue<UnfairLock, Value>)
+    case rwlock(LockAndValue<RWLock, Value>)
     case queue(Synchronized<Value>)
 }
 

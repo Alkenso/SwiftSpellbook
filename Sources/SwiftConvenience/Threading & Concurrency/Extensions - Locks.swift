@@ -29,25 +29,3 @@ extension NSLocking {
         return try body()
     }
 }
-
-extension os_unfair_lock {
-    public mutating func withLock<R>(_ body: () throws -> R) rethrows -> R {
-        os_unfair_lock_lock(&self)
-        defer { os_unfair_lock_unlock(&self) }
-        return try body()
-    }
-}
-
-extension pthread_rwlock_t {
-    public mutating func withReadLock<R>(_ body: () throws -> R) rethrows -> R {
-        pthread_rwlock_rdlock(&self)
-        defer { pthread_rwlock_unlock(&self) }
-        return try body()
-    }
-    
-    public mutating func withWriteLock<R>(_ body: () throws -> R) rethrows -> R {
-        pthread_rwlock_wrlock(&self)
-        defer { pthread_rwlock_unlock(&self) }
-        return try body()
-    }
-}

@@ -31,7 +31,7 @@ public class Resource<T> {
     /// Note:
     /// Be careful copying the value or storing it in the separate variable.
     /// Swift optimizations may free Resource (and perform cleanup)
-    /// in the place of last use of Resource, not the Resource.value place
+    /// in the place of last use of Resource, not the Resource.unsafeValue place.
     public var unsafeValue: T { _value }
     
     public init(_ value: T, cleanup: @escaping (T) -> Void) {

@@ -151,7 +151,7 @@ extension EventAskEx {
 extension EventAskEx {
     private class Values {
         private var values: [Transformed?]
-        private var lock = os_unfair_lock()
+        private var lock = UnfairLock()
         
         init(count: Int) {
             values = .init(repeating: nil, count: count)
