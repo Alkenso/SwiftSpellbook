@@ -32,19 +32,23 @@ extension ObjectBuilder {
         return copy
     }
     
-    public func `if`(_ condition: Bool, body: (inout Self) -> Void) -> Self {
-        guard condition else { return self }
-        
+    public func `if`(_ condition: Bool, then: (inout Self) -> Void, `else`: (inout Self) -> Void = { _ in }) -> Self {
         var copy = self
-        body(&copy)
+        if condition {
+            then(&copy)
+        } else {
+            `else`(&copy)
+        }
         return copy
     }
     
-    public func ifLet<T>(_ value: T?, body: (inout Self, T) -> Void) -> Self {
-        guard let value = value else { return self }
-        
+    public func ifLet<T>(_ value: T?, then: (inout Self, T) -> Void, `else`: (inout Self) -> Void = { _ in }) -> Self {
         var copy = self
-        body(&copy, value)
+        if let value {
+            then(&copy, value)
+        } else {
+            `else`(&copy)
+        }
         return copy
     }
     
