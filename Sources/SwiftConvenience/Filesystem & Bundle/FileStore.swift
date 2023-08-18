@@ -25,23 +25,41 @@ import Foundation
 /// Wraps common file operations file reading and writing.
 /// Provides ability to change underlying implementation to mock dealing with real file system.
 public struct FileStore<T> {
-    private let read: (URL) throws -> T
-    private let write: (T, URL) throws -> Void
+    private let _read: (URL, T?) throws -> T
+    private let _write: (T, URL, Bool) throws -> Void
     
-    public init(read: @escaping (URL) throws -> T, write: @escaping (T, URL) throws -> Void) {
-        self.read = read
-        self.write = write
+    public init(
+        read: @escaping (URL, T?) throws -> T,
+        write: @escaping (T, URL, Bool) throws -> Void
+    ) {
+        self._read = read
+        self._write = write
     }
     
-    public func read(from location: URL) throws -> T { try read(location) }
-    public func write(_ value: T, to location: URL) throws { try write(value, location) }
+    public func read(from location: URL, default ifNotExists: T? = nil) throws -> T {
+        try _read(location, ifNotExists)
+    }
+    
+    public func write(_ value: T, to location: URL, createDirectories: Bool = false) throws {
+        try _write(value, location, createDirectories)
+    }
 }
 
 extension FileStore where T == Data {
     public static var standard: FileStore {
-        FileStore<Data>(
-            read: { try Data(contentsOf: $0) },
-            write: { try $0.write(to: $1) }
+        FileStore(
+            read: { location, ifNotExists in
+                if let ifNotExists, !FileManager.default.fileExists(at: location) {
+                    return ifNotExists
+                }
+                return try Data(contentsOf: location)
+            },
+            write: { data, location, createDirectories in
+                if createDirectories {
+                    try FileManager.default.createDirectoryTree(for: location)
+                }
+                try data.write(to: location)
+            }
         )
     }
 }
@@ -49,8 +67,16 @@ extension FileStore where T == Data {
 extension FileStore {
     public func synchronized(on queue: DispatchQueue) -> Self {
         .init(
-            read: { location in try queue.sync { try self.read(from: location) } },
-            write: { value, location in try queue.sync(flags: .barrier) { try self.write(value, to: location) } }
+            read: { location, ifNotExists in
+                try queue.sync {
+                    try self.read(from: location, default: ifNotExists)
+                }
+            },
+            write: { value, location, createDirectories in
+                try queue.sync(flags: .barrier) {
+                    try self.write(value, to: location, createDirectories: createDirectories)
+                }
+            }
         )
     }
 }
@@ -58,20 +84,21 @@ extension FileStore {
 // MARK: - Exact file
 
 extension FileStore {
-    public func exact(_ location: URL) -> Exact {
-        .init(store: self, location: location)
+    public func exact(_ location: URL, default ifNotExists: T? = nil) -> Exact {
+        .init(location: location, store: self, ifNotExists: ifNotExists)
     }
     
     public struct Exact {
-        let store: FileStore
         public let location: URL
+        fileprivate let store: FileStore
+        fileprivate let ifNotExists: T?
         
-        public func read() throws -> T {
-            try store.read(location)
+        public func read(default ifNotExistsLocal: T? = nil) throws -> T {
+            try store.read(from: location, default: ifNotExistsLocal ?? ifNotExists)
         }
         
-        public func write(_ value: T) throws {
-            try store.write(value, location)
+        public func write(_ value: T, createDirectories: Bool = false) throws {
+            try store.write(value, to: location, createDirectories: createDirectories)
         }
     }
 }
@@ -79,21 +106,39 @@ extension FileStore {
 // MARK: - Codable
 
 extension FileStore where T == Data {
-    public func codable<U: Codable>(_ type: U.Type, using coder: FileStoreCoder<U>) -> FileStore<U> {
+    private static let nonexistentValue = UUID().uuidString.utf8Data
+    
+    public func codable<U: Codable>(_ type: U.Type = U.self, using coder: FileStoreCoder<U>) -> FileStore<U> {
         .init(
-            read: { try decode(U.self, from: $0, using: coder.decoder) },
-            write: { try encode($0, to: $1, using: coder.encoder) }
+            read: { try decode(U.self, from: $0, using: coder.decoder, default: $1) },
+            write: { try encode($0, to: $1, using: coder.encoder, createDirectories: $2) }
         )
     }
     
-    public func encode<U: Encodable>(_ value: U, to location: URL, using encoder: ObjectEncoder<U>) throws {
-        let representation = try encoder.encode(value)
-        try write(representation, to: location)
+    public func encode<U: Encodable>(
+        _ value: U,
+        to location: URL,
+        using encoder: ObjectEncoder<U>,
+        createDirectories: Bool = false
+    ) throws {
+        let data = try encoder.encode(value)
+        try write(data, to: location, createDirectories: createDirectories)
     }
     
-    public func decode<U: Decodable>(_ type: U.Type, from location: URL, using decoder: ObjectDecoder<U>) throws -> U {
-        let representation = try read(from: location)
-        return try decoder.decode(U.self, representation)
+    public func decode<U: Decodable>(
+        _ type: U.Type,
+        from location: URL,
+        using decoder: ObjectDecoder<U>,
+        default ifNotExists: U? = nil
+    ) throws -> U {
+        let data: Data
+        if let ifNotExists {
+            data = try read(from: location, default: Self.nonexistentValue)
+            guard data != Self.nonexistentValue else { return ifNotExists }
+        } else {
+            data = try read(from: location)
+        }
+        return try decoder.decode(type, data)
     }
 }
 
@@ -111,7 +156,7 @@ extension FileStoreCoder {
     public static func json(_ format: JSONEncoder.OutputFormatting = []) -> Self {
         .init(encoder: .json(format), decoder: .json())
     }
-
+    
     public static func plist(_ format: PropertyListSerialization.PropertyListFormat = .xml) -> Self {
         .init(encoder: .plist(format), decoder: .plist())
     }
