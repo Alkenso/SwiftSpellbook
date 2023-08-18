@@ -167,6 +167,7 @@ public struct GetEscapingUpdate<Value> {
 }
 
 /// Wrapper that provides access to value. Useful when value is a struct that may be changed over time.
+@propertyWrapper
 @dynamicMemberLookup
 public final class ValueView<Value> {
     private let accessor: () -> Value
@@ -175,10 +176,18 @@ public final class ValueView<Value> {
         self.accessor = accessor
     }
     
-    public func get() -> Value { accessor() }
+    public convenience init(wrappedValue: @autoclosure @escaping () -> Value) {
+        self.init(wrappedValue)
+    }
+    
+    public var wrappedValue: Value { accessor() }
+    public var projectedValue: ValueView<Value> { self }
+    
+    public func get() -> Value { wrappedValue }
+    public func callAsFunction() -> Value { wrappedValue }
     
     public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
-        (get())[keyPath: keyPath]
+        wrappedValue[keyPath: keyPath]
     }
 }
 
@@ -188,7 +197,7 @@ extension ValueView {
     }
     
     public subscript<U, Property>(dynamicMember keyPath: KeyPath<U, Property>) -> Property? where Value == U? {
-        (get())?[keyPath: keyPath]
+        wrappedValue?[keyPath: keyPath]
     }
 }
 

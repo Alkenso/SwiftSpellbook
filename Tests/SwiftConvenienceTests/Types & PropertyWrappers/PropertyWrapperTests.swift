@@ -52,4 +52,24 @@ class PropertyWrapperTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode([Test].self, from: Data(jsonArray.utf8)).count, 3)
         XCTAssertEqual(try JSONEncoder().encode([Test](repeating: Test(), count: 3)), Data(jsonArray.utf8))
     }
+    
+    func test_ValueView() {
+        XCTAssertEqual(ValueView.constant(10).get(), 10)
+        
+        var value1 = 1
+        @ValueView var view1 = value1
+        
+        XCTAssertEqual(view1, value1)
+        value1 = 10
+        XCTAssertEqual(view1, value1)
+        value1 = 20
+        XCTAssertEqual($view1.get(), value1)
+        
+        var value2 = 1
+        let view2 = ValueView { value2 }
+        
+        XCTAssertEqual(view2.get(), value2)
+        value2 = 10
+        XCTAssertEqual(view2(), value2)
+    }
 }
