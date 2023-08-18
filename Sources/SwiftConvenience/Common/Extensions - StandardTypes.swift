@@ -129,6 +129,19 @@ extension String {
     public var deletingPathExtension: String { (self as NSString).deletingPathExtension }
 }
 
+extension String {
+    /// Creates String from valid UTF-8 data.
+    /// The caller if fully responsible for validity of the data passed in.
+    public init<UTF8Data: DataProtocol>(validUTF8 data: UTF8Data) {
+        self.init(decoding: data, as: UTF8.self)
+    }
+    
+    /// UTF-8 representation of the string.
+    public var utf8Data: Data {
+        Data(utf8)
+    }
+}
+
 extension StringProtocol {
     /// Parse string consisted of key-value pairs.
     ///
