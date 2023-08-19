@@ -248,6 +248,21 @@ extension Result where Failure == Error {
             self = .failure(failure.safelyUnwrapped)
         }
     }
+    
+    /// Returns a new result, mapping any success value using the given
+    /// transformation that may also throw.
+    ///
+    /// Use this method when you need to transform the value of a `Result`
+    /// instance when it represents a success.
+    /// The difference from original `map` is `transform` closure may also throw.
+    ///
+    /// - Parameter transform: A closure that takes the success value of this
+    ///   instance.
+    /// - Returns: A `Result` instance with the result of evaluating `transform`
+    ///   as the new success value if this instance represents a success.
+    public func mapT<NewSuccess>(_ transform: (Success) throws -> NewSuccess) -> Result<NewSuccess, Error> {
+        Result<NewSuccess, Failure> { try transform(get()) }
+    }
 }
 
 // MARK: - Error
