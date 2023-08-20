@@ -80,10 +80,13 @@ extension CommonError.Code: CustomStringConvertible {
 }
 
 extension CommonError {
-    public init(_ code: Code, _ description: String? = nil, reason: Error? = nil) {
+    public init(_ code: Code, _ description: String? = nil, localized: String? = nil, reason: Error? = nil) {
         var userInfo: [String: Any] = [:]
         if let description {
             userInfo[NSDebugDescriptionErrorKey] = description
+        }
+        if let localized {
+            userInfo[NSLocalizedDescriptionKey] = localized
         }
         if let reason {
             userInfo[NSUnderlyingErrorKey] = reason
@@ -93,6 +96,10 @@ extension CommonError {
     
     public init(_ description: String, reason: Error? = nil) {
         self.init(.general, description, reason: reason)
+    }
+    
+    public init(localized: String, debug: String? = nil, reason: Error? = nil) {
+        self.init(.general, debug, localized: localized, reason: reason)
     }
     
     public init(_ userInfo: [String: Any]) {
