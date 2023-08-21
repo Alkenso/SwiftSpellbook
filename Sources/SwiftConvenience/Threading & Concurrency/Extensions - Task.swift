@@ -25,7 +25,7 @@ import Foundation
 @available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension Task {
     public static func runWithCompletion<R>(
-        _: R.Type = R.Type,
+        _: R.Type = R.self,
         _ body: @escaping () async throws -> R,
         completion: @escaping (Result<R, Error>) -> Void
     ) where Success == Void, Failure == Never {
