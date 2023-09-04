@@ -82,6 +82,21 @@ extension Data {
     }
 }
 
+extension Data {
+    /// Returns Data with `count` random bytes.
+    ///
+    /// Uses `arc4random_buf` under the hood.
+    public static func random(_ count: Int) -> Data {
+        guard count > 0 else { return Data() }
+        
+        var data = Data(repeating: 0, count: count)
+        data.withUnsafeMutableBytes {
+            arc4random_buf($0.baseAddress, $0.count)
+        }
+        return data
+    }
+}
+
 // MARK: - URL
 
 extension URL {
