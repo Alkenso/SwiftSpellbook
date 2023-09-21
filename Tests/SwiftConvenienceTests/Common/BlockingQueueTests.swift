@@ -25,7 +25,7 @@ class BlockingQueueTests: XCTestCase {
         let queue = BlockingQueue<Int>()
         
         let beforeDequeueExp = expectation(description: "before dequeue")
-        var dequeueExp = expectation(description: "should not be dequeued")
+        @Box var dequeueExp = expectation(description: "should not be dequeued")
         dequeueExp.isInverted = true
         DispatchQueue.global().async {
             beforeDequeueExp.fulfill()

@@ -28,10 +28,7 @@ let package = Package(
         ),
         .target(
             name: "SwiftConvenienceObjC",
-            publicHeadersPath: ".",
-            linkerSettings: [
-                .linkedLibrary("c++"),
-            ]
+            publicHeadersPath: "."
         ),
         .target(
             name: "SwiftConvenienceTestUtils",
