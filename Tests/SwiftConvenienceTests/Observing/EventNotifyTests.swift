@@ -13,7 +13,7 @@ class EventNotifyTests: XCTestCase {
         let exp = expectation(description: "notify called")
         exp.expectedFulfillmentCount = expectedValues.count
         
-        event.subscribe(initialNotify: true) {
+        event.subscribe(suppressInitialNotify: false) {
             XCTAssertEqual($0, expectedValues.popFirst())
             exp.fulfill()
         }.store(in: &subscriptions)
@@ -22,7 +22,7 @@ class EventNotifyTests: XCTestCase {
         /// `receiveValue` is called only on value update.
         let exp2 = expectation(description: "notify called 2")
         exp2.expectedFulfillmentCount = expectedValues.count
-        event.subscribe(initialNotify: false) { _ in
+        event.subscribe(suppressInitialNotify: true) { _ in
             exp2.fulfill()
         }.store(in: &subscriptions)
         
@@ -44,7 +44,7 @@ class EventNotifyTests: XCTestCase {
         let exp = expectation(description: "notify called")
         exp.expectedFulfillmentCount = expectedValues.count
         
-        event.subscribe(initialNotify: true) {
+        event.subscribe(suppressInitialNotify: false) {
             XCTAssertEqual($0, expectedValues.popFirst())
             exp.fulfill()
         }.store(in: &subscriptions)
@@ -53,7 +53,7 @@ class EventNotifyTests: XCTestCase {
         /// `initialNotify` parameter.
         let exp2 = expectation(description: "notify called 2")
         exp2.expectedFulfillmentCount = testValues.count
-        event.subscribe(initialNotify: false) { _ in
+        event.subscribe(suppressInitialNotify: true) { _ in
             exp2.fulfill()
         }.store(in: &subscriptions)
         

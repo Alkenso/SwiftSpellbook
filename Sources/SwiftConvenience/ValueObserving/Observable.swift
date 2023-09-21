@@ -38,8 +38,8 @@ public final class Observable<Value>: ValueObserving {
         value[keyPath: keyPath]
     }
     
-    public func subscribe(initialNotify: Bool, receiveValue: @escaping (Value, _ context: Any?) -> Void) -> SubscriptionToken {
-        subscribeReceive(initialNotify, receiveValue)
+    public func subscribe(suppressInitialNotify: Bool, receiveValue: @escaping (Value, _ context: Any?) -> Void) -> SubscriptionToken {
+        subscribeReceive(suppressInitialNotify, receiveValue)
     }
 }
 
@@ -51,8 +51,8 @@ extension Observable {
     public func scope<U>(_ transform: @escaping (Value) -> U) -> Observable<U> {
         Observable<U>(
             valueRef: .init { transform(self.value) },
-            subscribeReceiveValue: { initialNotify, localNotify in
-                self.subscribe(initialNotify: initialNotify) { globalValue, context in
+            subscribeReceiveValue: { suppressInitialNotify, localNotify in
+                self.subscribe(suppressInitialNotify: suppressInitialNotify) { globalValue, context in
                     localNotify(transform(globalValue), context)
                 }
             }

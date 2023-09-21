@@ -25,16 +25,16 @@ import Foundation
 
 public protocol ValueObserving {
     associatedtype T
-    func subscribe(initialNotify: Bool, receiveValue: @escaping (T, _ context: Any?) -> Void) -> SubscriptionToken
+    func subscribe(suppressInitialNotify: Bool, receiveValue: @escaping (T, _ context: Any?) -> Void) -> SubscriptionToken
 }
 
 extension ValueObserving {
     public func subscribe(receiveValue: @escaping (T, _ context: Any?) -> Void) -> SubscriptionToken {
-        subscribe(initialNotify: true, receiveValue: receiveValue)
+        subscribe(suppressInitialNotify: false, receiveValue: receiveValue)
     }
     
-    public func subscribe(initialNotify: Bool = true, receiveValue: @escaping (T) -> Void) -> SubscriptionToken {
-        subscribe(initialNotify: initialNotify) { value, _ in receiveValue(value) }
+    public func subscribe(suppressInitialNotify: Bool = false, receiveValue: @escaping (T) -> Void) -> SubscriptionToken {
+        subscribe(suppressInitialNotify: suppressInitialNotify) { value, _ in receiveValue(value) }
     }
 }
 
@@ -58,8 +58,8 @@ extension ValueObserving {
 
 extension ValueObserving {
     public func receive(onQueue queue: DispatchQueue) -> AnyValueObserving<T> {
-        .init { initialNotify, receiveValue in
-            self.subscribe(initialNotify: initialNotify) { value, context in
+        .init { suppressInitialNotify, receiveValue in
+            self.subscribe(suppressInitialNotify: suppressInitialNotify) { value, context in
                 queue.async { receiveValue(value, context) }
             }
         }
@@ -77,8 +77,8 @@ public struct AnyValueObserving<T>: ValueObserving {
     
     private let subscribe: (Bool, @escaping (T, Any?) -> Void) -> SubscriptionToken
     
-    public func subscribe(initialNotify: Bool, receiveValue: @escaping (T, Any?) -> Void) -> SubscriptionToken {
-        subscribe(initialNotify, receiveValue)
+    public func subscribe(suppressInitialNotify: Bool, receiveValue: @escaping (T, Any?) -> Void) -> SubscriptionToken {
+        subscribe(suppressInitialNotify, receiveValue)
     }
 }
 

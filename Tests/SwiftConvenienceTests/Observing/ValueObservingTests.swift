@@ -4,7 +4,7 @@ import Combine
 import XCTest
 
 private class ValueWrapper<T>: ValueObserving {
-    private var subscriptions: [(initialNotify: Bool, receiveValue: (T, Any?) -> Void)] = []
+    private var subscriptions: [(suppressInitialNotify: Bool, receiveValue: (T, Any?) -> Void)] = []
     
     init(value: T) {
         self.value = value
@@ -14,9 +14,9 @@ private class ValueWrapper<T>: ValueObserving {
         didSet { subscriptions.forEach { $0.receiveValue(value, nil) } }
     }
     
-    func subscribe(initialNotify: Bool, receiveValue: @escaping (T, Any?) -> Void) -> SubscriptionToken {
-        subscriptions.append((initialNotify, receiveValue))
-        if initialNotify {
+    func subscribe(suppressInitialNotify: Bool, receiveValue: @escaping (T, Any?) -> Void) -> SubscriptionToken {
+        subscriptions.append((suppressInitialNotify, receiveValue))
+        if !suppressInitialNotify {
             receiveValue(value, nil)
         }
         return .stub(())

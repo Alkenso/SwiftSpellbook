@@ -85,10 +85,10 @@ public final class ValueStore<Value>: ValueObserving {
         value?[keyPath: keyPath]
     }
     
-    public func subscribe(initialNotify: Bool, receiveValue: @escaping (Value, _ context: Any?) -> Void) -> SubscriptionToken {
+    public func subscribe(suppressInitialNotify: Bool, receiveValue: @escaping (Value, _ context: Any?) -> Void) -> SubscriptionToken {
         lock.withLock {
             subscriptions
-                .subscribe(initialNotify: initialNotify, receiveValue: receiveValue)
+                .subscribe(suppressInitialNotify: suppressInitialNotify, receiveValue: receiveValue)
                 .capturing(self)
         }
     }
