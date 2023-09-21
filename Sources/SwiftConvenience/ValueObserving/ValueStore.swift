@@ -167,4 +167,8 @@ extension ValueStore {
             subscribeReceiveValue: subscribe
         )
     }
+    
+    public var asView: ValueView<Value> {
+        .init { self.value }
+    }
 }
