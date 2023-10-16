@@ -29,13 +29,20 @@ public struct SynchronousExecutor {
     public var name: String?
     public var timeout: TimeInterval?
     
-    public init(_ name: String? = nil, timeout: TimeInterval? = nil) {
+    public init(_ name: String? = nil, timeout: TimeInterval?) {
         self.name = name
         self.timeout = timeout
     }
+}
+
+extension SynchronousExecutor {
+    public static func sync<R>(_ action: (@escaping (R) -> Void) throws -> Void) rethrows -> R {
+        @Atomic var result: R!
+        try sync(action, $result).wait()
+        return result
+    }
     
-    public func callAsFunction<R>(_ action: (@escaping (Result<R, Error>) -> Void) throws -> Void) throws -> R {
-        @Atomic var result: Result<R, Error>!
+    private static func sync<R>(_ action: (@escaping (R) -> Void) throws -> Void, _ result: Atomic<R?>) rethrows -> DispatchGroup {
         let group = DispatchGroup()
         group.enter()
         
@@ -47,18 +54,24 @@ public struct SynchronousExecutor {
                 }
                 return
             }
-            result = $0
+            result.wrappedValue = $0
             group.leave()
         }
         
-        if let timeout {
-            guard group.wait(timeout: .now() + timeout) == .success else {
-                throw CommonError.timedOut(what: name ?? "Operation")
-            }
-        } else {
-            group.wait()
+        return group
+    }
+}
+
+extension SynchronousExecutor {
+    public func callAsFunction<R>(_ action: (@escaping (Result<R, Error>) -> Void) throws -> Void) throws -> R {
+        guard let timeout else {
+            return try Self.sync(action).get()
         }
         
+        @Atomic var result: Result<R, Error>!
+        guard try Self.sync(action, $result).wait(timeout: .now() + timeout) == .success else {
+            throw CommonError.timedOut(what: name ?? "Async-to-sync operation")
+        }
         return try result.get()
     }
 }
@@ -87,6 +100,15 @@ extension SynchronousExecutor {
 
 @available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension SynchronousExecutor {
+    public static func sync<R>(_ action: @escaping () async -> R) -> R {
+        sync { completion in
+            Task {
+                let result = await action()
+                completion(result)
+            }
+        }
+    }
+    
     public func callAsFunction<R>(_ action: @escaping () async throws -> R) throws -> R {
         try callAsFunction { completion in
             Task {
