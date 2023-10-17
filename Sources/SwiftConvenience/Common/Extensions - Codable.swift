@@ -40,7 +40,7 @@ extension Encodable {
     }
 }
 
-public struct ObjectEncoder<T: Encodable> {
+public struct ObjectEncoder<T> {
     public var formatName: String
     public var encode: (T) throws -> Data
     
@@ -50,25 +50,35 @@ public struct ObjectEncoder<T: Encodable> {
     }
 }
 
-extension ObjectEncoder {
-    public static func json(encoder: JSONEncoder = JSONEncoder()) -> Self {
+extension ObjectEncoder where T: Encodable {
+    public static func json(_ type: T.Type = T.self, encoder: JSONEncoder = JSONEncoder()) -> Self {
         .init(name: "json", encode: encoder.encode)
     }
     
-    public static func json(_ format: JSONEncoder.OutputFormatting) -> Self {
+    public static func json(_ type: T.Type = T.self, formatting: JSONEncoder.OutputFormatting) -> Self {
         let encoder = JSONEncoder()
-        encoder.outputFormatting = format
+        encoder.outputFormatting = formatting
         return .json(encoder: encoder)
     }
     
-    public static func plist(encoder: PropertyListEncoder = PropertyListEncoder()) -> Self {
+    public static func plist(_ type: T.Type = T.self, encoder: PropertyListEncoder = PropertyListEncoder()) -> Self {
         .init(name: "plist", encode: encoder.encode)
     }
     
-    public static func plist(_ format: PropertyListSerialization.PropertyListFormat) -> Self {
+    public static func plist(_ type: T.Type = T.self, format: PropertyListSerialization.PropertyListFormat) -> Self {
         let encoder = PropertyListEncoder()
         encoder.outputFormat = format
         return .plist(encoder: encoder)
+    }
+}
+
+extension ObjectEncoder {
+    public static func foundationJSON(_ type: T.Type = T.self, options: JSONSerialization.WritingOptions = []) -> Self {
+        .init(name: "json") { try JSONSerialization.data(withJSONObject: $0, options: options) }
+    }
+    
+    public static func foundationPlist(_ type: T.Type = T.self, format: PropertyListSerialization.PropertyListFormat) -> Self {
+        .init(name: "plist") { try PropertyListSerialization.data(fromPropertyList: $0, format: format, options: 0) }
     }
 }
 
@@ -88,7 +98,7 @@ extension Decodable {
     }
 }
 
-public struct ObjectDecoder<T: Decodable> {
+public struct ObjectDecoder<T> {
     public var formatName: String
     public var decode: (T.Type, Data) throws -> T
     
@@ -98,13 +108,29 @@ public struct ObjectDecoder<T: Decodable> {
     }
 }
 
-extension ObjectDecoder {
-    public static func json(decoder: JSONDecoder = JSONDecoder()) -> Self {
+extension ObjectDecoder where T: Decodable {
+    public static func json(_ type: T.Type = T.self, decoder: JSONDecoder = JSONDecoder()) -> Self {
         .init(formatName: "json", decode: decoder.decode)
     }
     
-    public static func plist(decoder: PropertyListDecoder = PropertyListDecoder()) -> Self {
+    public static func plist(_ type: T.Type = T.self, decoder: PropertyListDecoder = PropertyListDecoder()) -> Self {
         .init(formatName: "plist", decode: decoder.decode)
+    }
+}
+
+extension ObjectDecoder {
+    public static func foundationJSON(_ type: T.Type = T.self, options: JSONSerialization.ReadingOptions = []) -> Self {
+        .init(formatName: "json") {
+            let object = try JSONSerialization.jsonObject(with: $1, options: options)
+            return try (object as? T).get(CommonError.cast(name: "JSON object", object, to: $0))
+        }
+    }
+    
+    public static func foundationPlist(_ type: T.Type = T.self, options: PropertyListSerialization.ReadOptions = []) -> Self {
+        .init(formatName: "plist") {
+            let object = try PropertyListSerialization.propertyList(from: $1, options: options, format: nil)
+            return try (object as? T).get(CommonError.cast(name: "Plist object", object, to: $0))
+        }
     }
 }
 
