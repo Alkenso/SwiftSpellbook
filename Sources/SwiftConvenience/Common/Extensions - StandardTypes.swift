@@ -280,6 +280,17 @@ extension Result where Failure == Error {
     }
 }
 
+extension Result where Success == Void {
+    /// Create Result object with failure if it present or success otherwise.
+    public init(failure: Failure?) {
+        if let failure {
+            self = .failure(failure)
+        } else {
+            self = .success(())
+        }
+    }
+}
+
 // MARK: - Error
 
 extension Error {
