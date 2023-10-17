@@ -12,6 +12,10 @@ let package = Package(
             targets: ["SwiftConvenience"]
         ),
         .library(
+            name: "SpellbookHTTP",
+            targets: ["SpellbookHTTP"]
+        ),
+        .library(
             name: "SwiftConvenienceTestUtils",
             targets: ["SwiftConvenienceTestUtils"]
         ),
@@ -29,6 +33,10 @@ let package = Package(
         .target(
             name: "SwiftConvenienceObjC",
             publicHeadersPath: "."
+        ),
+        .target(
+            name: "SpellbookHTTP",
+            dependencies: ["SwiftConvenience"]
         ),
         .target(
             name: "SwiftConvenienceTestUtils",
