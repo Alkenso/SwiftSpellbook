@@ -4,51 +4,51 @@
 import PackageDescription
 
 let package = Package(
-    name: "SwiftConvenience",
+    name: "SwiftSpellbook",
     platforms: [.macOS(.v10_10), .iOS(.v9), .tvOS(.v9), .watchOS(.v2)],
     products: [
         .library(
-            name: "SwiftConvenience",
-            targets: ["SwiftConvenience"]
+            name: "SpellbookFoundation",
+            targets: ["SpellbookFoundation"]
         ),
         .library(
             name: "SpellbookHTTP",
             targets: ["SpellbookHTTP"]
         ),
         .library(
-            name: "SwiftConvenienceTestUtils",
-            targets: ["SwiftConvenienceTestUtils"]
+            name: "SpellbookTestUtils",
+            targets: ["SpellbookTestUtils"]
         ),
     ],
     dependencies: [
     ],
     targets: [
         .target(
-            name: "SwiftConvenience",
-            dependencies: ["SwiftConvenienceObjC"],
+            name: "SpellbookFoundation",
+            dependencies: ["SpellbookFoundationObjC"],
             linkerSettings: [
                 .linkedLibrary("bsm", .when(platforms: [.macOS])),
             ]
         ),
         .target(
-            name: "SwiftConvenienceObjC",
+            name: "SpellbookFoundationObjC",
             publicHeadersPath: "."
         ),
         .target(
             name: "SpellbookHTTP",
-            dependencies: ["SwiftConvenience"]
+            dependencies: ["SpellbookFoundation"]
         ),
         .target(
-            name: "SwiftConvenienceTestUtils",
-            dependencies: ["SwiftConvenience"]
+            name: "SpellbookTestUtils",
+            dependencies: ["SpellbookFoundation"]
         ),
         .testTarget(
-            name: "SwiftConvenienceTests",
-            dependencies: ["SwiftConvenience", "SwiftConvenienceTestUtils"]
+            name: "SpellbookTests",
+            dependencies: ["SpellbookFoundation", "SpellbookTestUtils"]
         ),
         .testTarget(
-            name: "SwiftConvenienceTestUtilsTests",
-            dependencies: ["SwiftConvenience", "SwiftConvenienceTestUtils"]
+            name: "SpellbookTestUtilsTests",
+            dependencies: ["SpellbookFoundation", "SpellbookTestUtils"]
         ),
     ]
 )
