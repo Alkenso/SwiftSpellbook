@@ -1,49 +1,39 @@
-# SwiftConvenience
-Convenient additions to Swift standard library that makes development pleasant.
+# SwiftSpellbook
+SwiftSpellbook is collection of additions to Swift standard library that makes development easier.
 
-### Brief history
-While participating in many projects (mostly macOS) I use the same tools and standard types extensions.
+## Motivation
+While participating in many projects (macOS and iOS) I use the same tools and standard types extensions.
 Once I've decided stop to copy-paste code from project to project and make single library that covers lots of developer needs in utility code.
 
-### Content
-#### Common
-- CancellationToken: track cancelled state of the tasks
-- CommonError: most common error types in developers' practice
-- Environment: runtime access to build environment: if debug, if testing, etc.
-- Some standard types extensions
-- Some utility types
-#### Filesystem & Bundle
-- Bundle: convenience extensions
-- FileManager: recursive setAttributes and the same
-- FileEnumerator: Swift approach for deep enumeration of the filesystem
-- Temporary Directory: simple working with temporary files and directories
-#### Low level
-- IOKitError: swift error wrapping IOKit statuses
-- Mach: mach utilities
-- POD: conformance popular C structs to Swift Equatable / Codable / etc 
-- Unsafe: a bit more UnsafePointer... utilities
-#### System & Hardware
-- DeviceInfo: platform-dependent information about device (model, serial, etc)
-- Process: convenience extensions
-#### Wrappers & PropertyWrappers
-- Atomic
-- Box / Weak / WeakBox
-- Clamping: restrict value type to some bounds
-- Synchronized: object wrapper around value to provide thread-safety
-- Resource (RAII wrapper, smart pointer analog)
-#### BinaryParsing
-- Utilities to serialize / deserialize things in binary format
-#### Misc
-- WildcardExpression: same as RegularExpression, but for wildcards (?, *)
-- Transfromer: generic approach of transforming one value to another using multiple 'reducers'
-#### Objective-C
-- NSXPCConnection: audit_token_t property
-- NSException: catching Obj-C exceptions from Swift code
-#### Testing
-- convenient utilities used in XCTests
+## Content
+At top level, the code is organized into libraries that cover big areas.
+Now there are only two:
+- SpellbookFoundation: utility code
+- SpellbookHTTP: HTTP client
+- SpellbookTestUtils: utility code frequently used for Unit-Tests
 
-### Other
+The libraries/targets are organized as one level nested folders to distinguish between areas they are related to.
+
+## SpellbookFoundation
+The most of utility code lives here.
+- BinaryParsing: read and write data buffers or files in raw binary format
+- Combine: Combine.framework extensions
+- Common: 
+- DictionaryParsing: deal with data nested deeply in dictionaries
+- Filesystem & Bundle: FileManager, Bundle and same utilities
+- GUI: CoreGraphics utilities. This is NOT an AppKit/UIKit/SwiftUI
+- Low Level: extensions to deal with (popular) C structures, unsafe types, etc. 
+- ObjC Bridging: Caching Objective-C and C++ exceptions from Swift code
+- System & Hardware: UNIX and Process utilities
+- Threading & Concurrency: utilities that make multithead development easier
+- Types & PropertyWrappers: misc types and property wrappers
+- ValueObserving: utilities that allows observe and modify-with-observe on any types
+
+# Other
+If you've found this or other my libraries helpful, you could [buy me some pizza](https://www.buymeacoffee.com/alkenso).
+
 You can also find Swift libraries for macOS / *OS development
 - [sXPC](https://github.com/Alkenso/sXPC): type-safe wrapper around NSXPCConnection and proxy object
 - [sLaunchctl](https://github.com/Alkenso/sLaunchctl): register and manage daemons and user-agents
 - [sMock](https://github.com/Alkenso/sMock): Swift unit-test mocking framework similar to gtest/gmock
+- [sEndpointSecurity](https://github.com/Alkenso/sEndpointSecurity.git) Swift wrapper around EndpointSecurity.framework 
