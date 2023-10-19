@@ -133,19 +133,19 @@ extension HTTPRequest.Body {
     }
     
     public static func foundation(json obj: Any, options: JSONSerialization.WritingOptions = []) -> Self {
-        .init(value: obj, encoder: .foundationJSON(options: options), contentType: contentTypeJSON)
+        .init(value: obj, encoder: .foundationJSON(options), contentType: contentTypeJSON)
     }
     
     public static func foundation(plist obj: Any, format: PropertyListSerialization.PropertyListFormat = .xml) -> Self {
-        .init(value: obj, encoder: .foundationPlist(format: format), contentType: contentTypePlist)
+        .init(value: obj, encoder: .foundationPlist(format), contentType: contentTypePlist)
     }
     
     public static func codable<T: Encodable>(json obj: T, formatting: JSONEncoder.OutputFormatting = []) -> Self {
-        .init(value: obj, encoder: .json(formatting: formatting), contentType: contentTypeJSON)
+        .init(value: obj, encoder: .json(formatting), contentType: contentTypeJSON)
     }
     
     public static func codable<T: Encodable>(plist obj: T, format: PropertyListSerialization.PropertyListFormat = .xml) -> Self {
-        .init(value: obj, encoder: .plist(format: format), contentType: contentTypePlist)
+        .init(value: obj, encoder: .plist(format), contentType: contentTypePlist)
     }
     
     public static func data(_ data: Data, contentType: String?) -> Self {

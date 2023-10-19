@@ -51,21 +51,21 @@ public struct ObjectEncoder<T> {
 }
 
 extension ObjectEncoder where T: Encodable {
-    public static func json(_ type: T.Type = T.self, encoder: JSONEncoder = JSONEncoder()) -> Self {
+    public static func json(type: T.Type = T.self, encoder: JSONEncoder = JSONEncoder()) -> Self {
         .init(name: "json", encode: encoder.encode)
     }
     
-    public static func json(_ type: T.Type = T.self, formatting: JSONEncoder.OutputFormatting) -> Self {
+    public static func json(type: T.Type = T.self, _ formatting: JSONEncoder.OutputFormatting) -> Self {
         let encoder = JSONEncoder()
         encoder.outputFormatting = formatting
         return .json(encoder: encoder)
     }
     
-    public static func plist(_ type: T.Type = T.self, encoder: PropertyListEncoder = PropertyListEncoder()) -> Self {
+    public static func plist(type: T.Type = T.self, encoder: PropertyListEncoder = PropertyListEncoder()) -> Self {
         .init(name: "plist", encode: encoder.encode)
     }
     
-    public static func plist(_ type: T.Type = T.self, format: PropertyListSerialization.PropertyListFormat) -> Self {
+    public static func plist(type: T.Type = T.self, _ format: PropertyListSerialization.PropertyListFormat) -> Self {
         let encoder = PropertyListEncoder()
         encoder.outputFormat = format
         return .plist(encoder: encoder)
@@ -73,11 +73,11 @@ extension ObjectEncoder where T: Encodable {
 }
 
 extension ObjectEncoder {
-    public static func foundationJSON(_ type: T.Type = T.self, options: JSONSerialization.WritingOptions = []) -> Self {
+    public static func foundationJSON(type: T.Type = T.self, _ options: JSONSerialization.WritingOptions = []) -> Self {
         .init(name: "json") { try JSONSerialization.data(withJSONObject: $0, options: options) }
     }
     
-    public static func foundationPlist(_ type: T.Type = T.self, format: PropertyListSerialization.PropertyListFormat) -> Self {
+    public static func foundationPlist(type: T.Type = T.self, _ format: PropertyListSerialization.PropertyListFormat) -> Self {
         .init(name: "plist") { try PropertyListSerialization.data(fromPropertyList: $0, format: format, options: 0) }
     }
 }

@@ -154,10 +154,10 @@ public struct FileStoreCoder<T: Codable> {
 
 extension FileStoreCoder {
     public static func json(_ formatting: JSONEncoder.OutputFormatting = []) -> Self {
-        .init(encoder: .json(formatting: formatting), decoder: .json())
+        .init(encoder: .json(formatting), decoder: .json())
     }
     
     public static func plist(_ format: PropertyListSerialization.PropertyListFormat = .xml) -> Self {
-        .init(encoder: .plist(format: format), decoder: .plist())
+        .init(encoder: .plist(format), decoder: .plist())
     }
 }
