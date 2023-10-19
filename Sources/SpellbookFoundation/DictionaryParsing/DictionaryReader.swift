@@ -100,6 +100,19 @@ public struct DictionaryReader<Key: Hashable, Value> {
         try read(key: key) { $0 as? R }
     }
     
+    /// Get value for key, converting the value into desired type
+    /// ```
+    /// // `id` has type `UUID`
+    /// let id = try reader.get("name", as: String.self) { UUID(uuidString: $0) }
+    /// ```
+    ///
+    /// - Returns: Value for given key
+    /// - Throws: `DictionaryCodingError.keyNotFound` if key does not exist
+    /// - Throws: `DictionaryCodingError.typeMismatch` if value for given key cannot be converted into desired type
+    public func read<T, R>(key: Key, as: T.Type, transform: (T) -> R?) throws -> R {
+        try read(key: key) { ($0 as? T).flatMap(transform) }
+    }
+    
     /// Get value for `dotPath`, converting the value it into desired type
     /// ```
     /// let childAge = try reader.get(at: "name.children.[0].age") { $0 as? String }
@@ -129,6 +142,16 @@ public struct DictionaryReader<Key: Hashable, Value> {
     /// For more details, see `get(at:transform:)`
     public func read<R>(dotPath: String, as: R.Type) throws -> R {
         try read(dotPath: dotPath) { $0 as? R }
+    }
+    
+    /// Get value for `dotPath`, converting the value it into desired type
+    /// ```
+    /// let childID = try reader.get(at: "name.children.[0].age", as: String.self) { UUID(uuidString: $0) }
+    /// ```
+    ///
+    /// For more details, see `get(at:transform:)`
+    public func read<T, R>(dotPath: String, as: T.Type, transform: (T) -> R?) throws -> R {
+        try read(dotPath: dotPath) { ($0 as? T).flatMap(transform) }
     }
     
     /// Get value for `codingPath`, converting the value it into desired type
@@ -201,6 +224,16 @@ public struct DictionaryReader<Key: Hashable, Value> {
     /// For more details, see `get(at:transform:)`
     public func read<R>(codingPath: [DictionaryCodingKey], as: R.Type) throws -> R {
         try read(codingPath: codingPath) { $0 as? R }
+    }
+    
+    /// Get value for `codingPath`, converting the value it into desired type
+    /// ```
+    /// let childID = try reader.get(at: "name.children.[0].age", as: String.self) { UUID(uuidString: $0) }
+    /// ```
+    ///
+    /// For more details, see `get(at:transform:)`
+    public func read<T, R>(codingPath: [DictionaryCodingKey], as: T.Type, transform: (T) -> R?) throws -> R {
+        try read(codingPath: codingPath) { ($0 as? T).flatMap(transform) }
     }
     
     private func throwInvalidContainer<T>(

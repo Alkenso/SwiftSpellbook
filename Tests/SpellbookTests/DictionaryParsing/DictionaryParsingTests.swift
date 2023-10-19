@@ -5,10 +5,12 @@ import XCTest
 class DictionaryReaderTests: XCTestCase {
     func test_codingPath() throws {
         let person: [String: Any] = [
+            "id": UUID().uuidString,
             "name": "Bob",
             "address": [
                 "city": "Miami",
                 "zip": 12345,
+                "id": UUID().uuidString,
             ],
             "children": [
                 ["name": "Volodymyr", "age": 10],
@@ -24,12 +26,16 @@ class DictionaryReaderTests: XCTestCase {
         
         // read + convert
         XCTAssertEqual(try reader.read(key: "name", as: String.self), "Bob")
+        XCTAssertNoThrow(try reader.read(key: "id", as: String.self) { UUID(uuidString: $0) })
         XCTAssertThrowsError(try reader.read(key: "name", as: Int.self))
         XCTAssertThrowsError(try reader.read(key: "name") { $0 as? Int })
+        XCTAssertThrowsError(try reader.read(key: "id", as: String.self) { _ in nil as UUID? })
         
         // codingPath
         XCTAssertEqual(try reader.read(codingPath: ["address", "city"], as: String.self), "Miami")
+        XCTAssertNoThrow(try reader.read(codingPath: ["address", "id"], as: String.self) { UUID(uuidString: $0) })
         XCTAssertThrowsError(try reader.read(codingPath: ["address", "city2"], as: String.self))
+        XCTAssertThrowsError(try reader.read(codingPath: ["address", "id"], as: String.self) { _ in nil as UUID? })
         
         XCTAssertEqual(try reader.read(codingPath: ["children", .index(0), "age"], as: Int.self), 10)
         XCTAssertEqual(try reader.read(codingPath: ["children", .index(1), "age"], as: Int.self), 6)
