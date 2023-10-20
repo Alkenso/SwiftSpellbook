@@ -5,6 +5,7 @@ SwiftSpellbook is collection of additions to Swift standard library that makes d
   <img src="https://img.shields.io/badge/swift-5.7 | 5.8 | 5.9-orange" />
   <img src="https://img.shields.io/badge/platforms-macOS 10.13 | iOS 12 | watchOS 4 | tvOS 12-freshgreen" />
   <img src="https://img.shields.io/badge/Xcode-14 | 15-blue" />
+  <img src="https://github.com/Alkenso/SwiftSpellbook/actions/workflows/main.yml/badge.svg" />
 </p>
 
 ## Motivation
