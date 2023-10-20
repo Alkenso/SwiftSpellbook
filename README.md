@@ -1,6 +1,12 @@
 # SwiftSpellbook
 SwiftSpellbook is collection of additions to Swift standard library that makes development easier.
 
+<p>
+  <img src="https://img.shields.io/badge/swift-5.7 | 5.8 | 5.9-orange" />
+  <img src="https://img.shields.io/badge/platforms-macOS 10.13 | iOS 12 | watchOS 4 | tvOS 12-freshgreen" />
+  <img src="https://img.shields.io/badge/Xcode-14 | 15-blue" />
+</p>
+
 ## Motivation
 While participating in many projects (macOS and iOS) I use the same tools and standard types extensions.
 Once I've decided stop to copy-paste code from project to project and make single library that covers lots of developer needs in utility code.
@@ -30,7 +36,9 @@ The most of utility code lives here.
 - ValueObserving: utilities that allows observe and modify-with-observe on any types
 
 # Other
-If you've found this or other my libraries helpful, you could [buy me some pizza](https://www.buymeacoffee.com/alkenso).
+If you've found this or other my libraries helpful, you could buy me some pizza
+
+<a href="https://www.buymeacoffee.com/alkenso"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a pizza&emoji=🍕&slug=alkenso&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" /></a>
 
 You can also find Swift libraries for macOS / *OS development
 - [sXPC](https://github.com/Alkenso/sXPC): type-safe wrapper around NSXPCConnection and proxy object
