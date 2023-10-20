@@ -32,7 +32,7 @@ class BlockingQueueTests: XCTestCase {
             XCTAssertEqual(queue.dequeue(), 10)
             dequeueExp.fulfill()
         }
-        waitForExpectations(timeout: 0.1)
+        waitForExpectations(timeout: 0.1, ignoreWaitRate: true)
         
         dequeueExp = expectation(description: "dequeued after enqueue")
         queue.enqueue(10)

@@ -76,33 +76,33 @@ final class EventAskTests: XCTestCase {
         
         // Set event processor that takes more time than timeout.
         event.subscribe { _ in
-            Thread.sleep(forTimeInterval: 0.1)
+            Self.sleep(interval: 0.1)
             return 1
         }.store(in: &subscriptions)
         
         // Set event processor that takes less time than timeout.
         event.subscribe { _ in
-            Thread.sleep(forTimeInterval: 0.01)
+            Self.sleep(interval: 0.01)
             return 2
         }.store(in: &subscriptions)
         
         // Assuming
         let exp1 = expectation(description: "Evaluated.")
-        event.askAsync("", timeout: .init(0.05, fallback: nil)) {
+        event.askAsync("", timeout: .init(0.05 * Self.waitRate, fallback: nil)) {
             XCTAssertEqual(Set($0), [2])
             exp1.fulfill()
         }
         waitForExpectations()
         
         let exp2 = expectation(description: "Evaluated.")
-        event.askAsync("", timeout: .init(0.05, fallback: .replaceMissed(10))) {
+        event.askAsync("", timeout: .init(0.05 * Self.waitRate, fallback: .replaceMissed(10))) {
             XCTAssertEqual(Set($0), [2, 10])
             exp2.fulfill()
         }
         waitForExpectations()
         
         let exp3 = expectation(description: "Evaluated.")
-        event.askAsync("", timeout: .init(0.05, fallback: .replaceOutput([123]))) {
+        event.askAsync("", timeout: .init(0.05 * Self.waitRate, fallback: .replaceOutput([123]))) {
             XCTAssertEqual(Set($0), [123])
             exp3.fulfill()
         }

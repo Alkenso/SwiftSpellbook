@@ -7,20 +7,20 @@ class ConcurrentBlockOperationTests: XCTestCase {
     func test() throws {
         let interval = 0.1
         let op = ConcurrentBlockOperation { isCancelled, completion in
-            Thread.sleep(forTimeInterval: interval)
+            Self.sleep(interval: interval)
             completion()
         }
         let queue = OperationQueue()
         queue.addOperation(op)
         
-        Thread.sleep(forTimeInterval: 0.05)
+        Self.sleep(interval: 0.05)
         
         XCTAssertTrue(op.isAsynchronous)
         XCTAssertTrue(op.isReady)
         XCTAssertTrue(op.isExecuting)
         XCTAssertFalse(op.isFinished)
         
-        Thread.sleep(forTimeInterval: interval)
+        Self.sleep(interval: interval)
         
         XCTAssertFalse(op.isExecuting)
         XCTAssertTrue(op.isFinished)

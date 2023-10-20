@@ -22,24 +22,51 @@
 
 import XCTest
 
-public extension XCTestCase {
-    static var waitTimeout: TimeInterval = 0.5
+extension XCTestCase {
+#if SPELLBOOK_SLOW_CI_x10
+    public static var waitRate = 10.0
+#elseif SPELLBOOK_SLOW_CI_x20
+    public static var waitRate = 20.0
+#elseif SPELLBOOK_SLOW_CI_x30
+    public static var waitRate = 30.0
+#elseif SPELLBOOK_SLOW_CI_x50
+    public static var waitRate = 50.0
+#elseif SPELLBOOK_SLOW_CI_x100
+    public static var waitRate = 100.0
+#else
+    public static var waitRate = 1.0
+#endif
     
-    static var testBundle: Bundle {
+    public static var waitTimeout: TimeInterval = 0.5
+    
+    public static var testBundle: Bundle {
         return Bundle(for: Self.self)
     }
     
-    var testBundle: Bundle {
+    public var testBundle: Bundle {
         Self.testBundle
     }
     
     @discardableResult
-    func waitForExpectations(timeout: TimeInterval = XCTestCase.waitTimeout) -> Error? {
+    public func waitForExpectations(timeout: TimeInterval = XCTestCase.waitTimeout) -> Error? {
+        waitForExpectations(timeout: timeout, ignoreWaitRate: false)
+    }
+    
+    @discardableResult
+    public func waitForExpectations(timeout: TimeInterval = XCTestCase.waitTimeout, ignoreWaitRate: Bool) -> Error? {
         var error: Error?
-        waitForExpectations(timeout: timeout, handler: {
+        waitForExpectations(timeout: timeout * Self.waitRate) {
             error = $0
-        })
+        }
         
         return error
+    }
+    
+    public static func sleep(interval: TimeInterval) {
+        Thread.sleep(forTimeInterval: interval * Self.waitRate)
+    }
+    
+    public func sleep(interval: TimeInterval) {
+        Self.sleep(interval: interval)
     }
 }
