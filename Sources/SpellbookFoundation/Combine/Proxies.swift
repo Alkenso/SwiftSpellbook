@@ -30,7 +30,7 @@ public struct ProxyPublisher<P: Publisher>: Publisher {
     public let proxy: P
     public var context: Any?
     
-    public init(_ publisher: P) {
+    public init(_ publisher: P, context: Any? = nil) {
         proxy = publisher
     }
     
