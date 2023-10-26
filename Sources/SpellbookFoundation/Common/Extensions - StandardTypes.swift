@@ -172,10 +172,13 @@ extension StringProtocol {
     /// - Parameters:
     ///     - keyValue: separator used to split key from value.
     ///     - pairs: separator used to split keyValue pairs.
+    ///     - allowSeparatorsInValue: if true, then it is legal for the `value` in pair to contain a separator.
     /// - returns: array of key-value pairs.
     /// - throws: error if string is not valid key-value pairs string or if `keyValue` / `pairsSeparator` is empty.
     public func parseKeyValuePairs(
-        keyValue keyValueSeparator: String, pairs pairsSeparator: String
+        keyValue keyValueSeparator: String, 
+        pairs pairsSeparator: String,
+        allowSeparatorsInValue: Bool = false
     ) throws -> [KeyValue<String, String>] {
         guard !pairsSeparator.isEmpty else {
             throw CommonError.invalidArgument(
@@ -184,7 +187,9 @@ extension StringProtocol {
         }
         
         let pairs = components(separatedBy: pairsSeparator)
-        return try pairs.map { try $0.parseKeyValuePair(separator: keyValueSeparator) }
+        return try pairs.map {
+            try $0.parseKeyValuePair(separator: keyValueSeparator, allowSeparatorsInValue: allowSeparatorsInValue)
+        }
     }
     
     /// Parse key-value pair string.
@@ -198,7 +203,7 @@ extension StringProtocol {
     ///
     /// - Parameters:
     ///     - separatedBy: separator used to split key from value.
-    ///     - allowSeparatorsInValue: if true, then it is legal for the value to contain separator.
+    ///     - allowSeparatorsInValue: if true, then it is legal for the `value` to contain a separator.
     ///     For example, "key=value=1" will be parsed as "key" + "value=1".
     /// - returns: key-value pair.
     /// - throws: error if string is not valid key-value pair string or if `separator` is empty.
