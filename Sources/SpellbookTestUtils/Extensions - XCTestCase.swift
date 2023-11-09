@@ -69,4 +69,8 @@ extension XCTestCase {
     public func sleep(interval: TimeInterval) {
         Self.sleep(interval: interval)
     }
+    
+    public func withScope<R>(body: () throws -> R) rethrows -> R {
+        try body()
+    }
 }

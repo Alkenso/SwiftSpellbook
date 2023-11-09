@@ -25,66 +25,93 @@ import Foundation
 
 /// Resource wrapper that follows the RAII rule: 'Resource acquisition is initialization'.
 /// It is a resource wrapper that performs cleanup when resource is not used anymore.
+@propertyWrapper
 @dynamicMemberLookup
 public class Resource<T> {
+    private let lock = UnfairLock()
+    private var value: T
+    private var freeFn: (T) -> Void
+    private var shouldFree = true
+    
     /// In most cases prefer use of 'withValue' method.
     /// Note:
     /// Be careful copying the value or storing it in the separate variable.
     /// Swift optimizations may free Resource (and perform cleanup)
     /// in the place of last use of Resource, not the Resource.unsafeValue place.
-    public var unsafeValue: T { _value }
+    public var wrappedValue: T { value }
     
-    public init(_ value: T, cleanup: @escaping (T) -> Void) {
-        _value = value
-        _cleanup = cleanup
-    }
+    public var projectedValue: Resource { self }
     
-    /// Immediately perform cleanup action.
-    public func cleanup() {
-        let cleanup = __cleanup.exchange { _ in }
-        cleanup(_value)
-    }
-    
-    /// Disables cleanup action when Resource is freed.
-    @discardableResult
-    public func release() -> T {
-        _cleanup = { _ in }
-        return _value
-    }
-    
-    @discardableResult
-    public func replaceCleanup(_ newCleanup: @escaping (T) -> Void) -> (T) -> Void {
-        __cleanup.exchange(newCleanup)
+    public init(_ value: T, free: @escaping (T) -> Void) {
+        self.value = value
+        self.freeFn = free
     }
     
     deinit {
-        _cleanup(_value)
+        if shouldFree {
+            freeFn(value)
+        }
     }
     
-    private var _value: T
-    @Atomic private var _cleanup: (T) -> Void
+    /// Reset the resource value.
+    ///
+    /// Cleanup `current value` if `free` is `true`.
+    /// Independently of `free` value, the `free` function passed into `init`
+    /// will NOT be called for THIS value.
+    ///
+    /// If `newValue` is present, set it as `current one`.
+    /// `newValue` will be freed using `free` function passed into `init`
+    /// or on `deinit` or on next call to `reset`.
+    @discardableResult
+    public func reset(free: Bool = true, to newValue: T? = nil) -> T {
+        let (currentValue, cleanup) = lock.withLock {
+            let currentValue = value
+            let currentCleanup = freeFn
+            
+            if let newValue {
+                value = newValue
+                shouldFree = true
+            } else {
+                shouldFree = false
+            }
+            
+            let cleanup = free ? { currentCleanup(currentValue) } : {}
+            
+            return (currentValue, cleanup)
+        }
+        
+        cleanup()
+        
+        return currentValue
+    }
+    
+    /// Replace `cleanup` function with new one.
+    @discardableResult
+    public func replaceCleanup(_ newCleanup: @escaping (T) -> Void) -> (T) -> Void {
+        lock.withLock { updateSwap(&freeFn, newCleanup) }
+    }
 }
 
 extension Resource {
     /// Safe way accessing the value
     public func withValue<R>(_ body: (T) throws -> R) rethrows -> R {
-        try body(unsafeValue)
+        try body(wrappedValue)
     }
     
     public subscript<Local>(dynamicMember keyPath: KeyPath<T, Local>) -> Local {
-        unsafeValue[keyPath: keyPath]
+        wrappedValue[keyPath: keyPath]
     }
 }
 
 extension Resource {
     /// Create Resource wrapping value and performing cleanup block when the wrapper if freed.
-    public static func raii(_ value: T, cleanup: @escaping (T) -> Void) -> Resource {
-        Resource(value, cleanup: cleanup)
+    public static func raii(_ value: T, free: @escaping (T) -> Void) -> Resource {
+        Resource(value, free: free)
     }
     
     /// Create Resource wrapping value and performing nothing when the wrapper if freed.
     public static func stub(_ value: T) -> Resource {
-        Resource(value, cleanup: { _ in })
+        Resource(value, free: { _ in })
     }
 }
 
@@ -93,7 +120,7 @@ extension Resource {
     public static func pointer<P>(_ ptr: T) -> Resource where T == UnsafeMutablePointer<P> {
         Resource(
             ptr,
-            cleanup: {
+            free: {
                 $0.deinitialize(count: 1)
                 $0.deallocate()
             }
@@ -113,7 +140,7 @@ extension Resource {
     public static func pointer<P>(_ buffer: T) -> Resource where T == UnsafeMutableBufferPointer<P> {
         Resource(
             buffer,
-            cleanup: {
+            free: {
                 $0.baseAddress?.deinitialize(count: $0.count)
                 $0.deallocate()
             }
@@ -131,12 +158,12 @@ extension Resource {
     
     /// Create Resource wrapping pointer. Deallocates it on cleanup.
     public static func pointer(_ ptr: T) -> Resource where T == UnsafeMutableRawPointer {
-        Resource(ptr, cleanup: { $0.deallocate() })
+        Resource(ptr, free: { $0.deallocate() })
     }
     
     /// Create Resource wrapping pointer. Deallocates it on cleanup.
     public static func pointer(_ buffer: T) -> Resource where T == UnsafeMutableRawBufferPointer {
-        Resource(buffer, cleanup: { $0.deallocate() })
+        Resource(buffer, free: { $0.deallocate() })
     }
 }
 
@@ -145,7 +172,7 @@ public typealias DeinitAction = Resource<Void>
 extension Resource where T == Void {
     /// Perform the action when the instance is freed.
     public convenience init(onDeinit: @escaping () -> Void) {
-        self.init((), cleanup: onDeinit)
+        self.init((), free: onDeinit)
     }
     
     /// Perform the action when the instance is freed.
@@ -182,13 +209,13 @@ extension Resource where T == URL {
 
 extension Resource: Equatable where T: Equatable {
     public static func == (lhs: Resource<T>, rhs: Resource<T>) -> Bool {
-        lhs._value == rhs._value
+        lhs.value == rhs.value
     }
 }
 
 extension Resource: Comparable where T: Comparable {
     public static func < (lhs: Resource<T>, rhs: Resource<T>) -> Bool {
-        lhs._value < rhs._value
+        lhs.value < rhs.value
     }
 }
 
@@ -200,10 +227,10 @@ extension Resource {
 
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension Resource: Identifiable where T: Identifiable {
-    public var id: T.ID { _value.id }
+    public var id: T.ID { value.id }
 }
 
 @available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension Resource: Cancellable {
-    public func cancel() { cleanup() }
+    public func cancel() { reset() }
 }
