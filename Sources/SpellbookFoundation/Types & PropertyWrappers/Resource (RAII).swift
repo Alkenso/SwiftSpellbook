@@ -85,6 +85,14 @@ public class Resource<T> {
         return currentValue
     }
     
+    /// Disables `free` action when Resource is deinited.
+    ///
+    /// Equivalent to `reset(free: false)`.
+    @discardableResult
+    public func release() -> T {
+        reset(free: false)
+    }
+    
     /// Replace `cleanup` function with new one.
     @discardableResult
     public func replaceCleanup(_ newCleanup: @escaping (T) -> Void) -> (T) -> Void {
