@@ -37,7 +37,35 @@ public enum BuildEnvironment {
 /// Different indicators related to Application environment.
 public enum RunEnvironment {
     /// Runtime check if run inside XCTest bundle.
-    public static let isXCTesting: Bool = NSClassFromString("XCTestProbe") != nil
+    public static let isXCTesting: Bool = {
+        let envKeys = ["XCTestBundlePath", "XCTestConfigurationFilePath", "XCTestSessionIdentifier"]
+        if ProcessInfo.processInfo.environment.keys.contains(where: envKeys.contains) { return true }
+        
+        if let path = ProcessInfo.processInfo.arguments.first {
+            if path.lastPathComponent == "xctest" { return true }
+            if path.pathExtension == "xctest" { return true }
+        }
+        
+        if (try? NSException.catchingAll({
+            if let observationCenterClass = NSClassFromString("XCTestObservationCenter") as? NSObject.Type,
+               let observationCenter = observationCenterClass.perform(NSSelectorFromString("sharedTestObservationCenter")),
+               let builtInObservers = observationCenter.takeUnretainedValue().perform(NSSelectorFromString("observers")),
+               let builtInObserverArray = builtInObservers.takeUnretainedValue() as? [NSObject],
+               let misuseObserverClass = NSClassFromString("XCTestMisuseObserver"),
+               let misuseObserver = builtInObserverArray.first(where: { $0.isKind(of: misuseObserverClass) }),
+               let currentCaseAny = misuseObserver.perform(NSSelectorFromString("currentTestCase")),
+               let currentCase = currentCaseAny.takeUnretainedValue() as? NSObject,
+               let testCaseClass = NSClassFromString("XCTestCase") {
+                return currentCase.isKind(of: testCaseClass)
+            } else {
+                return false
+            }
+        })) == true {
+            return true
+        }
+        
+        return false
+    }()
     
     /// Runtime check if run from Xcode.
     public static let isRunFromXcode: Bool = {
