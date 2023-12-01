@@ -82,10 +82,8 @@ public struct AnyValueObserving<T>: ValueObserving {
     }
 }
 
-@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 public protocol ValueObservingPublisher: ValueObserving, Publisher where Failure == Never, Output == (T, Any?) {}
 
-@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension ValueObservingPublisher {
     public func receive<S>(subscriber: S) where S: Subscriber, Failure == S.Failure, Output == S.Input {
         let subscription = ProxySubscription()

@@ -22,7 +22,6 @@
 
 import Foundation
 
-@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension Task {
     public static func runWithCompletion<R>(
         _: R.Type = R.self,
@@ -63,7 +62,6 @@ extension Task {
     }
 }
 
-@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension Task where Success == Never, Failure == Never {
     public static func sleep(forTimeInterval interval: TimeInterval) async throws {
         try await sleep(nanoseconds: UInt64(interval * TimeInterval(NSEC_PER_SEC)))

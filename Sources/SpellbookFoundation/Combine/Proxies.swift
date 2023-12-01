@@ -22,7 +22,6 @@
 
 import Combine
 
-@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 public struct ProxyPublisher<P: Publisher>: Publisher {
     public typealias Output = P.Output
     public typealias Failure = P.Failure
@@ -39,7 +38,6 @@ public struct ProxyPublisher<P: Publisher>: Publisher {
     }
 }
 
-@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 public final class ProxySubscriber<S: Subscriber>: Subscriber {
     public typealias Input = S.Input
     public typealias Failure = S.Failure
@@ -64,7 +62,6 @@ public final class ProxySubscriber<S: Subscriber>: Subscriber {
     }
 }
 
-@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 public final class ProxySubscription: Subscription {
     public var context: Any?
     

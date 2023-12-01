@@ -154,7 +154,6 @@ extension ValueStore {
     }
 }
 
-@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension ValueStore: ValueObservingPublisher {
     public typealias Output = (Value, Any?)
     public typealias Failure = Never

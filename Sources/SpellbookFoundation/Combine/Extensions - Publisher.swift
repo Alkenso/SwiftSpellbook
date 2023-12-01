@@ -22,14 +22,12 @@
 
 import Combine
 
-@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension Publisher {
     public func eraseToAnyPublisher(attachingContext context: Any?) -> AnyPublisher<Output, Failure> {
         ProxyPublisher(self, context: context).eraseToAnyPublisher()
     }
 }
 
-@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension Publisher where Output: Equatable, Failure == Never {
     /// Publishes value changes in order it receives the values
     /// - Warning: When using `mapToChange`, be sure it receives the input in right order.

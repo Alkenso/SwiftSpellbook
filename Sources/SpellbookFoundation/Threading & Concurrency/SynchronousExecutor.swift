@@ -98,7 +98,6 @@ extension SynchronousExecutor {
     }
 }
 
-@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension SynchronousExecutor {
     public static func sync<R>(_ action: @escaping () async -> R) -> R {
         sync { completion in

@@ -78,7 +78,6 @@ private struct Dummy<T> {
     }
 }
 
-@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension Dummy {
     func asyncValue() async -> T {
         await withCheckedContinuation { continuation in

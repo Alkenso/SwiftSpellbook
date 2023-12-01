@@ -81,7 +81,6 @@ extension Box: Hashable where Value: Hashable {
 extension Box: Encodable, PropertyWrapperEncodable where Value: Encodable {}
 extension Box: Decodable, PropertyWrapperDecodable where Value: Decodable {}
 
-@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension Box: Identifiable where Value: Identifiable {
     public var id: Value.ID { wrappedValue.id }
 }
@@ -107,7 +106,6 @@ extension Indirect: Hashable where Value: Hashable {}
 extension Indirect: Encodable, PropertyWrapperEncodable where Value: Encodable {}
 extension Indirect: Decodable, PropertyWrapperDecodable where Value: Decodable {}
 
-@available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *)
 extension Indirect: Identifiable where Value: Identifiable {
     public var id: Value.ID { wrappedValue.id }
 }
