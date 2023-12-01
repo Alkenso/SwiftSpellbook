@@ -4,6 +4,18 @@ import SpellbookTestUtils
 import XCTest
 
 class StandardTypesExtensionsTests: XCTestCase {
+    private let tmp = TestTemporaryDirectory()
+    
+    override func setUpWithError() throws {
+        try tmp.setUp()
+    }
+    
+    override func tearDownWithError() throws {
+        try tmp.tearDown()
+    }
+}
+
+extension StandardTypesExtensionsTests {
     func test_Error_unwrapSafely() {
         let error: Error? = TestError()
         let unwrapped = error.safelyUnwrapped
@@ -34,7 +46,9 @@ class StandardTypesExtensionsTests: XCTestCase {
         let xpcCompatible = error.xpcCompatible()
         XCTAssertNoThrow(try NSKeyedArchiver.archivedData(withRootObject: xpcCompatible, requiringSecureCoding: true))
     }
-    
+}
+
+extension StandardTypesExtensionsTests {
     func test_Result_success_failure() {
         let resultWithValue: Result<Bool, Error> = .success(true)
         XCTAssertEqual(resultWithValue.success, true)
@@ -57,7 +71,9 @@ class StandardTypesExtensionsTests: XCTestCase {
         XCTAssertEqual(Result<Int?, Error>(success: nil, failure: TestError()).success, nil)
         XCTAssertNotNil(Result<Int?, Error>(success: nil as Int??, failure: TestError()).failure)
     }
-    
+}
+
+extension StandardTypesExtensionsTests {
     func test_Data_PODTypes_toData() {
         XCTAssertEqual(Data(pod: 0x10ff20), Data([0x20, 0xff, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00]))
         XCTAssertEqual(Data(pod: 0), Data([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
@@ -116,6 +132,22 @@ class StandardTypesExtensionsTests: XCTestCase {
         )
     }
     
+    func test_Data_contentsOfIfExists() throws {
+        let nonexistentFile = "/\(UUID().uuidString)"
+        let emptyFile = try tmp.createFile("f1")
+        let nonemptyFile = try tmp.createFile("f2", content: Data(pod: 123))
+        
+        let ifNoFile = Data(pod: 2)
+        XCTAssertEqual(try Data(contentsOfFile: nonexistentFile, ifNoFile: ifNoFile), ifNoFile)
+        XCTAssertEqual(try Data(contentsOf: emptyFile, ifNoFile: ifNoFile), Data())
+        XCTAssertEqual(try Data(contentsOf: nonemptyFile, ifNoFile: ifNoFile), Data(pod: 123))
+        
+        XCTAssertThrowsError(try Data(contentsOfFile: "/etc/sudoers")) // No such file.
+        XCTAssertThrowsError(try Data(contentsOfFile: "/etc/sudoers", ifNoFile: Data())) // Permissions denied.
+    }
+}
+
+extension StandardTypesExtensionsTests {
     func test_Comparable_clamped() {
         XCTAssertEqual(5.clamped(to: 0 ... 10), 5)
         XCTAssertEqual(5.clamped(to: 5 ... 10), 5)
@@ -153,7 +185,9 @@ class StandardTypesExtensionsTests: XCTestCase {
         XCTAssertTrue(10.compare(to: 10, relation: .greaterThanOrEqual))
         XCTAssertFalse(10.compare(to: 11, relation: .greaterThanOrEqual))
     }
-    
+}
+
+extension StandardTypesExtensionsTests {
     func test_URL_ensureFileURL() throws {
         XCTAssertNoThrow(try URL(fileURLWithPath: "relative").ensureFileURL())
         XCTAssertNoThrow(try URL(fileURLWithPath: "/absolute").ensureFileURL())
@@ -161,11 +195,15 @@ class StandardTypesExtensionsTests: XCTestCase {
         
         XCTAssertThrowsError(try URL(staticString: "https://remote.com").ensureFileURL())
     }
-    
+}
+
+extension StandardTypesExtensionsTests {
     func test_UUID_zero() {
         XCTAssertEqual(UUID.zero.uuidString, "00000000-0000-0000-0000-000000000000")
     }
-    
+}
+
+extension StandardTypesExtensionsTests {
     func test_String_parseKeyValuePair() throws {
         XCTAssertThrowsError(try "".parseKeyValuePair(separator: ""))
         XCTAssertThrowsError(try "keyvalue".parseKeyValuePair(separator: "="))
@@ -189,7 +227,9 @@ class StandardTypesExtensionsTests: XCTestCase {
             [KeyValue("key1", "value1"), KeyValue("key1", "value2"), KeyValue("key3", "value3")]
         )
     }
-    
+}
+
+extension StandardTypesExtensionsTests {
     func test_TimeInterval_fromTimespec() {
         let ts = timespec(tv_sec: 123, tv_nsec: 456)
         XCTAssertEqual(TimeInterval(ts: ts), 123.000000456, accuracy: 1 / Double(NSEC_PER_SEC))
@@ -200,7 +240,9 @@ class StandardTypesExtensionsTests: XCTestCase {
         let ts3 = timespec(tv_sec: 123, tv_nsec: 990_000_000)
         XCTAssertEqual(TimeInterval(ts: ts3), 123.990000000, accuracy: 1 / Double(NSEC_PER_SEC))
     }
-    
+}
+
+extension StandardTypesExtensionsTests {
     func test_Date_fromTimespec() {
         let ts = timespec(tv_sec: 123, tv_nsec: 456)
         XCTAssertEqual(Date(ts: ts).timeIntervalSince1970, 123.000000456, accuracy: 100 / Double(NSEC_PER_SEC))
@@ -211,7 +253,9 @@ class StandardTypesExtensionsTests: XCTestCase {
         let ts3 = timespec(tv_sec: 123, tv_nsec: 990_000_000)
         XCTAssertEqual(Date(ts: ts3).timeIntervalSince1970, 123.990000000, accuracy: 100 / Double(NSEC_PER_SEC))
     }
-    
+}
+
+extension StandardTypesExtensionsTests {
     func test_Calendar_endOfDay() {
         // GMT: Friday, 7 April 2023 y., 10:46:19
         let date = Date(timeIntervalSince1970: 1680864379)
@@ -227,7 +271,9 @@ class StandardTypesExtensionsTests: XCTestCase {
         // GMT: Saturday, 8 April 2023 y., 00:00:00
         XCTAssertLessThan(dayEnd, Date(timeIntervalSince1970: 1680912000))
     }
-    
+}
+
+extension StandardTypesExtensionsTests {
     func test_Optional_default() {
         var value: Int? = nil
         XCTAssertEqual(value[default: 10], 10)

@@ -97,6 +97,38 @@ extension Data {
     }
 }
 
+extension Data {
+    /// Initialize a `Data` with the contents of a `URL` or 
+    /// empty Data if URL is a file that does not exist.
+    ///
+    /// - parameter url: The `URL` to read.
+    /// - parameter options: Options for the read operation. Default value is `[]`.
+    /// - parameter ifNoFile: Optional `Data` replacement if a file does not exist.
+    /// - throws: An error in the Cocoa domain, if `url` cannot be read.
+    public init(contentsOf url: URL, options: Data.ReadingOptions = [], ifNoFile replacementContent: Data?) throws {
+        do {
+            try self.init(contentsOf: url, options: options)
+        } catch let error as CocoaError where [.fileNoSuchFile, .fileReadNoSuchFile].contains(error.code) {
+            if let replacementContent {
+                self = replacementContent
+            } else {
+                throw error
+            }
+        }
+    }
+    
+    /// Initialize a `Data` with the contents of a file at path or
+    /// empty Data if URL is a file that does not exist.
+    ///
+    /// - parameter path: File path to read.
+    /// - parameter options: Options for the read operation. Default value is `[]`.
+    /// - parameter ifNoFile: Optional `Data` replacement if a file does not exist.
+    /// - throws: An error in the Cocoa domain, if `url` cannot be read.
+    public init(contentsOfFile path: String, options: Data.ReadingOptions = [], ifNoFile replacementContent: Data? = nil) throws {
+        try self.init(contentsOf: URL(fileURLWithPath: path), options: options, ifNoFile: replacementContent)
+    }
+}
+
 // MARK: - URL
 
 extension URL {

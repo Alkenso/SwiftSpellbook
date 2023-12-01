@@ -49,10 +49,7 @@ extension FileStore where T == Data {
     public static var standard: FileStore {
         FileStore(
             read: { location, ifNotExists in
-                if let ifNotExists, !FileManager.default.fileExists(at: location) {
-                    return ifNotExists
-                }
-                return try Data(contentsOf: location)
+                try Data(contentsOf: location, ifNoFile: ifNotExists)
             },
             write: { data, location, createDirectories in
                 if createDirectories {
