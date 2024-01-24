@@ -81,10 +81,11 @@ class CollectionTests: XCTestCase {
         XCTAssertEqual(arr.removeFirst { $0 < 10 }, nil)
     }
     
-    func test_partitioned() {
+    func test_filterRemaining() {
         let arr = [1, 5, 11, 10]
-        let (first, second) = arr.partitioned(first: { $0 % 5 == 0 })
-        XCTAssertEqual(first, [5, 10])
-        XCTAssertEqual(second, [1, 11])
+        var remaining: [Int] = []
+        let filtered = arr.filter(remaining: &remaining) { $0 % 5 == 0 }
+        XCTAssertEqual(filtered, [5, 10])
+        XCTAssertEqual(remaining, [1, 11])
     }
 }

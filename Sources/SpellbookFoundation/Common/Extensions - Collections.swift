@@ -156,25 +156,39 @@ extension Collection {
 }
 
 extension Collection {
-    /// Split the elements of the collection into two parts, where first part
-    /// contains all the elements that match the given predicate and the second part
-    /// contains all the elements that don't match.
+    /// Returns an array containing, in order, the elements of the sequence
+    /// that satisfy the given predicate.
+    /// Collects unsatisfied elements into `remaining` array.
     ///
-    /// - Parameter belongsToFirstPartition: A predicate used to partition
-    ///   the collection. All elements satisfying this predicate are gathered
-    ///   into the fist part.
-    /// - Returns: Tuple of two part of the collection: (matched, not_matched)
-    ///   the predicate.
+    /// In this example, `filter(_:)` is used to include only names shorter than
+    /// five characters.
     ///
-    /// - Complexity: O(*n*), where *n* is the length of the collection.
-    public func partitioned(first belongsToFirstPartition: (Element) throws -> Bool) rethrows -> ([Element], [Element]) {
-        try reduce(into: (Array(), Array())) { partialResult, element in
-            if try belongsToFirstPartition(element) {
-                partialResult.0.append(element)
+    ///     let cast = ["Vivien", "Marlon", "Kim", "Karl"]
+    ///     var longNames: [String] = []
+    ///     let shortNames = cast.filter(remaining: &longNames) { $0.count < 5 }
+    ///     print(shortNames)
+    ///     // Prints "["Kim", "Karl"]"
+    ///     print(longNames)
+    ///     // Prints "["Vivien", "Marlon"]"
+    ///
+    /// - Parameter isIncluded: A closure that takes an element of the
+    ///   sequence as its argument and returns a Boolean value indicating
+    ///   whether the element should be included in the returned array.
+    /// - Parameter remaining: An array to collect elements that are
+    ///   not included into returned array.
+    /// - Returns: An array of the elements that `isIncluded` allowed.
+    ///
+    /// - Complexity: O(*n*), where *n* is the length of the sequence.
+    public func filter(remaining: inout [Element], _ isIncluded: (Element) throws -> Bool) rethrows -> [Element] {
+        var filtered: [Element] = []
+        for element in self {
+            if try isIncluded(element) {
+                filtered.append(element)
             } else {
-                partialResult.1.append(element)
+                remaining.append(element)
             }
         }
+        return filtered
     }
 }
 
