@@ -155,6 +155,29 @@ extension Collection {
     }
 }
 
+extension Collection {
+    /// Split the elements of the collection into two parts, where first part
+    /// contains all the elements that match the given predicate and the second part
+    /// contains all the elements that don't match.
+    ///
+    /// - Parameter belongsToFirstPartition: A predicate used to partition
+    ///   the collection. All elements satisfying this predicate are gathered
+    ///   into the fist part.
+    /// - Returns: Tuple of two part of the collection: (matched, not_matched)
+    ///   the predicate.
+    ///
+    /// - Complexity: O(*n*), where *n* is the length of the collection.
+    public func partitioned(first belongsToFirstPartition: (Element) throws -> Bool) rethrows -> ([Element], [Element]) {
+        try reduce(into: (Array(), Array())) { partialResult, element in
+            if try belongsToFirstPartition(element) {
+                partialResult.0.append(element)
+            } else {
+                partialResult.1.append(element)
+            }
+        }
+    }
+}
+
 extension RangeReplaceableCollection {
     @discardableResult
     public mutating func removeFirst(where predicate: (Element) throws -> Bool) rethrows -> Element? {

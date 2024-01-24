@@ -80,4 +80,11 @@ class CollectionTests: XCTestCase {
         XCTAssertEqual(arr.removeFirst { $0 < 10 }, 2)
         XCTAssertEqual(arr.removeFirst { $0 < 10 }, nil)
     }
+    
+    func test_partitioned() {
+        let arr = [1, 5, 11, 10]
+        let (first, second) = arr.partitioned(first: { $0 % 5 == 0 })
+        XCTAssertEqual(first, [5, 10])
+        XCTAssertEqual(second, [1, 11])
+    }
 }
