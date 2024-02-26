@@ -73,7 +73,7 @@ class DictionaryTests: XCTestCase {
     }
     
     func test_filterRemaining() {
-        var dict = [1: "q", 2: "w", 3: "e", 4: "r"]
+        let dict = [1: "q", 2: "w", 3: "e", 4: "r"]
         var remaining: [Int: String] = [:]
         let filtered = dict.filter(remaining: &remaining) { $0.key % 2 == 0 }
         XCTAssertEqual(filtered, [2: "w", 4: "r"])
