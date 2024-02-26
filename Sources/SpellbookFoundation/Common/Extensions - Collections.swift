@@ -95,6 +95,16 @@ extension Dictionary {
 }
 
 extension Dictionary {
+    /// Returns a new dictionary containing the key-value pairs of the dictionary
+    /// that satisfy the given predicate.
+    /// Collects unsatisfied elements into `remaining` dictionary.
+    ///
+    /// - Parameter isIncluded: A closure that takes a key-value pair as its
+    ///   argument and returns a Boolean value indicating whether the pair
+    ///   should be included in the returned dictionary.
+    /// - Parameter remaining: A dictionary to collect elements that are
+    ///   not included into returned dictionary.
+    /// - Returns: A dictionary of the key-value pairs that `isIncluded` allows.
     public func filter(remaining: inout [Key: Value], _ isIncluded: (Element) throws -> Bool) rethrows -> [Key: Value] {
         var filtered: [Key: Value] = [:]
         for (key, value) in self {
