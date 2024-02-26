@@ -288,4 +288,24 @@ extension StandardTypesExtensionsTests {
         dict["key"]?.value[default: 10] += 1
         XCTAssertEqual(dict["key"]?.value, 11)
     }
+    
+    func test_Optional_noneIf() {
+        XCTAssertNotNil(Int?.noneIf(5, equals: nil))
+        XCTAssertNotNil(Int?.noneIf(5, equals: 3))
+        
+        XCTAssertNil(Int?.noneIf(nil, equals: 5))
+        XCTAssertNil(Int?.noneIf(5, equals: 5))
+        
+        struct Foo {
+            var a: Int
+            var b: Int
+        }
+        
+        let foo = Foo(a: 5, b: 10)
+        XCTAssertNotNil(Foo?.noneIf(foo, at: \.a, equals: nil))
+        XCTAssertNotNil(Foo?.noneIf(foo, at: \.a, equals: 3))
+        
+        XCTAssertNil(Foo?.noneIf(nil, at: \.a, equals: 5))
+        XCTAssertNil(Foo?.noneIf(foo, at: \.a, equals: 5))
+    }
 }

@@ -432,6 +432,16 @@ extension Optional {
     }
 }
 
+extension Optional {
+    public static func noneIf(_ value: Wrapped?, equals nilEquivalent: Wrapped?) -> Self where Wrapped: Equatable {
+        value == nilEquivalent ? nil : value
+    }
+    
+    public static func noneIf<Property>(_ value: Wrapped?, at keyPath: KeyPath<Wrapped, Property>, equals nilEquivalent: Property?) -> Self where Property: Equatable {
+        value?[keyPath: keyPath] == nilEquivalent ? nil : value
+    }
+}
+
 // MARK: - TimeInterval & Date
 
 extension TimeInterval {
