@@ -94,6 +94,20 @@ extension Dictionary {
     }
 }
 
+extension Dictionary {
+    public func filter(remaining: inout [Key: Value], _ isIncluded: (Element) throws -> Bool) rethrows -> [Key: Value] {
+        var filtered: [Key: Value] = [:]
+        for (key, value) in self {
+            if try isIncluded((key, value)) {
+                filtered[key] = value
+            } else {
+                remaining[key] = value
+            }
+        }
+        return filtered
+    }
+}
+
 // MARK: - Array
 
 extension Array {
