@@ -46,3 +46,4 @@ You can also find Swift libraries for macOS / *OS development
 - [sLaunchctl](https://github.com/Alkenso/sLaunchctl): register and manage daemons and user-agents
 - [sMock](https://github.com/Alkenso/sMock): Swift unit-test mocking framework similar to gtest/gmock
 - [sEndpointSecurity](https://github.com/Alkenso/sEndpointSecurity.git) Swift wrapper around EndpointSecurity.framework 
+- [SwiftSpellbook_macOS](https://github.com/Alkenso/SwiftSpellbook_macOS) macOS-related collection of additions to Swift standard library that makes development easier.
