@@ -1,6 +1,6 @@
 //  MIT License
 //
-//  Copyright (c) 2023 Alkenso (Vladimir Vashurkin)
+//  Copyright (c) 2021 Alkenso (Vladimir Vashurkin)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -20,32 +20,14 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-import Foundation
-
 #if os(macOS)
 
-extension ProcessInfo {
-    public static func signingInfo(atPath path: String) throws -> [String: Any] {
-        try signingInfo(at: URL(fileURLWithPath: path))
-    }
-    
-    public static func signingInfo(at url: URL) throws -> [String: Any] {
-        let code = try NSError.osstatus.try { SecStaticCodeCreateWithPath(url as CFURL, [], $0) }
-        let signingInfoCF = try NSError.osstatus.try {
-            SecCodeCopySigningInformation(code, SecCSFlags(rawValue: kSecCSSigningInformation), $0)
-        }
-        guard let signingInfo = signingInfoCF as? [String: Any] else {
-            throw CommonError.cast(
-                signingInfoCF,
-                to: [String: Any].self,
-                description: "Invalid SecCodeCopySigningInformation format"
-            )
-        }
-        return signingInfo
-    }
-    
-    public func signingInfo() throws -> [String: Any] {
-        try Self.signingInfo(atPath: arguments.first ?? "")
+import Foundation
+@_implementationOnly import SpellbookFoundationObjC
+
+extension NSXPCConnection {
+    public var auditToken: audit_token_t {
+        SpellbookObjC.nsxpcConnection_auditToken(self)
     }
 }
 

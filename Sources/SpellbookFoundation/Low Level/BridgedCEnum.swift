@@ -1,6 +1,6 @@
 //  MIT License
 //
-//  Copyright (c) 2022 Alkenso (Vladimir Vashurkin)
+//  Copyright (c) 2024 Alkenso (Vladimir Vashurkin)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -20,22 +20,10 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-import CoreGraphics
 import Foundation
 
-extension CGRect {
-    /// Center given rect relative to another one.
-    /// - returns: New CGRect which center is the same with given one.
-    public func centered(against rect: CGRect) -> CGRect {
-        var centeredOrigin = origin
-        centeredOrigin.x = rect.origin.x + (rect.width / 2) - (width / 2)
-        centeredOrigin.y = rect.origin.y + (rect.height / 2) - (height / 2)
-        
-        return CGRect(origin: centeredOrigin, size: size)
-    }
-    
-    /// Center given rect relative to another one.
-    public mutating func center(against rect: CGRect) {
-        self = centered(against: rect)
-    }
+public protocol BridgedCEnum: RawRepresentable where RawValue == UInt32 {
+    init(_ rawValue: RawValue)
+    init(rawValue: RawValue)
+    var rawValue: RawValue { get set }
 }
