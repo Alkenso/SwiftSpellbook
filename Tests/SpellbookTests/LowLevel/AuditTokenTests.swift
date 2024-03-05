@@ -1,6 +1,8 @@
 import SpellbookFoundation
 import XCTest
 
+#if os(macOS)
+
 class AuditTokenTests: XCTestCase {
     func test_currentTaskAuditToken() throws {
         let token = try audit_token_t.current()
@@ -32,3 +34,5 @@ class AuditTokenTests: XCTestCase {
         XCTAssertEqual(decodedToken, token)
     }
 }
+
+#endif
