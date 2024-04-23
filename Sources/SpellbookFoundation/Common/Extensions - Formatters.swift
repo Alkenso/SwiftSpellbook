@@ -26,12 +26,14 @@ extension DateFormatter {
     public convenience init(
         _ dateFormat: String,
         dateStyle: DateFormatter.Style? = nil,
-        timeStyle: DateFormatter.Style? = nil
+        timeStyle: DateFormatter.Style? = nil,
+        timeZone: TimeZone? = nil
     ) {
         self.init()
         
         self.dateFormat = dateFormat
         dateStyle.flatMap { self.dateStyle = $0 }
         timeStyle.flatMap { self.timeStyle = $0 }
+        timeZone.flatMap { self.timeZone = $0 }
     }
 }

@@ -1,6 +1,6 @@
 //  MIT License
 //
-//  Copyright (c) 2023 Alkenso (Vladimir Vashurkin)
+//  Copyright (c) 2024 Alkenso (Vladimir Vashurkin)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -22,12 +22,22 @@
 
 import Foundation
 
-public func updateSwap<T>(_ a: inout T, _ b: T) -> T {
-    let copy = a
-    a = b
-    return copy
-}
-
-public func throwingCast<T>(name: String? = nil, _ object: Any, to: T.Type) throws -> T {
-    try (object as? T).get(CommonError.cast(name: name, object, to: to))
+extension Optional where Wrapped == DispatchQueue {
+    @inline(__always)
+    package func async(flags: DispatchWorkItemFlags = [], execute work: @escaping () -> Void) {
+        if let self {
+            self.async(flags: flags, execute: work)
+        } else {
+            work()
+        }
+    }
+    
+    @inline(__always)
+    package func sync<R>(execute work: () -> R) -> R {
+        if let self {
+            return self.sync(execute: work)
+        } else {
+            return work()
+        }
+    }
 }

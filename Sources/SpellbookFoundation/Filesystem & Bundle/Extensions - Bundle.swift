@@ -43,7 +43,7 @@ extension Bundle {
     /// - throws: NSError with code NSURLErrorFileDoesNotExist, domain NSURLErrorDomain if file does not exist.
     public func existingURL(forResource name: String, withExtension ext: String?) throws -> URL {
         guard let url = url(forResource: name, withExtension: ext),
-            FileManager.default.fileExists(atPath: url.path)
+              FileManager.default.fileExists(atPath: url.path)
         else {
             throw NSError(
                 domain: NSURLErrorDomain,

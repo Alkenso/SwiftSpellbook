@@ -1,4 +1,4 @@
-import SpellbookFoundation
+import SpellbookBinaryParsing
 import SpellbookTestUtils
 
 import XCTest

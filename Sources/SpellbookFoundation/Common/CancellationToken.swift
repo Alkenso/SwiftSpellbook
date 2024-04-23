@@ -24,39 +24,39 @@ import Combine
 import Foundation
 
 public class CancellationToken {
-    private let _queue: DispatchQueue
-    private let _onDeinit: Bool
-    private let _onCancel: () -> Void
+    private let queue: DispatchQueue
+    private let onDeinit: Bool
+    private let onCancel: () -> Void
     
-    @Atomic private var _cancelled = false
-    private var _children = Synchronized<[CancellationToken]>(.serial)
+    @Atomic private var cancelled = false
+    private var children = Synchronized<[CancellationToken]>(.serial)
     
-    public var isCancelled: Bool { _cancelled }
+    public var isCancelled: Bool { cancelled }
     
     public init(on queue: DispatchQueue = .global(), onDeinit: Bool = false, cancel: @escaping () -> Void) {
-        _queue = queue
-        _onDeinit = onDeinit
-        _onCancel = cancel
+        self.queue = queue
+        self.onDeinit = onDeinit
+        self.onCancel = cancel
     }
     
     deinit {
-        if _onDeinit {
+        if onDeinit {
             cancel()
         }
     }
     
     public func cancel() {
-        guard !__cancelled.exchange(true) else { return }
-        _queue.async(execute: _onCancel)
-        _children.read().forEach { $0._queue.async(execute: $0.cancel) }
+        guard !$cancelled.exchange(true) else { return }
+        queue.async(execute: onCancel)
+        children.exchange([]).forEach { $0.queue.async(execute: $0.cancel) }
     }
     
     public func addChild(_ token: CancellationToken) {
-        _children.writeAsync {
+        children.write {
             if !self.isCancelled {
                 $0.append(token)
             } else {
-                token._queue.async(execute: token.cancel)
+                token.queue.async(execute: token.cancel)
             }
         }
     }

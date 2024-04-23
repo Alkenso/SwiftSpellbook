@@ -22,6 +22,8 @@
 
 import Foundation
 
+private let log = SpellbookLogger.internal(category: "BlockingQueue")
+
 /// Queue that blocks thread execution waiting new elements.
 /// All methods are designed to be thread-safe.
 public class BlockingQueue<Element> {
@@ -31,8 +33,8 @@ public class BlockingQueue<Element> {
     private var invalidated = false
     
     public init() {
-        guard pthread_cond_init(&self.condition, nil) == 0 else { fatalError("Failed to pthread_cond_init") }
-        guard pthread_mutex_init(&self.mutex, nil) == 0 else { fatalError("Failed to pthread_mutex_init") }
+        guard pthread_cond_init(&condition, nil) == 0 else { fatalError("Failed to pthread_cond_init") }
+        guard pthread_mutex_init(&mutex, nil) == 0 else { fatalError("Failed to pthread_mutex_init") }
     }
     
     deinit {
@@ -47,7 +49,7 @@ public class BlockingQueue<Element> {
         defer { pthread_mutex_unlock(&mutex) }
         
         guard !invalidated else {
-            assertionFailure("Failed to enqueue the element into invalidated queue. The element is dropped")
+            log.error("Failed to enqueue the element into invalidated queue. The element is dropped", assert: true)
             return
         }
         

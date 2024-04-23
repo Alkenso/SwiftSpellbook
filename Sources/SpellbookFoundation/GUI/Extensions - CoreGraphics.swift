@@ -38,4 +38,13 @@ extension CGRect {
     public mutating func center(against rect: CGRect) {
         self = centered(against: rect)
     }
+    
+    public func flippedY(fullHeight: CGFloat) -> CGRect {
+        let newY = fullHeight - (origin.y + height)
+        return CGRect(x: origin.x, y: newY, width: width, height: height)
+    }
+    
+    public mutating func flipY(fullHeight: CGFloat) {
+        self = flippedY(fullHeight: fullHeight)
+    }
 }

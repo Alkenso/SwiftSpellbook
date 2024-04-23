@@ -7,8 +7,8 @@ class ObservableTests: XCTestCase {
     func test() {
         var value = 10
         let event = EventNotify<Int>()
-        let observable = Observable<Int>(
-            valueRef: .init { value },
+        let observable = ValueObservable<Int>(
+            view: .init { value },
             subscribeReceiveValue: {
                 let token = event.subscribe(receiveValue: $1)
                 $1(value, nil)
@@ -39,8 +39,8 @@ class ObservableTests: XCTestCase {
     func test_scope() {
         var value = 10
         let event = EventNotify<Int>()
-        let observable = Observable<Int>(
-            valueRef: .init { value },
+        let observable = ValueObservable<Int>(
+            view: .init { value },
             subscribeReceiveValue: {
                 let token = event.subscribe(receiveValue: $1)
                 $1(value, nil)

@@ -12,7 +12,7 @@ final class SBLogTests: XCTestCase {
         let expFatal = expectation(description: "fatal")
         
         let log = SpellbookLogger(name: "test")
-        log.destinations.append { logRecord in
+        log.destinations.append(.init(minLevel: .verbose) { logRecord in
             switch logRecord.level {
             case .verbose:
                 XCTAssertEqual(logRecord.message as? String, "verbose")
@@ -33,9 +33,7 @@ final class SBLogTests: XCTestCase {
                 XCTAssertEqual(logRecord.message as? String, "fatal")
                 expFatal.fulfill()
             }
-        }
-        
-        log.minLevel = .verbose
+        })
         
         log.verbose("verbose")
         log.debug("debug")
@@ -48,24 +46,23 @@ final class SBLogTests: XCTestCase {
     }
     
     func test_minLevel() {
-        let expectations = [
-            SpellbookLogLevel.verbose: expectation(description: "verbose"),
-            SpellbookLogLevel.debug: expectation(description: "debug"),
-            SpellbookLogLevel.info: expectation(description: "info"),
-            SpellbookLogLevel.warning: expectation(description: "warning"),
-            SpellbookLogLevel.error: expectation(description: "error"),
-            SpellbookLogLevel.fatal: expectation(description: "fatal"),
+        let expectations: [SpellbookLogLevel: XCTestExpectation] = [
+            .verbose: expectation(description: "verbose"),
+            .debug: expectation(description: "debug"),
+            .info: expectation(description: "info"),
+            .warning: expectation(description: "warning"),
+            .error: expectation(description: "error"),
+            .fatal: expectation(description: "fatal"),
         ]
         
         let log = SpellbookLogger(name: "test")
-        log.destinations.append { logRecord in
+        log.destinations.append(.init(minLevel: .warning) { logRecord in
             expectations[logRecord.level]?.fulfill()
-        }
+        })
         
         expectations[.verbose]?.isInverted = true
         expectations[.debug]?.isInverted = true
         expectations[.info]?.isInverted = true
-        log.minLevel = .warning
         
         log.verbose("")
         log.debug("")
@@ -73,6 +70,33 @@ final class SBLogTests: XCTestCase {
         log.warning("")
         log.error("")
         log.fatal("")
+        
+        waitForExpectations()
+    }
+    
+    func test_destinations() {
+        let e1 = expectation(description: "warning")
+        let e2 = expectation(description: "info")
+        let e3 = expectation(description: "debug")
+        
+        let log = SpellbookLogger(name: "test")
+        log.destinations.append(.init(minLevel: .warning) { _ in
+            e1.fulfill()
+        })
+        log.destinations.append(.init(minLevel: .info) { _ in
+            e2.fulfill()
+        })
+        log.destinations.append(.init(minLevel: .debug) { _ in
+            e3.fulfill()
+        })
+        
+        e1.expectedFulfillmentCount = 1
+        e2.expectedFulfillmentCount = 2
+        e3.expectedFulfillmentCount = 3
+        
+        log.debug("")
+        log.info("")
+        log.warning("")
         
         waitForExpectations()
     }
@@ -87,7 +111,7 @@ final class SBLogTests: XCTestCase {
         let expUnsupported = expectation(description: "unsupported subsystem")
         expUnsupported.isInverted = true
         
-        log.destinations.append { logRecord in
+        log.destinations.append(.init { logRecord in
             switch logRecord.source.subsystem {
             case SpellbookLogSource.default().subsystem:
                 if logRecord.source.category != "w2" {
@@ -106,7 +130,7 @@ final class SBLogTests: XCTestCase {
             default:
                 XCTFail("Unsupported subsystem")
             }
-        }
+        })
         
         log.info("")
         log.with(subsystem: "q1", category: "w1").info("")

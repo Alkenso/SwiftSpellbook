@@ -404,6 +404,17 @@ extension Optional where Wrapped: Error {
 }
 
 extension Optional {
+    /// Sets the value to `defaultValue` only if current value is `nil`.
+    public mutating func coalesce(_ defaultValue: @autoclosure () throws -> Wrapped) rethrows -> Wrapped {
+        if let self {
+            return self
+        } else {
+            let value = try defaultValue()
+            self = value
+            return value
+        }
+    }
+    
     /// Provides convenient way of mutating optional values.
     ///
     /// ```
@@ -442,12 +453,12 @@ extension Optional {
     }
 }
 
-// MARK: - TimeInterval & Date
+// MARK: - Date & Time
 
-extension TimeInterval {
+extension timespec {
     /// Creates `TimeInverval` from `timespec` structure.
-    public init(ts: timespec) {
-        self = TimeInterval(ts.tv_sec) + (TimeInterval(ts.tv_nsec) / TimeInterval(NSEC_PER_SEC))
+    public var timeInterval: TimeInterval {
+        TimeInterval(tv_sec) + (TimeInterval(tv_nsec) / TimeInterval(NSEC_PER_SEC))
     }
 }
 
@@ -455,7 +466,7 @@ extension Date {
     /// Creates `TimeInverval` from `timespec` structure.
     /// - Note: Expected accuracy of resulting `Date` is ~100 nanoseconds.
     public init(ts: timespec) {
-        self.init(timeIntervalSince1970: TimeInterval(ts: ts))
+        self.init(timeIntervalSince1970: ts.timeInterval)
     }
 }
 

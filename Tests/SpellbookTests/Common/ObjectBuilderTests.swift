@@ -3,7 +3,7 @@ import SpellbookFoundation
 import XCTest
 
 class ObjectBuilderTests: XCTestCase {
-    struct Foo: Equatable, ObjectBuilder {
+    struct Foo: Equatable, ValueBuilder {
         var a = 10
         var b = "qwerty"
     }

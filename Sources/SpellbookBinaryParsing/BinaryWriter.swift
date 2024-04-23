@@ -21,6 +21,7 @@
 //  SOFTWARE.
 
 import Foundation
+import SpellbookFoundation
 
 public struct BinaryWriter {
     private let _output: BinaryWriterOutput

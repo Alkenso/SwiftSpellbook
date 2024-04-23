@@ -96,4 +96,9 @@ class CollectionTests: XCTestCase {
         XCTAssertEqual(filtered, [5, 10])
         XCTAssertEqual(remaining, [1, 11])
     }
+    
+    func test_firstMapped() {
+        let values = ["a", "1", "2", "b"]
+        XCTAssertEqual(values.firstMapped { Int($0) }, 1)
+    }
 }

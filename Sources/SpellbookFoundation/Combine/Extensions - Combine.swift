@@ -45,3 +45,9 @@ extension Publisher where Output: Equatable, Failure == Never {
         return proxy.eraseToAnyPublisher()
     }
 }
+
+extension Cancellable {
+    public func capturing(_ object: Any) -> AnyCancellable {
+        .init { withExtendedLifetime(object, self.cancel) }
+    }
+}

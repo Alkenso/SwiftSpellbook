@@ -30,6 +30,15 @@ public final class ConcurrentBlockOperation: Operation {
         self.block = block
     }
     
+    public init(block: @escaping (_ isCancelled: ValueView<Bool>) async -> Void) {
+        self.block = { isCancelled, completion in
+            Task.detached {
+                await block(isCancelled)
+                completion()
+            }
+        }
+    }
+    
     public override var isExecuting: Bool {
         state == false
     }
@@ -57,7 +66,7 @@ public final class ConcurrentBlockOperation: Operation {
         block(.init { self.isCancelled }, finish)
     }
     
-    func finish() {
+    private func finish() {
         willChangeValue(for: \.isExecuting)
         willChangeValue(for: \.isFinished)
         state = true

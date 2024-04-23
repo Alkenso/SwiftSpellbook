@@ -25,40 +25,38 @@ import Foundation
 /// Wraps common file operations file reading and writing.
 /// Provides ability to change underlying implementation to mock dealing with real file system.
 public struct FileStore<T> {
-    private let _read: (URL, T?) throws -> T
-    private let _write: (T, URL, Bool) throws -> Void
+    private let read: (URL, T?) throws -> T
+    private let write: (T, URL, Bool) throws -> Void
     
     public init(
         read: @escaping (URL, T?) throws -> T,
         write: @escaping (T, URL, Bool) throws -> Void
     ) {
-        self._read = read
-        self._write = write
+        self.read = read
+        self.write = write
     }
     
     public func read(from location: URL, default ifNotExists: T? = nil) throws -> T {
-        try _read(location, ifNotExists)
+        try read(location, ifNotExists)
     }
     
     public func write(_ value: T, to location: URL, createDirectories: Bool = false) throws {
-        try _write(value, location, createDirectories)
+        try write(value, location, createDirectories)
     }
 }
 
 extension FileStore where T == Data {
-    public static var standard: FileStore {
-        FileStore(
-            read: { location, ifNotExists in
-                try Data(contentsOf: location, ifNoFile: ifNotExists)
-            },
-            write: { data, location, createDirectories in
-                if createDirectories {
-                    try FileManager.default.createDirectoryTree(for: location)
-                }
-                try data.write(to: location)
+    public static var standard = FileStore(
+        read: { location, ifNotExists in
+            try Data(contentsOf: location, ifNoFile: ifNotExists)
+        },
+        write: { data, location, createDirectories in
+            if createDirectories {
+                try FileManager.default.createDirectoryTree(for: location)
             }
-        )
-    }
+            try data.write(to: location)
+        }
+    )
 }
 
 extension FileStore {
@@ -90,8 +88,8 @@ extension FileStore {
         fileprivate let store: FileStore
         fileprivate let ifNotExists: T?
         
-        public func read(default ifNotExistsLocal: T? = nil) throws -> T {
-            try store.read(from: location, default: ifNotExistsLocal ?? ifNotExists)
+        public func read(default ifNotExistsOverride: T? = nil) throws -> T {
+            try store.read(from: location, default: ifNotExistsOverride ?? ifNotExists)
         }
         
         public func write(_ value: T, createDirectories: Bool = false) throws {

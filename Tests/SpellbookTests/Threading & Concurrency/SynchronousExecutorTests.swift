@@ -7,37 +7,37 @@ class SynchronousExecutorTests: XCTestCase {
     func test() throws {
         let infiniteExecutor = SynchronousExecutor(timeout: nil)
         let dummyValue = Dummy(value: 10, timeout: 0.05)
-        XCTAssertEqual(try infiniteExecutor(dummyValue.value), 10)
-        XCTAssertEqual(try infiniteExecutor(dummyValue.resultValue), 10)
-        XCTAssertEqual(try infiniteExecutor(dummyValue.optionalValue), 10)
-        XCTAssertEqual(try infiniteExecutor { dummyValue.multiReplyValue(count: 10, reply: $0) }, 10)
+        XCTAssertEqual(try infiniteExecutor.sync(dummyValue.value), 10)
+        XCTAssertEqual(try infiniteExecutor.sync(dummyValue.resultValue), 10)
+        XCTAssertEqual(try infiniteExecutor.sync(dummyValue.optionalValue), 10)
+        XCTAssertEqual(try infiniteExecutor.sync { dummyValue.multiReplyValue(count: 10, reply: $0) }, 10)
         
         let dummyError = Dummy<Int>(value: nil, timeout: 0.05)
-        XCTAssertThrowsError(try infiniteExecutor(dummyError.error))
-        XCTAssertThrowsError(try infiniteExecutor(dummyError.resultValue))
-        XCTAssertEqual(try infiniteExecutor(dummyError.optionalValue), nil)
+        XCTAssertThrowsError(try infiniteExecutor.sync(dummyError.error))
+        XCTAssertThrowsError(try infiniteExecutor.sync(dummyError.resultValue))
+        XCTAssertEqual(try infiniteExecutor.sync(dummyError.optionalValue), nil)
         
         if #available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *) {
-            XCTAssertEqual(try infiniteExecutor(dummyValue.asyncValue), 10)
-            XCTAssertThrowsError(try infiniteExecutor(dummyError.asyncError))
+            XCTAssertEqual(try infiniteExecutor.sync(dummyValue.asyncValue), 10)
+            XCTAssertThrowsError(try infiniteExecutor.sync(dummyError.asyncError))
         }
     }
     
     func test_timeout() throws {
         let timedExecutor = SynchronousExecutor(timeout: 0.05)
         let dummyValue = Dummy(value: 10, timeout: 0.1)
-        XCTAssertThrowsError(try timedExecutor(dummyValue.value))
-        XCTAssertThrowsError(try timedExecutor(dummyValue.resultValue))
-        XCTAssertThrowsError(try timedExecutor(dummyValue.optionalValue))
+        XCTAssertThrowsError(try timedExecutor.sync(dummyValue.value))
+        XCTAssertThrowsError(try timedExecutor.sync(dummyValue.resultValue))
+        XCTAssertThrowsError(try timedExecutor.sync(dummyValue.optionalValue))
         
         let dummyError = Dummy<Int>(value: nil, timeout: 0.1)
-        XCTAssertThrowsError(try timedExecutor(dummyError.error))
-        XCTAssertThrowsError(try timedExecutor(dummyError.resultValue))
-        XCTAssertThrowsError(try timedExecutor(dummyError.optionalValue))
+        XCTAssertThrowsError(try timedExecutor.sync(dummyError.error))
+        XCTAssertThrowsError(try timedExecutor.sync(dummyError.resultValue))
+        XCTAssertThrowsError(try timedExecutor.sync(dummyError.optionalValue))
         
         if #available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *) {
-            XCTAssertThrowsError(try timedExecutor(dummyValue.asyncValue))
-            XCTAssertThrowsError(try timedExecutor(dummyError.asyncError))
+            XCTAssertThrowsError(try timedExecutor.sync(dummyValue.asyncValue))
+            XCTAssertThrowsError(try timedExecutor.sync(dummyError.asyncError))
         }
     }
 }

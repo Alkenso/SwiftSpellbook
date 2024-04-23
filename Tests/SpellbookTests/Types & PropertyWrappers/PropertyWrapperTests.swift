@@ -18,15 +18,15 @@ class PropertyWrapperTests: XCTestCase {
         XCTAssertEqual(a, 3)
     }
     
-    func test_Box_codable() throws {
-        struct Test: Codable {
-            @Box var value = 123
-        }
-        let data = try JSONEncoder().encode(Test())
-        let string = try String(data: data, encoding: .utf8).get()
-        XCTAssertEqual(string, #"{"value":123}"#)
+    func test_Indirect_valueType() throws {
+        var a = Indirect(wrappedValue: 123)
+        var b = a
         
-        XCTAssertEqual(try JSONDecoder().decode(Test.self, from: data).value, 123)
+        a.wrappedValue = 10
+        b.wrappedValue = 20
+        
+        XCTAssertEqual(a.wrappedValue, 10)
+        XCTAssertEqual(b.wrappedValue, 20)
     }
     
     func test_Indirect_codable() throws {
@@ -54,22 +54,22 @@ class PropertyWrapperTests: XCTestCase {
     }
     
     func test_ValueView() {
-        XCTAssertEqual(ValueView.constant(10).get(), 10)
+        XCTAssertEqual(ValueView.constant(10).value, 10)
         
         var value1 = 1
-        @ValueView var view1 = value1
+        @ValueViewed var view1 = value1
         
         XCTAssertEqual(view1, value1)
         value1 = 10
         XCTAssertEqual(view1, value1)
         value1 = 20
-        XCTAssertEqual($view1.get(), value1)
+        XCTAssertEqual($view1.value, value1)
         
         var value2 = 1
         let view2 = ValueView { value2 }
         
-        XCTAssertEqual(view2.get(), value2)
+        XCTAssertEqual(view2.value, value2)
         value2 = 10
-        XCTAssertEqual(view2(), value2)
+        XCTAssertEqual(view2.value, value2)
     }
 }

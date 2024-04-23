@@ -22,8 +22,6 @@
 
 import Foundation
 
-public typealias SubscriptionToken = DeinitAction
-
 public final class EventNotify<T>: ValueObserving {
     private typealias Handler = (T, Any?) -> Void
     
@@ -34,37 +32,40 @@ public final class EventNotify<T>: ValueObserving {
     /// Queue to be used to notify subscribers. If not set, it will be notified on caller thread.
     public var notifyQueue: DispatchQueue?
     
-    /// Create EventNotify. Acts like PassthoughtSubject from Combine.
+    /// Create EventNotify.
     public convenience init() {
         self.init(initialValue: nil)
     }
     
-    /// Create EventNotify with initial value. Such EventNotify will notify it's subscriber immediately
-    /// with that last value (initial value or last value passed to `notify` method.
-    /// Acts like CurrentValueSubject from Combine.
-    public init(initialValue: T?) {
+    /// Create EventNotify with initial value. When new subscriber makes a subscription,
+    /// `EventNotify` will use the `initialValue` or last value passed to `notify` method
+    ///  to notify the subscriber immediately.
+    public init(initialValue: T? = nil) {
         self.lastValue = initialValue
     }
     
-    public func subscribe(suppressInitialNotify: Bool, receiveValue: @escaping (T, _ context: Any?) -> Void) -> SubscriptionToken {
+    public var value: T? { lock.withLock { lastValue } }
+    
+    public func subscribe(
+        suppressInitialNotify: Bool,
+        receiveValue: @escaping (T, _ context: Any?) -> Void
+    ) -> SubscriptionToken {
         let id = UUID()
         lock.withLock {
             subscriptions[id] = receiveValue
-            if let lastValue = lastValue, !suppressInitialNotify {
+            if let lastValue, !suppressInitialNotify {
                 notifyOne(lastValue, nil, action: receiveValue)
             }
         }
-        return DeinitAction { [weak self] in
-            guard let self = self else { return }
+        return .init { [weak self] in
+            guard let self else { return }
             self.lock.withLock { _ = self.subscriptions.removeValue(forKey: id) }
         }
     }
     
     public func notify(_ value: T, context: Any? = nil) {
-        let subscriptions: [Handler] = lock.withLock {
-            if lastValue != nil {
-                lastValue = value
-            }
+        let subscriptions = lock.withLock {
+            lastValue = value
             return Array(self.subscriptions.values)
         }
         subscriptions.forEach { notifyOne(value, context, action: $0) }
@@ -77,9 +78,4 @@ public final class EventNotify<T>: ValueObserving {
             action(value, context)
         }
     }
-}
-
-extension EventNotify: ValueObservingPublisher {
-    public typealias Output = (T, Any?)
-    public typealias Failure = Never
 }

@@ -22,7 +22,7 @@
 
 import Foundation
 
-/// Different indicators related to Application environment.
+/// Different indicators related to Application build environment.
 public enum BuildEnvironment {
     /// Runtime check if run in debug mode.
     public static let isDebug: Bool = {
@@ -34,7 +34,7 @@ public enum BuildEnvironment {
     }()
 }
 
-/// Different indicators related to Application environment.
+/// Different indicators related to Application run environment.
 public enum RunEnvironment {
     /// Runtime check if run inside XCTest bundle.
     public static let isXCTesting: Bool = {

@@ -4,7 +4,7 @@ import SpellbookTestUtils
 import XCTest
 
 class FileEnumeratorTests: XCTestCase {
-    let tempDir = TestTemporaryDirectory(prefix: "SBTests")
+    let tempDir = TemporaryDirectory.bundle
     
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -19,15 +19,15 @@ class FileEnumeratorTests: XCTestCase {
     }
     
     func test_enumerateFiles() throws {
-        var expectedFiles = [tempDir.url]
-        try expectedFiles.append(tempDir.createFile("file1"))
-        try expectedFiles.append(tempDir.createFile("file2"))
-        try expectedFiles.append(tempDir.createSubdirectory("subdir"))
-        try expectedFiles.append(tempDir.createFile("subdir/file3"))
-        try expectedFiles.append(tempDir.createSubdirectory("subdir/nested"))
-        try expectedFiles.append(tempDir.createFile("subdir/nested/file4"))
+        var expectedFiles = [tempDir.location]
+        try expectedFiles.append(tempDir.createFile(name: "file1", content: Data()))
+        try expectedFiles.append(tempDir.createFile(name: "file2", content: Data()))
+        try expectedFiles.append(tempDir.directory(name: "subdir").setUp().location)
+        try expectedFiles.append(tempDir.createFile(name: "subdir/file3", content: Data()))
+        try expectedFiles.append(tempDir.directory(name: "subdir/nested").setUp().location)
+        try expectedFiles.append(tempDir.createFile(name: "subdir/nested/file4", content: Data()))
         
-        let enumeratedFiles = Array(FileEnumerator(tempDir.url))
+        let enumeratedFiles = Array(FileEnumerator(tempDir.location))
         XCTAssertEqual(
             Set(enumeratedFiles.map { $0.resolvingSymlinksInPath() }),
             Set(expectedFiles.map { $0.resolvingSymlinksInPath() })
@@ -36,14 +36,14 @@ class FileEnumeratorTests: XCTestCase {
     
     func test_enumerateFiles_ofTypes() throws {
         var expectedFiles: [URL] = []
-        try expectedFiles.append(tempDir.createFile("file1"))
-        try expectedFiles.append(tempDir.createFile("file2"))
-        _ = try tempDir.createSubdirectory("subdir")
-        try expectedFiles.append(tempDir.createFile("subdir/file3"))
-        _ = try tempDir.createSubdirectory("subdir/nested")
-        try expectedFiles.append(tempDir.createFile("subdir/nested/file4"))
+        try expectedFiles.append(tempDir.createFile(name: "file1", content: Data()))
+        try expectedFiles.append(tempDir.createFile(name: "file2", content: Data()))
+        try tempDir.directory(name: "subdir").setUp()
+        try expectedFiles.append(tempDir.createFile(name: "subdir/file3", content: Data()))
+        try tempDir.directory(name: "subdir/nested").setUp()
+        try expectedFiles.append(tempDir.createFile(name: "subdir/nested/file4", content: Data()))
         
-        let enumeratedFiles = Array(FileEnumerator(types: [.regular], tempDir.url))
+        let enumeratedFiles = Array(FileEnumerator(types: [.regular], tempDir.location))
         XCTAssertEqual(
             Set(enumeratedFiles.map { $0.resolvingSymlinksInPath() }),
             Set(expectedFiles.map { $0.resolvingSymlinksInPath() })
@@ -51,17 +51,17 @@ class FileEnumeratorTests: XCTestCase {
     }
     
     func test_enumerateFiles_filter() throws {
-        var expectedFiles = [tempDir.url]
-        try expectedFiles.append(tempDir.createFile("file1"))
+        var expectedFiles = [tempDir.location]
+        try expectedFiles.append(tempDir.createFile(name: "file1", content: Data()))
         
-        _ = try tempDir.createSubdirectory("subdir")
-        try expectedFiles.append(tempDir.createSubdirectory("subdir/folder1"))
-        try expectedFiles.append(tempDir.createFile("subdir/file3"))
+        try tempDir.directory("subdir").setUp()
+        try expectedFiles.append(tempDir.directory("subdir/folder1").setUp().location)
+        try expectedFiles.append(tempDir.createFile(name: "subdir/file3", content: Data()))
         
-        _ = try tempDir.createSubdirectory("subdir/nested")
-        _ = try tempDir.createFile("subdir/nested/file4")
+        try tempDir.directory("subdir/nested").setUp()
+        _ = try tempDir.createFile(name: "subdir/nested/file4", content: Data())
         
-        let enumerator = FileEnumerator(tempDir.url)
+        let enumerator = FileEnumerator(tempDir.location)
         enumerator.locationFilter = {
             switch $0.lastPathComponent {
             case "subdir":

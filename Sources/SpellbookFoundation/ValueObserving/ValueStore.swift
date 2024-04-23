@@ -20,8 +20,23 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-import Combine
 import Foundation
+
+@propertyWrapper
+public final class ValueStored<Value> {
+    private let store: ValueStore<Value>
+    
+    public init(wrappedValue: Value) {
+        self.store = .init(initialValue: wrappedValue)
+    }
+    
+    public init(store: ValueStore<Value>) {
+        self.store = store
+    }
+    
+    public var wrappedValue: Value { store.value }
+    public var projectedValue: ValueStore<Value> { store }
+}
 
 @dynamicMemberLookup
 public final class ValueStore<Value>: ValueObserving {
@@ -49,20 +64,26 @@ public final class ValueStore<Value>: ValueObserving {
         update(context: context) { $0 = value }
     }
     
-    public func update<Property>(_ keyPath: WritableKeyPath<Value, Property>, _ property: Property, context: Any? = nil) {
+    public func update<Property>(
+        _ keyPath: WritableKeyPath<Value, Property>,
+        _ property: Property,
+        context: Any? = nil
+    ) {
         update(context: context) { $0[keyPath: keyPath] = property }
     }
     
     public func update<Property, Wrapped>(
-        _ keyPath: WritableKeyPath<Wrapped, Property>, _ property: Property, context: Any? = nil
+        _ keyPath: WritableKeyPath<Wrapped, Property>,
+        _ property: Property,
+        context: Any? = nil
     ) where Value == Wrapped? {
         update(context: context) { $0?[keyPath: keyPath] = property }
     }
     
     /// This is designated implementation of value update.
-    /// Prefer to avoid use of this method.
-    /// 'body' closure is invoked under internal lock. Careless use may lead to performance problems or even deadlock
-    public func update(context: Any?, body: (inout Value) -> Void) {
+    /// Use it carefully: `body` closure is invoked under internal lock.
+    /// Careless use may lead to performance problems or even deadlock.
+    public func update(context: Any? = nil, body: (inout Value) -> Void) {
         if let parentUpdate = parentUpdate {
             parentUpdate(context, body)
         } else {
@@ -74,18 +95,16 @@ public final class ValueStore<Value>: ValueObserving {
         value[keyPath: keyPath]
     }
     
-    public subscript<Property>(dynamicMember keyPath: WritableKeyPath<Value, Property>) -> Property {
-        get { value[keyPath: keyPath] }
-        set { update(keyPath, newValue) }
-    }
-    
     public subscript<Property, Wrapped>(
         dynamicMember keyPath: KeyPath<Wrapped, Property>
     ) -> Property? where Value == Wrapped? {
         value?[keyPath: keyPath]
     }
     
-    public func subscribe(suppressInitialNotify: Bool, receiveValue: @escaping (Value, _ context: Any?) -> Void) -> SubscriptionToken {
+    public func subscribe(
+        suppressInitialNotify: Bool,
+        receiveValue: @escaping (Value, _ context: Any?) -> Void
+    ) -> SubscriptionToken {
         lock.withLock {
             subscriptions
                 .subscribe(suppressInitialNotify: suppressInitialNotify, receiveValue: receiveValue)
@@ -114,7 +133,10 @@ extension ValueStore {
         scope(transform: { $0[keyPath: keyPath] }, merge: { $0[keyPath: keyPath] = $1 })
     }
     
-    public func scope<U>(transform: @escaping (Value) -> U, merge: @escaping (inout Value, U) -> Void) -> ValueStore<U> {
+    public func scope<U>(
+        transform: @escaping (Value) -> U,
+        merge: @escaping (inout Value, U) -> Void
+    ) -> ValueStore<U> {
         lock.withLock {
             let scoped = ValueStore<U>(initialValue: transform(value))
             
@@ -136,38 +158,51 @@ extension ValueStore {
         }
     }
     
-    /// Converts `ValueStore<Optional<T>>` into `ValueStore<T>`, unwrapping single level of optionality.
+    /// Converts `ValueStore<T?>` into `ValueStore<T>`, unwrapping single level of optionality.
     /// - Parameters:
     ///     - default: the value returned used by new ValueStore if parent's value is `nil`.
     ///     - mergeIntoNil: if `false`, any changes made through new `ValueStore`
     ///                     will be **ignored** if parent's value is `nil`.
-    public func unwrap<Unwrapped>(default: Unwrapped, mergeIntoNil: Bool = false) -> ValueStore<Unwrapped>
-    where Value == Optional<Unwrapped> {
+    public func unwrapped<Unwrapped>(
+        default: Unwrapped, mergeIntoNil: Bool = false
+    ) -> ValueStore<Unwrapped> where Value == Unwrapped? {
         scope(
             transform: { $0 ?? `default` },
-            merge: {
-                if $0 != nil || mergeIntoNil {
-                    $0 = $1
+            merge: { storedValue, newValue in
+                if storedValue != nil || mergeIntoNil {
+                    storedValue = newValue
+                }
+            }
+        )
+    }
+    
+    /// Converts `ValueStore<T>` into `ValueStore<T?>`, wrapping single level of optionality.
+    /// - Parameters:
+    ///     - fallback: used in case optional ValueStore's value is updated to `nil`.
+    ///     In such case, if `fallback` is not `nil`, it will update original store with `fallback` value.
+    public func optional(fallback: Value?, mergeIntoNil: Bool = false) -> ValueStore<Value?> {
+        scope(
+            transform: { $0 },
+            merge: { storedValue, newValue in
+                if let newValue {
+                    storedValue = newValue
+                } else if let fallback {
+                    storedValue = fallback
                 }
             }
         )
     }
 }
 
-extension ValueStore: ValueObservingPublisher {
-    public typealias Output = (Value, Any?)
-    public typealias Failure = Never
-}
-
 extension ValueStore {
-    public var asObservable: Observable<Value> {
-        Observable(
-            valueRef: .init { self.value },
+    public var observable: ValueObservable<Value> {
+        ValueObservable(
+            view: .init { self.value },
             subscribeReceiveValue: subscribe
         )
     }
     
-    public var asView: ValueView<Value> {
+    public var view: ValueView<Value> {
         .init { self.value }
     }
 }

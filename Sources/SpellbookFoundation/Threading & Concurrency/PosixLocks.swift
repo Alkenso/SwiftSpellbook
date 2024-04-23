@@ -23,7 +23,7 @@
 import Foundation
 
 /// Swift-safe wrapper around `os_unfair_lock`.
-/// More explanation at [OSAllocatedUnfairLock](https://developer.apple.com/documentation/os/osallocatedunfairlock).
+/// More explanation at [OSAllocatedUnfairLock](https://developer.apple.com/documentation/os/osallocatedunfairlock)
 @available(macOS, deprecated: 13.0, message: "Use `OSAllocatedUnfairLock` lock")
 @available(iOS, deprecated: 16.0, message: "Use `OSAllocatedUnfairLock` lock")
 @available(watchOS, deprecated: 9.0, message: "Use `OSAllocatedUnfairLock` lock")
@@ -63,13 +63,13 @@ public final class UnfairLock: @unchecked Sendable {
 }
 
 /// Swift-safe wrapper around `pthread_rwlock_t`.
-/// More explanation at [OSAllocatedUnfairLock](https://developer.apple.com/documentation/os/osallocatedunfairlock).
+/// More explanation at [OSAllocatedUnfairLock](https://developer.apple.com/documentation/os/osallocatedunfairlock)
 public final class RWLock: @unchecked Sendable {
     private let raw: UnsafeMutablePointer<pthread_rwlock_t>
     
     public init(attrs: UnsafePointer<pthread_rwlockattr_t>? = nil) {
         self.raw = UnsafeMutablePointer<pthread_rwlock_t>.allocate(capacity: 1)
-        pthread_rwlock_init(raw, attrs)
+        guard pthread_rwlock_init(raw, attrs) == 0 else { fatalError("Failed to pthread_rwlock_init") }
     }
     
     deinit {

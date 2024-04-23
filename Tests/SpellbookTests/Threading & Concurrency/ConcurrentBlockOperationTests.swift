@@ -29,7 +29,7 @@ class ConcurrentBlockOperationTests: XCTestCase {
     func test_cancel() throws {
         let exp = expectation(description: "finished")
         let op = ConcurrentBlockOperation { isCancelled, completion in
-            while !isCancelled.get() {
+            while !isCancelled.value {
                 Thread.sleep(forTimeInterval: 0.01)
             }
             completion()

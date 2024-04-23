@@ -19,7 +19,7 @@ private class ValueWrapper<T>: ValueObserving {
         if !suppressInitialNotify {
             receiveValue(value, nil)
         }
-        return .stub(())
+        return .init {}
     }
 }
 

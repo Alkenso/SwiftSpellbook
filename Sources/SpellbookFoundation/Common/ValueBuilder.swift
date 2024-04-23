@@ -22,9 +22,9 @@
 
 import Foundation
 
-public protocol ObjectBuilder {}
+public protocol ValueBuilder {}
 
-extension ObjectBuilder {
+extension ValueBuilder {
     public func set<T>(_ keyPath: WritableKeyPath<Self, T>, _ value: T?) -> Self {
         guard let value = value else { return self }
         var copy = self

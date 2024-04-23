@@ -40,7 +40,11 @@ public enum Benchmark {
     /// Executes the given block and prints the `name` and the number of seconds
     /// with nanosecond precision it takes to execute the block.
     /// This function is for debugging and performance analysis work.
-    public static func measure<R>(_ name: String, execute: () throws -> R) rethrows -> R {
+    public static func measure<R>(
+        _ name: String,
+        print: (String) -> Void = { print($0) },
+        execute: () throws -> R
+    ) rethrows -> R {
         let (result, durationSec) = try measure(execute: execute)
         print("\(name) takes \(durationSec) sec")
         

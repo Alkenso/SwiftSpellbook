@@ -22,7 +22,7 @@
 
 import Foundation
 
-/// Executes synchronously the asynchronous method with completion handler.
+/// Executes synchronously the asynchronous method.
 /// - Note: While this is not the best practice ever,
 ///         real-world tasks time to time require exactly this.
 public struct SynchronousExecutor {
@@ -36,34 +36,7 @@ public struct SynchronousExecutor {
 }
 
 extension SynchronousExecutor {
-    public static func sync<R>(_ action: (@escaping (R) -> Void) throws -> Void) rethrows -> R {
-        @Atomic var result: R!
-        try sync(action, $result).wait()
-        return result
-    }
-    
-    private static func sync<R>(_ action: (@escaping (R) -> Void) throws -> Void, _ result: Atomic<R?>) rethrows -> DispatchGroup {
-        let group = DispatchGroup()
-        group.enter()
-        
-        var once = atomic_flag()
-        try action {
-            guard !atomic_flag_test_and_set(&once) else {
-                if !RunEnvironment.isXCTesting {
-                    assertionFailure("\(Self.self) async action called multiple times")
-                }
-                return
-            }
-            result.wrappedValue = $0
-            group.leave()
-        }
-        
-        return group
-    }
-}
-
-extension SynchronousExecutor {
-    public func callAsFunction<R>(_ action: (@escaping (Result<R, Error>) -> Void) throws -> Void) throws -> R {
+    public func sync<R>(_ action: (@escaping (Result<R, Error>) -> Void) throws -> Void) throws -> R {
         guard let timeout else {
             return try Self.sync(action).get()
         }
@@ -74,11 +47,9 @@ extension SynchronousExecutor {
         }
         return try result.get()
     }
-}
-
-extension SynchronousExecutor {
-    public func callAsFunction(_ action: (@escaping (Error?) -> Void) throws -> Void) throws {
-        try callAsFunction { (reply: @escaping (Result<(), Error>) -> Void) in
+    
+    public func sync(_ action: (@escaping (Error?) -> Void) throws -> Void) throws {
+        try sync { (reply: @escaping (Result<(), Error>) -> Void) in
             try action {
                 if let error = $0 {
                     reply(.failure(error))
@@ -89,27 +60,16 @@ extension SynchronousExecutor {
         }
     }
     
-    public func callAsFunction<T>(_ action: (@escaping (T) -> Void) throws -> Void) throws -> T {
-        try callAsFunction { (reply: @escaping (Result<T, Error>) -> Void) in
+    public func sync<T>(_ action: (@escaping (T) -> Void) throws -> Void) throws -> T {
+        try sync { (reply: @escaping (Result<T, Error>) -> Void) in
             try action {
                 reply(.success($0))
             }
         }
     }
-}
-
-extension SynchronousExecutor {
-    public static func sync<R>(_ action: @escaping () async -> R) -> R {
-        sync { completion in
-            Task {
-                let result = await action()
-                completion(result)
-            }
-        }
-    }
     
-    public func callAsFunction<R>(_ action: @escaping () async throws -> R) throws -> R {
-        try callAsFunction { completion in
+    public func sync<R>(_ action: @escaping () async throws -> R) throws -> R {
+        try sync { completion in
             Task {
                 do {
                     let success = try await action()
@@ -117,6 +77,42 @@ extension SynchronousExecutor {
                 } catch {
                     completion(.failure(error))
                 }
+            }
+        }
+    }
+    
+    private static func sync<R>(_ action: (@escaping (R) -> Void) throws -> Void, _ result: Synchronized<R?>) rethrows -> DispatchGroup {
+        let group = DispatchGroup()
+        group.enter()
+        
+        let once = AtomicFlag()
+        try action {
+            guard !once.testAndSet() else {
+                if !RunEnvironment.isXCTesting {
+                    assertionFailure("\(Self.self) async action called multiple times")
+                }
+                return
+            }
+            result.write($0)
+            group.leave()
+        }
+        
+        return group
+    }
+}
+
+extension SynchronousExecutor {
+    public static func sync<R>(_ action: (@escaping (R) -> Void) throws -> Void) rethrows -> R {
+        @Atomic var result: R!
+        try sync(action, $result).wait()
+        return result
+    }
+    
+    public static func sync<R>(_ action: @escaping () async -> R) -> R {
+        sync { completion in
+            Task {
+                let result = await action()
+                completion(result)
             }
         }
     }

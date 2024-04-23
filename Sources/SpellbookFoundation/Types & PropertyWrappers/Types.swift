@@ -81,9 +81,7 @@ extension ProgressValue {
 }
 
 extension ProgressValue: Hashable {}
-extension ProgressValue: Equatable {}
-extension ProgressValue: Encodable {}
-extension ProgressValue: Decodable {}
+extension ProgressValue: Codable {}
 
 public struct Pair<First, Second> {
     public var first: First

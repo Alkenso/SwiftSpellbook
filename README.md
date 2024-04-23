@@ -2,9 +2,9 @@
 SwiftSpellbook is collection of additions to Swift standard library that makes development easier.
 
 <p>
-  <img src="https://img.shields.io/badge/swift-5.7 | 5.8 | 5.9-orange" />
+  <img src="https://img.shields.io/badge/swift-5.9-orange" />
   <img src="https://img.shields.io/badge/platforms-macOS 10.15 | iOS 13 | watchOS 6 | tvOS 13-freshgreen" />
-  <img src="https://img.shields.io/badge/Xcode-14 | 15-blue" />
+  <img src="https://img.shields.io/badge/Xcode-15-blue" />
   <img src="https://github.com/Alkenso/SwiftSpellbook/actions/workflows/main.yml/badge.svg" />
 </p>
 
@@ -16,16 +16,14 @@ Once I've decided stop to copy-paste code from project to project and make singl
 At top level, the code is organized into libraries that cover big areas.
 Now there are only two:
 - SpellbookFoundation: utility code
+- SpellbookBinaryParsing: convenient way to read and write binary data byte-by-byte
 - SpellbookHTTP: HTTP client
 - SpellbookTestUtils: utility code frequently used for Unit-Tests
 
-The libraries/targets are organized as one level nested folders to distinguish between areas they are related to.
-
 ## SpellbookFoundation
 The most of utility code lives here.
-- BinaryParsing: read and write data buffers or files in raw binary format
 - Combine: Combine.framework extensions
-- Common: 
+- Common: Mix of commonly used entities
 - DictionaryParsing: deal with data nested deeply in dictionaries
 - Filesystem & Bundle: FileManager, Bundle and same utilities
 - GUI: CoreGraphics utilities. This is NOT an AppKit/UIKit/SwiftUI

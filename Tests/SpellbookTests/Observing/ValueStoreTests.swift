@@ -100,7 +100,7 @@ class StoreTests: XCTestCase {
             exp.fulfill()
         }.store(in: &cancellables)
         
-        store.val = "qwert"
+        store.update(\.val, "qwert")
         
         waitForExpectations()
     }
@@ -108,12 +108,12 @@ class StoreTests: XCTestCase {
     func test_unwrap() {
         func test(mergeIntoNil: Bool) {
             let store = ValueStore<Pair<Int, String>?>(initialValue: .init(10, "q"))
-            let unwrapped = store.unwrap(default: .init(1, "w"), mergeIntoNil: mergeIntoNil)
+            let unwrapped = store.unwrapped(default: .init(1, "w"), mergeIntoNil: mergeIntoNil)
             
             XCTAssertEqual(unwrapped.value.first, 10)
             XCTAssertEqual(unwrapped.value.second, "q")
             
-            unwrapped.second = "e"
+            unwrapped.update(\.second, "e")
             XCTAssertEqual(unwrapped.value.second, "e")
             XCTAssertEqual(store.value?.second, "e")
             
@@ -121,7 +121,7 @@ class StoreTests: XCTestCase {
             XCTAssertEqual(unwrapped.value.second, "w")
             XCTAssertEqual(store.value?.second, nil)
             
-            unwrapped.second = "r"
+            unwrapped.update(\.second, "r")
             if mergeIntoNil {
                 XCTAssertEqual(unwrapped.value.second, "r")
                 XCTAssertEqual(store.value?.first, 1)

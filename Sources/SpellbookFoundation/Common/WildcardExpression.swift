@@ -22,10 +22,14 @@
 
 import Foundation
 
-/// In contrast to NSRegularExpression, implements matching for string by wildcards "*" and "?".
+/// In contrast to NSRegularExpression, implements matching for string by wildcards `*` and `?`.
+/// `WildcardExpression` is Swift wrapper around `fnmatch` function.
 public struct WildcardExpression {
     public var pattern: String
     public var caseSensitive: Bool
+    
+    /// Slash characters in string must be explicitly matched by slashes in pattern.
+    /// If this flag is not set, then slashes are treated as regular characters.
     public var fileNames: Bool
     
     public init(pattern: String, caseSensitive: Bool = true, fileNames: Bool = false) {
@@ -45,10 +49,10 @@ public struct WildcardExpression {
     private var flags: Int32 {
         var flags: Int32 = 0
         if !caseSensitive {
-            flags = flags | FNM_CASEFOLD
+            flags |= FNM_CASEFOLD
         }
         if fileNames {
-            flags = flags | FNM_FILE_NAME
+            flags |= FNM_FILE_NAME
         }
         return flags
     }

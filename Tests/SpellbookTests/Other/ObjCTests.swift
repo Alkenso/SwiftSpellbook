@@ -4,7 +4,7 @@ import XCTest
 
 class ObjCTests: XCTestCase {
     private let objcExeption = NSException(name: .genericException, reason: "Test Obj-C ex", userInfo: nil)
-    private let cppException = StdException(what: "Test c++ ex")
+    private let cppException = CppException(what: "Test c++ ex")
     private let swiftError = TestError("Test error")
     
     func test_NSException_catching() {
@@ -24,13 +24,13 @@ class ObjCTests: XCTestCase {
     func test_StdException() {
         XCTAssertEqual(NSException.catching { 10 }.success, 10)
         
-        let failure = StdException.catching { cppException.raise() }.failure
+        let failure = CppException.catching { cppException.raise() }.failure
         XCTAssertEqual(failure?.what, cppException.what)
     }
     
     func test_catchingAny() {
         let nsEx = Result { try catchingAny { objcExeption.raise() } }.failure as? NSExceptionError
-        let stdEx = Result { try catchingAny { cppException.raise() } }.failure as? StdException
+        let stdEx = Result { try catchingAny { cppException.raise() } }.failure as? CppException
         
         XCTAssertEqual(nsEx?.exception.reason, objcExeption.reason)
         XCTAssertEqual(stdEx?.what, cppException.what)

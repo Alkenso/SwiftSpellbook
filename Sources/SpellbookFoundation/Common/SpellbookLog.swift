@@ -117,6 +117,16 @@ extension SpellbookLogSource: CustomStringConvertible {
     public var description: String { "\(subsystem)/\(category)" }
 }
 
+public struct SpellbookLogDestination {
+    public var minLevel: SpellbookLogLevel
+    public var log: (SpellbookLogRecord) -> Void
+    
+    public init(minLevel: SpellbookLogLevel = .info, log: @escaping (SpellbookLogRecord) -> Void) {
+        self.log = log
+        self.minLevel = minLevel
+    }
+}
+
 public final class SpellbookLogger {
     private let queue: DispatchQueue?
     
@@ -128,9 +138,7 @@ public final class SpellbookLogger {
     
     public var source = SpellbookLogSource.default()
     
-    public var destinations: [(SpellbookLogRecord) -> Void] = []
-    
-    public var minLevel: SpellbookLogLevel = .info
+    public var destinations: [SpellbookLogDestination] = []
     
     /// If log messages with `assert = true` should really produce asserts.
     public var isAssertsEnabled = true
@@ -172,22 +180,19 @@ extension SpellbookLogger: SpellbookLog {
         source: SpellbookLogSource, level: SpellbookLogLevel, message: @autoclosure () -> Any, assert: Bool,
         file: StaticString, function: StaticString, line: Int
     ) {
-        guard level >= minLevel else { return }
-        
         if assert && isAssertsEnabled {
             assertionFailure("\(message())", file: file, line: UInt(line))
         }
+        
+        let destinations = destinations.filter { level >= $0.minLevel }
+        guard !destinations.isEmpty else { return }
         
         let record = SpellbookLogRecord(
             source: source, level: level, message: message(),
             file: file, function: function, line: line
         )
-        if let queue {
-            queue.async {
-                self.destinations.forEach { $0(record) }
-            }
-        } else {
-            self.destinations.forEach { $0(record) }
+        queue.async {
+            destinations.forEach { $0.log(record) }
         }
     }
 }

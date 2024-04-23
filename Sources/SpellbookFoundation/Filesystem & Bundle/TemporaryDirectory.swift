@@ -22,62 +22,115 @@
 
 import Foundation
 
+/// A convenient interface to deal with temporary directories.
 public struct TemporaryDirectory {
-    public let url: URL
+    public let location: URL
     
-    public static var `default`: TemporaryDirectory {
-        .init(url: URL(fileURLWithPath: NSTemporaryDirectory()))
+    /// Initializes temporary directory with given location.
+    public init(at location: URL) {
+        self.location = location
     }
     
-    public init(url tempDir: URL) {
-        url = tempDir
+    /// Initializes temporarty directory inside current user temporary directory with given prefix and name.
+    /// - Parameters:
+    ///   - prefix: if specified, prefixes the name of new directory.
+    ///   - name: if specified, acts like the name of new directory. Otherwise `UUID` is used.
+    public init(prefix: String? = nil, name: String? = nil) {
+        self = TemporaryDirectory(at: URL(fileURLWithPath: NSTemporaryDirectory()))
+            .directory(prefix: prefix, name: name)
     }
     
-    public func createDirectoryTree(includingLastPathComponent: Bool = true) throws {
-        var createURL = url
-        if !includingLastPathComponent {
-            createURL.deleteLastPathComponent()
-        }
-        if !FileManager.default.directoryExists(at: createURL) {
-            try FileManager.default.createDirectory(at: createURL, withIntermediateDirectories: true, attributes: nil)
-        }
+    /// Creates a directory with the given attributes at the specified URL.
+    /// Does nothing if the directory already exists.
+    @discardableResult
+    public func setUp(attributes: [FileAttributeKey : Any]? = nil) throws -> Self {
+        try FileManager.default.createDirectory(
+            at: location,
+            withIntermediateDirectories: true,
+            attributes: attributes
+        )
+        return self
     }
     
-    public func subdir(_ subdir: String) -> TemporaryDirectory {
+    /// Removes the directory if it exists.
+    public func tearDown() throws {
+        try FileManager.default.removeItemIfExists(at: location)
+    }
+}
+
+extension TemporaryDirectory {
+    /// Temporarty directory named as the main app bundle inside current user temporary directory.
+    public static let bundle = TemporaryDirectory(
+        name: Bundle.main.bundleIdentifier ?? Bundle.main.bundlePath.lastPathComponent
+    )
+}
+
+extension TemporaryDirectory {
+    /// Creates nested `TemporaryDirectory` using `prefix` and `name` for proper naming.
+    /// New directory is NOT actually created. Use `setUp` to create it.
+    /// - Parameters:
+    ///   - prefix: if specified, prefixes the name of new directory.
+    ///   - name: if specified, acts like the name of new directory. Otherwise `UUID` is used.
+    public func directory(prefix: String? = nil, name: String? = nil) -> TemporaryDirectory {
+        directory(makeName(prefix: prefix, name: name))
+    }
+    
+    /// Creates nested `TemporaryDirectory` using `prefix` and `name` for proper naming.
+    /// New directory is NOT actually created. Use `setUp` to create it.
+    /// - Parameters:
+    ///   - subpath: path relative to URL of current `TemporaryDirectory`.
+    public func directory(_ subpath: String) -> TemporaryDirectory {
         TemporaryDirectory(
-            url: url
-                .appendingPathComponent(subdir, isDirectory: true)
+            at: location
+                .appendingPathComponent(subpath, isDirectory: true)
                 .standardizedFileURL
         )
     }
     
-    public func file(_ name: String) -> URL {
-        url.appendingPathComponent(name, isDirectory: false).standardizedFileURL
+    /// Produces URL to nested file using `prefix` and `name` for proper naming.
+    /// The file is NOT actually created. Use `createFile` to actually create it.
+    /// - Parameters:
+    ///   - prefix: if specified, prefixes the name of the file.
+    ///   - name: if specified, acts like the name of the file. Otherwise `UUID` is used.
+    ///   - extension: if specified, used as extension of the file.
+    public func file(prefix: String? = nil, name: String? = nil, extension ext: String? = nil) -> URL {
+        let fullName = makeName(prefix: prefix, name: name, extension: ext)
+        return location.appendingPathComponent(fullName, isDirectory: false).standardizedFileURL
     }
     
-    /// Creates unique location at system temporary directory.
-    /// Does NOT create anything at that location.
-    public func uniqueSubdir(prefix: String? = nil) -> TemporaryDirectory {
-        let name = (prefix.flatMap { "\($0)-" } ?? "") + UUID().uuidString
-        return TemporaryDirectory(
-            url: url
-                .appendingPathComponent(name, isDirectory: true)
-                .standardizedFileURL
-        )
+    /// Creates nested file using `prefix` and `name` for proper naming.
+    /// If the file already exists, this method will overwrite it.
+    /// - Parameters:
+    ///   - prefix: if specified, prefixes the name of the file.
+    ///   - name: if specified, acts like the name of the file. Otherwise `UUID` is used.
+    ///   - extension: if specified, used as extension of the file.
+    ///   - content: A data object containing the contents of the new file.
+    ///   - attributes: A dictionary containing the attributes to associate with the new file.
+    ///   You can use these attributes to set the owner and group numbers, file permissions, and modification date.
+    ///   For a list of keys, see `FileAttributeKey`. 
+    ///   If you specify `nil` for attributes, the file is created with a set of default attributes.
+    public func createFile(
+        prefix: String? = nil,
+        name: String? = nil,
+        extension ext: String? = nil,
+        content: Data,
+        attributes: [FileAttributeKey : Any]? = nil
+    ) throws -> URL {
+        let file = file(prefix: prefix, name: name, extension: ext)
+        guard FileManager.default.createFile(atPath: file.path, contents: content, attributes: attributes) else {
+            throw URLError(.cannotWriteToFile, userInfo: [NSFilePathErrorKey: file.path])
+        }
+        return file
     }
     
-    /// Creates unique location at system temporary directory by adding unique extension to the basename.
-    /// Does NOT create anything at that location.
-    public func uniqueFile(basename: String) -> URL {
-        url.appendingPathComponent(basename)
-            .appendingPathExtension(UUID().uuidString)
-            .standardizedFileURL
-    }
-    
-    /// Creates unique location at system temporary directory.
-    /// Does NOT create anything at that location.
-    public func uniqueFile(prefix: String? = nil) -> URL {
-        let name = (prefix.flatMap { "\($0)-" } ?? "") + UUID().uuidString
-        return url.appendingPathComponent(name).standardizedFileURL
+    private func makeName(prefix: String?, name: String?, extension ext: String? = nil) -> String {
+        var fullName = name ?? UUID().uuidString
+        if let prefix {
+            fullName = prefix + fullName
+        }
+        if let ext {
+            fullName = fullName.appendingPathExtension(ext)
+        }
+        return fullName
     }
 }

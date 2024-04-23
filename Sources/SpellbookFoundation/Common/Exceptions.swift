@@ -48,7 +48,7 @@ extension NSException: NonSwiftException {
 }
 
 /// Error-like wrapper around C++ `std::exception` to make it Swift.Error compatible.
-public struct StdException: Error {
+public struct CppException: Error {
     public var what: String
     
     public init(what: String) {
@@ -60,13 +60,13 @@ public struct StdException: Error {
     }
 }
 
-extension StdException: NonSwiftException {
+extension CppException: NonSwiftException {
     public static func evaluate(_ body: () -> Void) -> String? {
         SpellbookObjC.cppException_catching(body)
     }
     
     public static func create(with nonSwiftError: String) -> Self {
-        StdException(what: nonSwiftError)
+        CppException(what: nonSwiftError)
     }
 }
 
@@ -105,7 +105,7 @@ extension NonSwiftException {
 /// - Warning: Use it reasonably, catching code related to
 /// Objective-C and C++ exceptions may affect the performance.
 public func catchingAny<R>(_ body: () throws -> R) throws -> R {
-    try StdException.catchingAll {
+    try CppException.catchingAll {
         try NSException.catchingAll(body)
     }
 }

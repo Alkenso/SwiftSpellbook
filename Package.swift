@@ -1,4 +1,4 @@
-// swift-tools-version:5.7
+// swift-tools-version:5.9
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -14,6 +14,10 @@ let package = Package(
         .library(
             name: "SpellbookHTTP",
             targets: ["SpellbookHTTP"]
+        ),
+        .library(
+            name: "SpellbookBinaryParsing",
+            targets: ["SpellbookBinaryParsing"]
         ),
         .library(
             name: "SpellbookTestUtils",
@@ -39,12 +43,16 @@ let package = Package(
             dependencies: ["SpellbookFoundation"]
         ),
         .target(
+            name: "SpellbookBinaryParsing",
+            dependencies: ["SpellbookFoundation"]
+        ),
+        .target(
             name: "SpellbookTestUtils",
             dependencies: ["SpellbookFoundation"]
         ),
         .testTarget(
             name: "SpellbookTests",
-            dependencies: ["SpellbookFoundation", "SpellbookTestUtils"]
+            dependencies: ["SpellbookFoundation", "SpellbookBinaryParsing", "SpellbookTestUtils"]
         ),
         .testTarget(
             name: "SpellbookTestUtilsTests",

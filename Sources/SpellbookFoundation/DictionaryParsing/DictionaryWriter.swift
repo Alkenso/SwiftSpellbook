@@ -195,4 +195,4 @@ public struct DictionaryWriter<Key: Hashable, Value> {
     }
 }
 
-extension DictionaryWriter: ObjectBuilder {}
+extension DictionaryWriter: ValueBuilder {}

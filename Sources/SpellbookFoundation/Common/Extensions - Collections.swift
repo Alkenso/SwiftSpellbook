@@ -177,6 +177,15 @@ extension Collection {
             return mutated
         }
     }
+    
+    public func firstMapped<T>(where transform: (Element) throws -> T?) rethrows -> T? {
+        for element in self {
+            if let mapped = try transform(element) {
+                return mapped
+            }
+        }
+        return nil
+    }
 }
 
 extension Collection {

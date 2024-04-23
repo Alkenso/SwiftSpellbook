@@ -40,394 +40,170 @@ extension IOKitError: CustomNSError {
     public var errorUserInfo: [String: Any] { userInfo }
 }
 
-public extension IOKitError {
+extension IOKitError {
     /// IOReturn.h error codes
-    enum Code {
-        /// OK
-        case success
+    public struct Code: RawRepresentable, Hashable {
+        public var rawValue: IOReturn
+        public init(rawValue: IOReturn) { self.rawValue = rawValue }
         
-        /// general error
-        case error
+        /// OK.
+        public static let success = Self(rawValue: kIOReturnSuccess)
         
-        /// can't allocate memory
-        case noMemory
+        /// general error.
+        public static let error = Self(rawValue: kIOReturnError)
         
-        /// resource shortage
-        case noResources
+        /// can't allocate memory.
+        public static let noMemory = Self(rawValue: kIOReturnNoMemory)
         
-        /// error during IPC
-        case ipcError
+        /// resource shortage.
+        public static let noResources = Self(rawValue: kIOReturnNoResources)
         
-        /// no such device
-        case noDevice
+        /// error during IPC.
+        public static let ipcError = Self(rawValue: kIOReturnIPCError)
         
-        /// privilege violation
-        case notPrivileged
+        /// no such device.
+        public static let noDevice = Self(rawValue: kIOReturnNoDevice)
         
-        /// invalid argument
-        case badArgument
+        /// privilege violation.
+        public static let notPrivileged = Self(rawValue: kIOReturnNotPrivileged)
         
-        /// device read locked
-        case lockedRead
+        /// invalid argument.
+        public static let badArgument = Self(rawValue: kIOReturnBadArgument)
         
-        /// device write locked
-        case lockedWrite
+        /// device read locked.
+        public static let lockedRead = Self(rawValue: kIOReturnLockedRead)
         
-        /// exclusive access and device already open
-        case exclusiveAccess
+        /// device write locked.
+        public static let lockedWrite = Self(rawValue: kIOReturnLockedWrite)
         
-        /// sent/received messages had different msg_id
-        case badMessageID
+        /// exclusive access and device already open.
+        public static let exclusiveAccess = Self(rawValue: kIOReturnExclusiveAccess)
         
-        /// unsupported function
-        case unsupported
+        /// sent/received messages had different msg_id.
+        public static let badMessageID = Self(rawValue: kIOReturnBadMessageID)
         
-        /// misc. VM failure
-        case vmError
+        /// unsupported function.
+        public static let unsupported = Self(rawValue: kIOReturnUnsupported)
         
-        /// internal error
-        case internalError
+        /// misc. VM failure.
+        public static let vmError = Self(rawValue: kIOReturnVMError)
         
-        /// General I/O error
-        case ioError
+        /// internal error.
+        public static let internalError = Self(rawValue: kIOReturnInternalError)
         
-        /// can't acquire lock
-        case cannotLock
+        /// General I/O error.
+        public static let ioError = Self(rawValue: kIOReturnIOError)
         
-        /// device not open
-        case notOpen
+        /// can't acquire lock.
+        public static let cannotLock = Self(rawValue: kIOReturnCannotLock)
         
-        /// read not supported
-        case notReadable
+        /// device not open.
+        public static let notOpen = Self(rawValue: kIOReturnNotOpen)
         
-        /// write not supported
-        case notWritable
+        /// read not supported.
+        public static let notReadable = Self(rawValue: kIOReturnNotReadable)
         
-        /// alignment error
-        case notAligned
+        /// write not supported.
+        public static let notWritable = Self(rawValue: kIOReturnNotWritable)
         
-        /// Media Error
-        case badMedia
+        /// alignment error.
+        public static let notAligned = Self(rawValue: kIOReturnNotAligned)
         
-        /// device(s) still open
-        case stillOpen
+        /// Media Error.
+        public static let badMedia = Self(rawValue: kIOReturnBadMedia)
         
-        /// rld failure
-        case rldError
+        /// device(s) still open.
+        public static let stillOpen = Self(rawValue: kIOReturnStillOpen)
         
-        /// DMA failure
-        case dmaError
+        /// rld failure.
+        public static let rldError = Self(rawValue: kIOReturnRLDError)
         
-        /// Device Busy
-        case busy
+        /// DMA failure.
+        public static let dmaError = Self(rawValue: kIOReturnDMAError)
         
-        /// I/O Timeout
-        case timeout
+        /// Device Busy.
+        public static let busy = Self(rawValue: kIOReturnBusy)
         
-        /// device offline
-        case offline
+        /// I/O Timeout.
+        public static let timeout = Self(rawValue: kIOReturnTimeout)
         
-        /// not ready
-        case notReady
+        /// device offline.
+        public static let offline = Self(rawValue: kIOReturnOffline)
         
-        /// device not attached
-        case notAttached
+        /// not ready.
+        public static let notReady = Self(rawValue: kIOReturnNotReady)
         
-        /// no DMA channels left
-        case noChannels
+        /// device not attached.
+        public static let notAttached = Self(rawValue: kIOReturnNotAttached)
         
-        /// no space for data
-        case noSpace
+        /// no DMA channels left.
+        public static let noChannels = Self(rawValue: kIOReturnNoChannels)
         
-        /// port already exists
-        case portExists
+        /// no space for data.
+        public static let noSpace = Self(rawValue: kIOReturnNoSpace)
         
-        /// can't wire down physical memory
-        case cannotWire
+        /// port already exists.
+        public static let portExists = Self(rawValue: kIOReturnPortExists)
         
-        /// no interrupt attached
-        case noInterrupt
+        /// can't wire down physical memory.
+        public static let cannotWire = Self(rawValue: kIOReturnCannotWire)
         
-        /// no DMA frames enqueued
-        case noFrames
+        /// no interrupt attached.
+        public static let noInterrupt = Self(rawValue: kIOReturnNoInterrupt)
         
-        /// oversized msg received on interrupt port
-        case messageTooLarge
+        /// no DMA frames enqueued.
+        public static let noFrames = Self(rawValue: kIOReturnNoFrames)
         
-        /// not permitted
-        case notPermitted
+        /// oversized msg received on interrupt port.
+        public static let messageTooLarge = Self(rawValue: kIOReturnMessageTooLarge)
         
-        /// no power to device
-        case noPower
+        /// not permitted.
+        public static let notPermitted = Self(rawValue: kIOReturnNotPermitted)
         
-        /// media not present
-        case noMedia
+        /// no power to device.
+        public static let noPower = Self(rawValue: kIOReturnNoPower)
         
-        // media not formatted
-        case unformattedMedia
+        /// media not present.
+        public static let noMedia = Self(rawValue: kIOReturnNoMedia)
         
-        /// no such mode
-        case unsupportedMode
+        /// media not formatted.
+        public static let unformattedMedia = Self(rawValue: kIOReturnUnformattedMedia)
         
-        /// data underrun
-        case underrun
+        /// no such mode.
+        public static let unsupportedMode = Self(rawValue: kIOReturnUnsupportedMode)
         
-        /// data overrun
-        case overrun
+        /// data underrun.
+        public static let underrun = Self(rawValue: kIOReturnUnderrun)
         
-        /// the device is not working properly!
-        case deviceError
+        /// data overrun.
+        public static let overrun = Self(rawValue: kIOReturnOverrun)
         
-        /// a completion routine is required
-        case noCompletion
+        /// the device is not working properly!.
+        public static let deviceError = Self(rawValue: kIOReturnDeviceError)
         
-        /// operation aborted
-        case aborted
+        /// a completion routine is required.
+        public static let noCompletion = Self(rawValue: kIOReturnNoCompletion)
         
-        /// bus bandwidth would be exceeded
-        case noBandwidth
+        /// operation aborted.
+        public static let aborted = Self(rawValue: kIOReturnAborted)
         
-        /// device not responding
-        case notResponding
+        /// bus bandwidth would be exceeded.
+        public static let noBandwidth = Self(rawValue: kIOReturnNoBandwidth)
         
-        /// isochronous I/O request for distant past!
-        case isoTooOld
+        /// device not responding.
+        public static let notResponding = Self(rawValue: kIOReturnNotResponding)
         
-        /// isochronous I/O request for distant future
-        case isoTooNew
+        /// isochronous I/O request for distant past!.
+        public static let isoTooOld = Self(rawValue: kIOReturnIsoTooOld)
         
-        /// data was not found
-        case notFound
+        /// isochronous I/O request for distant future.
+        public static let isoTooNew = Self(rawValue: kIOReturnIsoTooNew)
         
-        /// should never be seen
-        case invalid
-    }
-}
-
-extension IOKitError.Code: RawRepresentable {
-    public typealias RawValue = IOReturn
-    public init?(rawValue: IOReturn) {
-        switch rawValue {
-        case kIOReturnSuccess:
-            self = .success
-        case kIOReturnError:
-            self = .error
-        case kIOReturnNoMemory:
-            self = .noMemory
-        case kIOReturnNoResources:
-            self = .noResources
-        case kIOReturnIPCError:
-            self = .ipcError
-        case kIOReturnNoDevice:
-            self = .noDevice
-        case kIOReturnNotPrivileged:
-            self = .notPrivileged
-        case kIOReturnBadArgument:
-            self = .badArgument
-        case kIOReturnLockedRead:
-            self = .lockedRead
-        case kIOReturnLockedWrite:
-            self = .lockedWrite
-        case kIOReturnExclusiveAccess:
-            self = .exclusiveAccess
-        case kIOReturnBadMessageID:
-            self = .badMessageID
-        case kIOReturnUnsupported:
-            self = .unsupported
-        case kIOReturnVMError:
-            self = .vmError
-        case kIOReturnInternalError:
-            self = .internalError
-        case kIOReturnIOError:
-            self = .ioError
-        case kIOReturnCannotLock:
-            self = .cannotLock
-        case kIOReturnNotOpen:
-            self = .notOpen
-        case kIOReturnNotReadable:
-            self = .notReadable
-        case kIOReturnNotWritable:
-            self = .notWritable
-        case kIOReturnNotAligned:
-            self = .notAligned
-        case kIOReturnBadMedia:
-            self = .badMedia
-        case kIOReturnStillOpen:
-            self = .stillOpen
-        case kIOReturnRLDError:
-            self = .rldError
-        case kIOReturnDMAError:
-            self = .dmaError
-        case kIOReturnBusy:
-            self = .busy
-        case kIOReturnTimeout:
-            self = .timeout
-        case kIOReturnOffline:
-            self = .offline
-        case kIOReturnNotReady:
-            self = .notReady
-        case kIOReturnNotAttached:
-            self = .notAttached
-        case kIOReturnNoChannels:
-            self = .noChannels
-        case kIOReturnNoSpace:
-            self = .noSpace
-        case kIOReturnPortExists:
-            self = .portExists
-        case kIOReturnCannotWire:
-            self = .cannotWire
-        case kIOReturnNoInterrupt:
-            self = .noInterrupt
-        case kIOReturnNoFrames:
-            self = .noFrames
-        case kIOReturnMessageTooLarge:
-            self = .messageTooLarge
-        case kIOReturnNotPermitted:
-            self = .notPermitted
-        case kIOReturnNoPower:
-            self = .noPower
-        case kIOReturnNoMedia:
-            self = .noMedia
-        case kIOReturnUnformattedMedia:
-            self = .unformattedMedia
-        case kIOReturnUnsupportedMode:
-            self = .unsupportedMode
-        case kIOReturnUnderrun:
-            self = .underrun
-        case kIOReturnOverrun:
-            self = .overrun
-        case kIOReturnDeviceError:
-            self = .deviceError
-        case kIOReturnNoCompletion:
-            self = .noCompletion
-        case kIOReturnAborted:
-            self = .aborted
-        case kIOReturnNoBandwidth:
-            self = .noBandwidth
-        case kIOReturnNotResponding:
-            self = .notResponding
-        case kIOReturnIsoTooOld:
-            self = .isoTooOld
-        case kIOReturnIsoTooNew:
-            self = .isoTooNew
-        case kIOReturnNotFound:
-            self = .notFound
-        case kIOReturnInvalid:
-            self = .invalid
-        default:
-            return nil
-        }
-    }
-    
-    public var rawValue: IOReturn {
-        switch self {
-        case .success:
-            return kIOReturnSuccess
-        case .error:
-            return kIOReturnError
-        case .noMemory:
-            return kIOReturnNoMemory
-        case .noResources:
-            return kIOReturnNoResources
-        case .ipcError:
-            return kIOReturnIPCError
-        case .noDevice:
-            return kIOReturnNoDevice
-        case .notPrivileged:
-            return kIOReturnNotPrivileged
-        case .badArgument:
-            return kIOReturnBadArgument
-        case .lockedRead:
-            return kIOReturnLockedRead
-        case .lockedWrite:
-            return kIOReturnLockedWrite
-        case .exclusiveAccess:
-            return kIOReturnExclusiveAccess
-        case .badMessageID:
-            return kIOReturnBadMessageID
-        case .unsupported:
-            return kIOReturnUnsupported
-        case .vmError:
-            return kIOReturnVMError
-        case .internalError:
-            return kIOReturnInternalError
-        case .ioError:
-            return kIOReturnIOError
-        case .cannotLock:
-            return kIOReturnCannotLock
-        case .notOpen:
-            return kIOReturnNotOpen
-        case .notReadable:
-            return kIOReturnNotReadable
-        case .notWritable:
-            return kIOReturnNotWritable
-        case .notAligned:
-            return kIOReturnNotAligned
-        case .badMedia:
-            return kIOReturnBadMedia
-        case .stillOpen:
-            return kIOReturnStillOpen
-        case .rldError:
-            return kIOReturnRLDError
-        case .dmaError:
-            return kIOReturnDMAError
-        case .busy:
-            return kIOReturnBusy
-        case .timeout:
-            return kIOReturnTimeout
-        case .offline:
-            return kIOReturnOffline
-        case .notReady:
-            return kIOReturnNotReady
-        case .notAttached:
-            return kIOReturnNotAttached
-        case .noChannels:
-            return kIOReturnNoChannels
-        case .noSpace:
-            return kIOReturnNoSpace
-        case .portExists:
-            return kIOReturnPortExists
-        case .cannotWire:
-            return kIOReturnCannotWire
-        case .noInterrupt:
-            return kIOReturnNoInterrupt
-        case .noFrames:
-            return kIOReturnNoFrames
-        case .messageTooLarge:
-            return kIOReturnMessageTooLarge
-        case .notPermitted:
-            return kIOReturnNotPermitted
-        case .noPower:
-            return kIOReturnNoPower
-        case .noMedia:
-            return kIOReturnNoMedia
-        case .unformattedMedia:
-            return kIOReturnUnformattedMedia
-        case .unsupportedMode:
-            return kIOReturnUnsupportedMode
-        case .underrun:
-            return kIOReturnUnderrun
-        case .overrun:
-            return kIOReturnOverrun
-        case .deviceError:
-            return kIOReturnDeviceError
-        case .noCompletion:
-            return kIOReturnNoCompletion
-        case .aborted:
-            return kIOReturnAborted
-        case .noBandwidth:
-            return kIOReturnNoBandwidth
-        case .notResponding:
-            return kIOReturnNotResponding
-        case .isoTooOld:
-            return kIOReturnIsoTooOld
-        case .isoTooNew:
-            return kIOReturnIsoTooNew
-        case .notFound:
-            return kIOReturnNotFound
-        case .invalid:
-            return kIOReturnInvalid
-        }
+        /// data was not found.
+        public static let notFound = Self(rawValue: kIOReturnNotFound)
+        
+        /// should never be seen.
+        public static let invalid = Self(rawValue: kIOReturnInvalid)
     }
 }
 
@@ -540,6 +316,8 @@ extension IOKitError.Code: CustomStringConvertible {
             return "kIOReturnNotFound, short = 0x2f0, full = \(rawValueHex)"
         case .invalid:
             return "kIOReturnInvalid, short = 0x1, full = \(rawValueHex)"
+        default:
+            return "Unknown, value = \(rawValueHex)"
         }
     }
     

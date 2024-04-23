@@ -28,7 +28,7 @@ public typealias EventAsk<Input, Output> = EventAskEx<Input, Output, [Output]>
 
 public class EventAskEx<Input, Transformed, Output> {
     private typealias Entry<T> = (transform: AsyncTransform, queue: DispatchQueue)
-    private let transforms = Synchronized<[ObjectIdentifier: Entry<AsyncTransform>]>(.concurrent)
+    private let transforms = Synchronized<[UUID: Entry<AsyncTransform>]>(.concurrent)
     private let combine: ([Transformed]) -> Output
     
     public typealias AsyncTransform = (Input, @escaping (Transformed) -> Void) -> Void
@@ -62,9 +62,9 @@ public class EventAskEx<Input, Transformed, Output> {
         for (idx, entry) in transforms.enumerated() {
             group.enter()
             entry.queue.async {
-                var once = atomic_flag()
+                let once = AtomicFlag()
                 entry.transform(value) { singleResult in
-                    guard !atomic_flag_test_and_set(&once) else {
+                    guard !once.testAndSet() else {
                         if !RunEnvironment.isXCTesting {
                             assertionFailure("\(Self.self) transform action called multiple times")
                         }
@@ -110,24 +110,22 @@ public class EventAskEx<Input, Transformed, Output> {
     
     // MARK: Subscribe
     
-    public func subscribe(on queue: DispatchQueue = .global(), transform: @escaping AsyncTransform) -> SubscriptionToken {
-        let subscription = DeinitAction {}
-        let id = ObjectIdentifier(subscription)
-        transforms.writeAsync {
-            $0[id] = (transform, queue)
+    public func subscribe(
+        on queue: DispatchQueue = .global(),
+        transform: @escaping AsyncTransform
+    ) -> SubscriptionToken {
+        let id = UUID()
+        transforms.write { $0[id] = (transform, queue) }
+        return .init { [weak self] in 
+            self?.transforms.write { _ = $0.removeValue(forKey: id) }
         }
-        subscription.replaceCleanup { [weak self] in self?.unsubscribe(id) }
-        return subscription
     }
     
-    public func subscribe(on queue: DispatchQueue = .global(), transform: @escaping SyncTransform) -> SubscriptionToken {
+    public func subscribe(
+        on queue: DispatchQueue = .global(),
+        transform: @escaping SyncTransform
+    ) -> SubscriptionToken {
         subscribe(on: queue) { $1(transform($0)) }
-    }
-    
-    private func unsubscribe(_ id: ObjectIdentifier) {
-        transforms.writeAsync {
-            $0.removeValue(forKey: id)
-        }
     }
 }
 

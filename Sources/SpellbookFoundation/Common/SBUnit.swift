@@ -25,8 +25,6 @@ import Foundation
 public protocol SBUnit: RawRepresentable where RawValue == Double {}
 
 extension SBUnit {
-//    public static func convert(_ value: Double, to: Self) -> Double { value / to.rawValue }
-//    public static func restore(_ magnitude: Double, of: Self) -> Double { magnitude * of.rawValue }
     /// Perform conversion between measurement units.
     /// - Parameters:
     ///     - value: Unit magnitude.

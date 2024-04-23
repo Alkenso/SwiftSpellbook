@@ -4,7 +4,7 @@ import SpellbookTestUtils
 import XCTest
 
 class FileManagerExtensionsTests: XCTestCase {
-    let tempDir = TestTemporaryDirectory(prefix: "MHT-Tests")
+    let tempDir = TemporaryDirectory.bundle
     
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -19,14 +19,14 @@ class FileManagerExtensionsTests: XCTestCase {
     }
     
     func test_fileExistsAt() throws {
-        let file = try tempDir.createFile("testfile")
+        let file = try tempDir.createFile(name: "testfile", content: Data())
         XCTAssertTrue(FileManager.default.fileExists(atPath: file.path))
         XCTAssertTrue(FileManager.default.fileExists(at: file))
     }
     
     func test_directoryExistsAt() throws {
-        let directory = tempDir.url
-        let file = try tempDir.createFile("testfile")
+        let directory = tempDir.location
+        let file = try tempDir.createFile(name: "testfile", content: Data())
         
         var isDirectory = ObjCBool(false)
         XCTAssertTrue(FileManager.default.fileExists(atPath: file.path, isDirectory: &isDirectory))
@@ -39,7 +39,7 @@ class FileManagerExtensionsTests: XCTestCase {
     }
     
     func test_xattr() throws {
-        let file = try tempDir.createFile("file")
+        let file = try tempDir.createFile(name: "file", content: Data())
         XCTAssertEqual(try FileManager.default.listXattr(at: file), [])
         XCTAssertThrowsError(try FileManager.default.xattr(at: file, name: "xa"))
         XCTAssertThrowsError(try FileManager.default.removeXattr(at: file, name: "xa"))
