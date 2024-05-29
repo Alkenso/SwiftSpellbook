@@ -23,39 +23,89 @@
 import Foundation
 
 public protocol SpellbookLog {
-    func custom(level: SpellbookLogLevel, message: @autoclosure () -> Any, assert: Bool, file: StaticString, function: StaticString, line: Int)
+    func _custom(
+        level: SpellbookLogLevel,
+        message: @autoclosure () -> Any,
+        assert: Bool,
+        file: StaticString,
+        function: StaticString,
+        line: Int
+    )
 }
 
 extension SpellbookLog {
-    public func verbose(_ message: @autoclosure () -> Any, _ file: StaticString = #file, _ function: StaticString = #function, line: Int = #line) {
-        custom(level: .verbose, message: message(), assert: false, file, function, line)
+    public func verbose(
+        _ message: @autoclosure () -> Any,
+        file: StaticString = #file,
+        function: StaticString = #function,
+        line: Int = #line
+    ) {
+        custom(level: .verbose, message: message(), assert: false, file: file, function: function, line: line)
     }
     
-    public func debug(_ message: @autoclosure () -> Any, _ file: StaticString = #file, _ function: StaticString = #function, line: Int = #line) {
-        custom(level: .debug, message: message(), assert: false, file, function, line)
+    public func debug(
+        _ message: @autoclosure () -> Any,
+        file: StaticString = #file,
+        function: StaticString = #function,
+        line: Int = #line
+    ) {
+        custom(level: .debug, message: message(), assert: false, file: file, function: function, line: line)
     }
     
-    public func info(_ message: @autoclosure () -> Any, _ file: StaticString = #file, _ function: StaticString = #function, line: Int = #line) {
-        custom(level: .info, message: message(), assert: false, file, function, line)
+    public func info(
+        _ message: @autoclosure () -> Any,
+        file: StaticString = #file,
+        function: StaticString = #function,
+        line: Int = #line
+    ) {
+        custom(level: .info, message: message(), assert: false, file: file, function: function, line: line)
     }
     
-    public func warning(_ message: @autoclosure () -> Any, _ file: StaticString = #file, _ function: StaticString = #function, line: Int = #line) {
-        custom(level: .warning, message: message(), assert: false, file, function, line)
+    public func warning(
+        _ message: @autoclosure () -> Any,
+        file: StaticString = #file,
+        function: StaticString = #function,
+        line: Int = #line
+    ) {
+        custom(level: .warning, message: message(), assert: false, file: file, function: function, line: line)
     }
     
-    public func error(_ message: @autoclosure () -> Any, assert: Bool = false, _ file: StaticString = #file, _ function: StaticString = #function, line: Int = #line) {
-        custom(level: .error, message: message(), assert: assert, file, function, line)
+    public func error(
+        _ message: @autoclosure () -> Any,
+        assert: Bool = false,
+        file: StaticString = #file,
+        function: StaticString = #function,
+        line: Int = #line
+    ) {
+        custom(level: .error, message: message(), assert: assert, file: file, function: function, line: line)
     }
     
-    public func fatal(_ message: @autoclosure () -> Any, assert: Bool = false, _ file: StaticString = #file, _ function: StaticString = #function, line: Int = #line) {
-        custom(level: .fatal, message: message(), assert: assert, file, function, line)
+    public func fatal(
+        _ message: @autoclosure () -> Any,
+        assert: Bool = false,
+        file: StaticString = #file,
+        function: StaticString = #function,
+        line: Int = #line
+    ) {
+        custom(level: .fatal, message: message(), assert: assert, file: file, function: function, line: line)
     }
     
     public func custom(
-        level: SpellbookLogLevel, message: @autoclosure () -> Any, assert: Bool,
-        _ file: StaticString = #file, _ function: StaticString = #function, _ line: Int = #line
+        level: SpellbookLogLevel,
+        message: @autoclosure () -> Any,
+        assert: Bool,
+        file: StaticString = #file,
+        function: StaticString = #function,
+        line: Int = #line
     ) {
-        custom(level: level, message: message(), assert: assert, file: file, function: function, line: line)
+        _custom(
+            level: level,
+            message: message(),
+            assert: assert,
+            file: file,
+            function: function,
+            line: line
+        )
     }
 }
 
@@ -82,7 +132,14 @@ public struct SpellbookLogRecord {
     public var function: StaticString
     public var line: Int
     
-    public init(source: SpellbookLogSource, level: SpellbookLogLevel, message: Any, file: StaticString, function: StaticString, line: Int) {
+    public init(
+        source: SpellbookLogSource,
+        level: SpellbookLogLevel,
+        message: Any,
+        file: StaticString,
+        function: StaticString,
+        line: Int
+    ) {
         self.source = source
         self.level = level
         self.message = message
@@ -172,13 +229,33 @@ extension SpellbookLogger {
 }
 
 extension SpellbookLogger: SpellbookLog {
-    public func custom(level: SpellbookLogLevel, message: @autoclosure () -> Any, assert: Bool, file: StaticString, function: StaticString, line: Int) {
-        custom(source: source, level: level, message: message(), assert: assert, file: file, function: function, line: line)
+    public func _custom(
+        level: SpellbookLogLevel,
+        message: @autoclosure () -> Any,
+        assert: Bool,
+        file: StaticString,
+        function: StaticString,
+        line: Int
+    ) {
+        custom(
+            source: source,
+            level: level,
+            message: message(),
+            assert: assert,
+            file: file,
+            function: function,
+            line: line
+        )
     }
     
     private func custom(
-        source: SpellbookLogSource, level: SpellbookLogLevel, message: @autoclosure () -> Any, assert: Bool,
-        file: StaticString, function: StaticString, line: Int
+        source: SpellbookLogSource,
+        level: SpellbookLogLevel,
+        message: @autoclosure () -> Any,
+        assert: Bool,
+        file: StaticString,
+        function: StaticString,
+        line: Int
     ) {
         if assert && isAssertsEnabled {
             assertionFailure("\(message())", file: file, line: UInt(line))
@@ -198,9 +275,23 @@ extension SpellbookLogger: SpellbookLog {
 }
 
 private struct SubsystemLogger: SpellbookLog {
-    let logImpl: (_ level: SpellbookLogLevel, _ message: @autoclosure () -> Any, _ assert: Bool, _ file: StaticString, _ function: StaticString, _ line: Int) -> Void
+    let logImpl: (
+        _ level: SpellbookLogLevel,
+        _ message: @autoclosure () -> Any,
+        _ assert: Bool,
+        _ file: StaticString,
+        _ function: StaticString,
+        _ line: Int
+    ) -> Void
     
-    func custom(level: SpellbookLogLevel, message: @autoclosure () -> Any, assert: Bool, file: StaticString, function: StaticString, line: Int) {
+    func _custom(
+        level: SpellbookLogLevel,
+        message: @autoclosure () -> Any,
+        assert: Bool,
+        file: StaticString,
+        function: StaticString,
+        line: Int
+    ) {
         logImpl(level, message(), assert, file, function, line)
     }
 }

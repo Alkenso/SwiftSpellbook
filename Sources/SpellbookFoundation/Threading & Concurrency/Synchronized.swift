@@ -84,7 +84,7 @@ extension Synchronized {
         write { $0 = value }
     }
     
-    public func write<S>(_ subValue: S, at keyPath: WritableKeyPath<Value, S>) {
+    public func write<S>(at keyPath: WritableKeyPath<Value, S>, _ subValue: S) {
         write { $0[keyPath: keyPath] = subValue }
     }
     

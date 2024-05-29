@@ -29,7 +29,7 @@ extension SBUnit {
     /// - Parameters:
     ///     - value: Unit magnitude.
     ///     - from: `value` measurement units. `nil` means base units.
-    ///     - to: `resulting` measurement units. `nil` means base units.     
+    ///     - to: `resulting` measurement units. `nil` means base units.
     public static func convert(_ value: Double, _ from: Self? = nil, to: Self? = nil) -> Double {
         value * (from?.rawValue ?? 1) / (to?.rawValue ?? 1)
     }

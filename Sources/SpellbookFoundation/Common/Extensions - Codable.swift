@@ -34,7 +34,7 @@ extension Encodable {
         do {
             return try encoder.encode(self)
         } catch {
-            (log ?? codableLogger).error("Encoding \(Self.self) to \(encoder.formatName) failed. Error: \(error)", file, function, line: line)
+            (log ?? codableLogger).error("Encoding \(Self.self) to \(encoder.formatName) failed. Error: \(error)", file: file, function: function, line: line)
             return nil
         }
     }
@@ -92,7 +92,7 @@ extension Decodable {
         do {
             self = try decoder.decode(Self.self, data)
         } catch {
-            (log ?? codableLogger).error("Decoding \(Self.self) from \(decoder.formatName) failed. Error: \(error)", file, function, line: line)
+            (log ?? codableLogger).error("Decoding \(Self.self) from \(decoder.formatName) failed. Error: \(error)", file: file, function: function, line: line)
             return nil
         }
     }
