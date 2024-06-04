@@ -37,7 +37,7 @@ public final class Synchronized<Value> {
     private let lock: SynchronizedLocking
     private var value: Value
     
-    public init(_ value: Value, _ primitive: Primitive) {
+    public init(_ primitive: Primitive, _ value: Value) {
         self.value = value
         
         self.lock = switch primitive {
@@ -50,9 +50,9 @@ public final class Synchronized<Value> {
         case .rwlock:
             RWLock()
         case .serial:
-            DispatchQueue(label: "\(Self.self).queue")
+            DispatchQueue(label: "\(Self.self).queue", autoreleaseFrequency: .workItem)
         case .concurrent:
-            DispatchQueue(label: "\(Self.self).queue", attributes: .concurrent)
+            DispatchQueue(label: "\(Self.self).queue", attributes: .concurrent, autoreleaseFrequency: .workItem)
         case .custom(let queue):
             queue
         }
@@ -99,17 +99,17 @@ extension Synchronized {
 
 extension Synchronized {
     public convenience init(_ primitive: Primitive) where Value: ExpressibleByArrayLiteral {
-        self.init([], primitive)
+        self.init(primitive, [])
     }
     
     public convenience init(_ primitive: Primitive) where Value: ExpressibleByDictionaryLiteral {
-        self.init([:], primitive)
+        self.init(primitive, [:])
     }
 }
 
 extension Synchronized {
     public convenience init<T>(_ primitive: Primitive) where Value == T? {
-        self.init(nil, primitive)
+        self.init(primitive, nil)
     }
     
     public func initialize<T>(_ initialize: @autoclosure () -> T) -> T where Value == T? {

@@ -30,7 +30,7 @@ public final class Atomic<Value> {
     private let storage: Synchronized<Value>
     
     public convenience init(wrappedValue: Value, _ primitive: Synchronized<Value>.Primitive = .unfair) {
-        self.init(storage: .init(wrappedValue, primitive))
+        self.init(storage: .init(primitive, wrappedValue))
     }
     
     public init(storage: Synchronized<Value>) {
