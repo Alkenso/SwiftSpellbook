@@ -61,6 +61,12 @@ public final class Atomic<Value> {
     }
 }
 
+extension Atomic where Value: AdditiveArithmetic {
+    public func increment(by diff: Value) {
+        storage.write { $0 += diff }
+    }
+}
+
 public final class AtomicFlag {
     private let pointer: UnsafeMutablePointer<atomic_flag>
     
