@@ -76,7 +76,7 @@ extension Synchronized {
         read { $0 }
     }
     
-    public func read<R>(_ keyPath: KeyPath<Value, R>) -> R {
+    public func read<R>(at keyPath: KeyPath<Value, R>) -> R {
         read { $0[keyPath: keyPath] }
     }
     
@@ -112,12 +112,12 @@ extension Synchronized {
         self.init(primitive, nil)
     }
     
-    public func initialize<T>(_ initialize: @autoclosure () -> T) -> T where Value == T? {
-        write {
+    public func initialize<T>(_ initialize: @autoclosure () throws -> T) rethrows -> T where Value == T? {
+        try write {
             if let value = $0 {
                 return value
             } else {
-                let newValue = initialize()
+                let newValue = try initialize()
                 $0 = newValue
                 return newValue
             }
