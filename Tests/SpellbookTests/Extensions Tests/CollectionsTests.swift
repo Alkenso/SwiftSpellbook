@@ -101,4 +101,13 @@ class CollectionTests: XCTestCase {
         let values = ["a", "1", "2", "b"]
         XCTAssertEqual(values.firstMapped { Int($0) }, 1)
     }
+    
+    func test_sorted_keyPath() {
+        XCTAssertEqual(["aaa", "d", "cccc", "bb"].sorted(by: \.count), ["d", "bb", "aaa", "cccc"])
+    }
+    
+    func test_sorted_options() {
+        XCTAssertEqual(["1", "11", "12", "112"].sorted(), ["1", "11", "112", "12"])
+        XCTAssertEqual(["1", "11", "12", "112"].sorted(options: .numeric), ["1", "11", "12", "112"])
+    }
 }

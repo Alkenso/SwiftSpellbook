@@ -234,3 +234,29 @@ extension RangeReplaceableCollection {
         return element
     }
 }
+
+// MARK: - Sequence
+
+extension Sequence {
+    public func sorted<T: Comparable>(by keyPath: KeyPath<Element, T>) -> [Element] {
+        sorted {
+            let lhs = $0[keyPath: keyPath]
+            let rhs = $1[keyPath: keyPath]
+            return lhs < rhs
+        }
+    }
+}
+
+extension Sequence {
+    public func sorted(options: String.CompareOptions) -> [Element] where Element: StringProtocol {
+        sorted { $0.compare($1, options: options) == .orderedAscending }
+    }
+    
+    public func sorted<T: StringProtocol>(by keyPath: KeyPath<Element, T>, options: String.CompareOptions) -> [Element] {
+        sorted { 
+            let lhs = $0[keyPath: keyPath]
+            let rhs = $1[keyPath: keyPath]
+            return lhs.compare(rhs, options: options) == .orderedAscending
+        }
+    }
+}
