@@ -60,6 +60,17 @@ extension FileStore where T == Data {
 }
 
 extension FileStore {
+    public static func inMemory(storeRef: UnsafeMutablePointer<Synchronized<[URL: T]>>? = nil) -> Self {
+        let store = Synchronized<[URL: T]>(.unfair)
+        storeRef?.pointee = store
+        return .init(
+            read: { location, ifNil in try store.read { $0[location] ?? ifNil }.get(CocoaError(.fileNoSuchFile)) },
+            write: { content, location, _ in store.write { $0[location] = content } }
+        )
+    }
+}
+
+extension FileStore {
     public func synchronized(on queue: DispatchQueue) -> Self {
         .init(
             read: { location, ifNotExists in
