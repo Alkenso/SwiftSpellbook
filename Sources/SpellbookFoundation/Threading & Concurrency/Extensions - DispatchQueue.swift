@@ -44,6 +44,10 @@ public class DebounceContext {
         previousTask?.cancel()
         queue.asyncAfter(deadline: .now() + delay, execute: task)
     }
+    
+    public func cancel() {
+        _currentTask.exchange(nil)?.cancel()
+    }
 }
 
 extension DispatchQueue {
