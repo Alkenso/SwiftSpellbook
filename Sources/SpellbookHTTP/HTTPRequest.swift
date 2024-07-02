@@ -30,7 +30,7 @@ public struct HTTPRequest {
     public var port: UInt16?
     
     public var query: [QueryItem: String] = [:]
-    public var headers: [Header: HeaderValue] = [:]
+    public var headers: [Header: String] = [:]
     public var body: Body?
     
     public init(urlString: String, method: Method) {
@@ -68,11 +68,6 @@ extension HTTPRequest {
         public var rawValue: String
         public init(rawValue: String) { self.rawValue = rawValue }
     }
-    
-    public struct HeaderValue: RawRepresentable, Hashable {
-        public var rawValue: String
-        public init(rawValue: String) { self.rawValue = rawValue }
-    }
 }
 
 extension HTTPRequest.Header {
@@ -83,18 +78,10 @@ extension HTTPRequest.Header: ExpressibleByStringLiteral {
     public init(stringLiteral value: StringLiteralType) { self.rawValue = value }
 }
 
-extension HTTPRequest.HeaderValue {
-    public static func authorization(_ type: HTTPRequest.AuthorizationType, _ token: String) -> Self {
-        .init(rawValue: "\(type.rawValue) \(token)")
+extension HTTPRequest {
+    public static func authorization(_ type: HTTPRequest.AuthorizationType, _ token: String) -> String {
+        "\(type.rawValue) \(token)"
     }
-}
-
-extension HTTPRequest.HeaderValue: ExpressibleByStringLiteral {
-    public init(stringLiteral value: StringLiteralType) { self.rawValue = value }
-}
-
-extension HTTPRequest.HeaderValue: ExpressibleByStringInterpolation {
-    public init(stringInterpolation: DefaultStringInterpolation) { self.rawValue = stringInterpolation.description }
 }
 
 extension HTTPRequest {
@@ -114,8 +101,8 @@ extension HTTPRequest.AuthorizationType: ExpressibleByStringInterpolation {
 
 extension HTTPRequest {
     public struct Body {
-        internal let data: () throws -> Data
-        internal let contentType: String?
+        public let data: () throws -> Data
+        public let contentType: String?
         
         public init(contentType: String?, data: @escaping () throws -> Data) {
             self.data = data
@@ -156,7 +143,10 @@ extension HTTPRequest.Body {
 extension HTTPRequest {
     public func urlRequest() throws -> URLRequest {
         guard var components = URLComponents(string: url) else {
-            fatalError()
+            throw URLError(.badURL, userInfo: [
+                NSDebugDescriptionErrorKey: "Failed to parse URLComponents from URL",
+                SBRelatedObjectErrorKey: url,
+            ])
         }
         if !query.isEmpty {
             components.queryItems = query.map { URLQueryItem(name: $0.key.rawValue, value: $0.value) }
@@ -165,13 +155,13 @@ extension HTTPRequest {
             components.port = Int(port)
         }
         guard let url = components.url else {
-            fatalError()
+            throw URLError(.badURL, userInfo: [
+                NSDebugDescriptionErrorKey: "Failed to create URL from URLComponents",
+                SBRelatedObjectErrorKey: url,
+            ])
         }
         
         var urlRequest = URLRequest(url: url)
-        headers.forEach {
-            urlRequest.setValue($0.value.rawValue, forHTTPHeaderField: $0.key.rawValue)
-        }
         urlRequest.httpMethod = method.rawValue
         if let body {
             urlRequest.httpBody = try Result { try body.data() }
@@ -180,6 +170,9 @@ extension HTTPRequest {
             if let contentType = body.contentType {
                 urlRequest.addValue(contentType, forHTTPHeaderField: "Content-Type")
             }
+        }
+        headers.forEach {
+            urlRequest.setValue($0.value, forHTTPHeaderField: $0.key.rawValue)
         }
         
         return urlRequest

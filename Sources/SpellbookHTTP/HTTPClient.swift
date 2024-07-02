@@ -34,9 +34,13 @@ open class HTTPClient {
  
 extension HTTPClient {
     public func data(for request: HTTPRequest, completion: @escaping (Result<HTTPResult<Data>, Error>) -> Void) {
+        data(for: try request.urlRequest(), completion: completion)
+    }
+    
+    public func data(for request: @autoclosure () throws -> URLRequest, completion: @escaping (Result<HTTPResult<Data>, Error>) -> Void) {
         let urlRequest: URLRequest
         do {
-            urlRequest = try request.urlRequest()
+            urlRequest = try request()
         } catch {
             completion(.failure(error))
             return
@@ -56,11 +60,21 @@ extension HTTPClient {
     }
     
     public func object<T>(
+        _ type: T.Type = T.self,
         for request: HTTPRequest,
         decoder: ObjectDecoder<T>,
         completion: @escaping (Result<HTTPResult<T>, Error>) -> Void
     ) {
-        data(for: request) {
+        object(type, for: try request.urlRequest(), decoder: decoder, completion: completion)
+    }
+    
+    public func object<T>(
+        _ type: T.Type = T.self,
+        for request: @autoclosure () throws -> URLRequest,
+        decoder: ObjectDecoder<T>,
+        completion: @escaping (Result<HTTPResult<T>, Error>) -> Void
+    ) {
+        data(for: try request()) {
             completion($0.flatMap { dataResult in
                 Self.decodeResponse(dataResult.value, decoder: decoder)
                     .map { .init(value: $0, response: dataResult.response) }
@@ -84,8 +98,14 @@ extension HTTPClient {
         for request: HTTPRequest,
         delegate: URLSessionTaskDelegate? = nil
     ) async throws -> HTTPResult<Data> {
-        let urlRequest = try request.urlRequest()
-        let (data, response) = try await session.data(for: urlRequest, delegate: delegate)
+        try await data(for: try request.urlRequest(), delegate: delegate)
+    }
+    
+    public func data(
+        for request: URLRequest,
+        delegate: URLSessionTaskDelegate? = nil
+    ) async throws -> HTTPResult<Data> {
+        let (data, response) = try await session.data(for: request, delegate: delegate)
         guard let response = response as? HTTPURLResponse else {
             throw URLError.badResponseType(response)
         }
@@ -95,6 +115,14 @@ extension HTTPClient {
     
     public func object<T>(
         for request: HTTPRequest,
+        delegate: URLSessionTaskDelegate? = nil,
+        decoder: ObjectDecoder<T>
+    ) async throws -> HTTPResult<T> {
+        try await object(for: try request.urlRequest(), delegate: delegate, decoder: decoder)
+    }
+    
+    public func object<T>(
+        for request: URLRequest,
         delegate: URLSessionTaskDelegate? = nil,
         decoder: ObjectDecoder<T>
     ) async throws -> HTTPResult<T> {
