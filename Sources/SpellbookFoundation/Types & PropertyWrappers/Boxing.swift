@@ -30,6 +30,14 @@ public struct Weak<Value: AnyObject> {
     }
 }
 
+public struct Unowned<Value: AnyObject> {
+    public unowned var value: Value?
+    
+    public init(_ value: Value?) {
+        self.value = value
+    }
+}
+
 @dynamicMemberLookup
 public final class Box<Value> {
     public var value: Value
