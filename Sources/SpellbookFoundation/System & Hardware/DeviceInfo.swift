@@ -80,7 +80,7 @@ public extension DeviceInfo {
 // MARK: - iOS
 
 #if os(iOS)
-public extension DeviceInfo {
+extension DeviceInfo {
     /// Models: https://gist.github.com/adamawolf/3048717
     public static var modelName: String {
         var systemInfo = utsname()
