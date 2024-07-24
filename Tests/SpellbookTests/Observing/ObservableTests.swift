@@ -4,6 +4,12 @@ import Combine
 import XCTest
 
 class ObservableTests: XCTestCase {
+    var cancellables: [AnyCancellable] = []
+    
+    override func setUp() {
+        cancellables.removeAll()
+    }
+    
     func test() {
         var value = 10
         let event = EventNotify<Int>()
@@ -16,9 +22,6 @@ class ObservableTests: XCTestCase {
             }
         )
         XCTAssertEqual(observable.value, 10)
-        
-        var cancellables: [AnyCancellable] = []
-        defer { withExtendedLifetime(cancellables) {} }
         
         let exp = expectation(description: "OnChange called")
         
@@ -36,6 +39,21 @@ class ObservableTests: XCTestCase {
         waitForExpectations()
     }
     
+    func test_constant() {
+        let observable = ValueObservable<Int>.constant(10)
+        var value: Int?
+        
+        observable
+            .subscribe(suppressInitialNotify: true) { value = $0 }
+            .store(in: &cancellables)
+        XCTAssertNil(value)
+        
+        observable
+            .subscribe(suppressInitialNotify: false) { value = $0 }
+            .store(in: &cancellables)
+        XCTAssertEqual(value, 10)
+    }
+    
     func test_scope() {
         var value = 10
         let event = EventNotify<Int>()
@@ -47,9 +65,6 @@ class ObservableTests: XCTestCase {
                 return token
             }
         )
-        
-        var cancellables: [AnyCancellable] = []
-        defer { withExtendedLifetime(cancellables) {} }
         
         let exp = expectation(description: "OnChange called")
         exp.expectedFulfillmentCount = 4

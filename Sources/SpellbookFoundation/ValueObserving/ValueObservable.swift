@@ -96,6 +96,11 @@ extension ValueObservable {
 
 extension ValueObservable {
     public static func constant(_ value: Value) -> ValueObservable {
-        .init(view: .constant(value)) { _, _ in .init {} }
+        .init(view: .constant(value)) { suppressInitialNotiry, receiveValue in
+            if !suppressInitialNotiry {
+                receiveValue(value, nil)
+            }
+            return .init {}
+        }
     }
 }
