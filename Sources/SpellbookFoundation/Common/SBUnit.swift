@@ -22,7 +22,7 @@
 
 import Foundation
 
-public protocol SBUnit: RawRepresentable where RawValue == Double {}
+public protocol SBUnit: RawRepresentable {}
 
 extension SBUnit {
     /// Perform conversion between measurement units.
@@ -30,14 +30,31 @@ extension SBUnit {
     ///     - value: Unit magnitude.
     ///     - from: `value` measurement units. `nil` means base units.
     ///     - to: `resulting` measurement units. `nil` means base units.
-    public static func convert(_ value: Double, _ from: Self? = nil, to: Self? = nil) -> Double {
-        value * (from?.rawValue ?? 1) / (to?.rawValue ?? 1)
+    public static func convert(
+        _ value: Double, _ from: Self? = nil, to: Self? = nil
+    ) -> Double where RawValue: BinaryFloatingPoint {
+        convert(value, from.flatMap { Double($0.rawValue) }, to: to.flatMap { Double($0.rawValue) })
+    }
+    
+    /// Perform conversion between measurement units.
+    /// - Parameters:
+    ///     - value: Unit magnitude.
+    ///     - from: `value` measurement units. `nil` means base units.
+    ///     - to: `resulting` measurement units. `nil` means base units.
+    public static func convert(
+        _ value: Double, _ from: Self? = nil, to: Self? = nil
+    ) -> Double where RawValue: BinaryInteger {
+        convert(value, from.flatMap { Double($0.rawValue) }, to: to.flatMap { Double($0.rawValue) })
+    }
+    
+    private static func convert(_ value: Double, _ from: Double?, to: Double?) -> Double {
+        value * (from ?? 1.0) / (to ?? 1.0)
     }
 }
 
 public struct SBUnitInformationStorage: SBUnit {
-    public var rawValue: Double
-    public init(rawValue: Double) { self.rawValue = rawValue }
+    public var rawValue: Int
+    public init(rawValue: Int) { self.rawValue = rawValue }
     
     public static let kilobyte = Self(rawValue: 1024)
     public static let megabyte = Self(rawValue: 1024 * kilobyte.rawValue)
@@ -45,8 +62,8 @@ public struct SBUnitInformationStorage: SBUnit {
 }
 
 public struct SBUnitTime: SBUnit {
-    public var rawValue: Double
-    public init(rawValue: Double) { self.rawValue = rawValue }
+    public var rawValue: TimeInterval
+    public init(rawValue: TimeInterval) { self.rawValue = rawValue }
     
     public static let minute = Self(rawValue: 60)
     public static let hour = Self(rawValue: 60 * minute.rawValue)
