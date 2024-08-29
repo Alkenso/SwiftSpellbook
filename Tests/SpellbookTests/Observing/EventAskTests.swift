@@ -110,6 +110,8 @@ final class EventAskTests: XCTestCase {
     }
     
     func test_extraReply() {
+        SpellbookLogger.default.isAssertsEnabled = false
+        
         var subscriptions: [SubscriptionToken] = []
         let event = EventAsk<String, Int>()
         let exp = expectation(description: "late subscribe call")

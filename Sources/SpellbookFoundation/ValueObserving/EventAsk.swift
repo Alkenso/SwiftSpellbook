@@ -23,16 +23,19 @@
 import Combine
 import Foundation
 
+private let log = SpellbookLogger.internal(category: "EventAsk")
+
 public typealias EventAskCombined<Input, Output> = EventAskEx<Input, Output, Output>
 public typealias EventAsk<Input, Output> = EventAskEx<Input, Output, [Output]>
 
 public class EventAskEx<Input, Transformed, Output> {
-    private typealias Entry<T> = (transform: AsyncTransform, queue: DispatchQueue)
+    private typealias Entry<T> = (transform: AsyncTransform, queue: DispatchQueue?)
     private let transforms = Synchronized<[UUID: Entry<AsyncTransform>]>(.concurrent)
     private let combine: ([Transformed]) -> Output
     
     public typealias AsyncTransform = (Input, @escaping (Transformed) -> Void) -> Void
     public typealias SyncTransform = (Input) -> Transformed
+    public typealias ConcurrentTransform = (Input) async -> Transformed
     
     public init(combine: @escaping ([Transformed]) -> Output) {
         self.combine = combine
@@ -54,6 +57,12 @@ public class EventAskEx<Input, Transformed, Output> {
         return output
     }
     
+    public func ask(_ value: Input, timeout: Timeout? = nil) async -> Output {
+        await withCheckedContinuation {
+            askAsync(value, timeout: timeout, completion: $0.resume(returning:))
+        }
+    }
+    
     private func transform(_ value: Input, queue: DispatchQueue?, timeout: Timeout?, completion: @escaping (Output) -> Void) {
         let transforms = transforms.read { $0.values }
         
@@ -65,9 +74,7 @@ public class EventAskEx<Input, Transformed, Output> {
                 let once = AtomicFlag()
                 entry.transform(value) { singleResult in
                     guard !once.testAndSet() else {
-                        if !RunEnvironment.isXCTesting {
-                            assertionFailure("\(Self.self) transform action called multiple times")
-                        }
+                        log.error("\(Self.self) transform action called multiple times", assert: true)
                         return
                     }
                     values.set(value: singleResult, at: idx)
@@ -91,13 +98,18 @@ public class EventAskEx<Input, Transformed, Output> {
         timeout: Timeout?,
         completion: @escaping (Output) -> Void
     ) {
-        let once = Closure(completion).oneShot()
+        let once = AtomicFlag()
         
-        group.notify(queue: queue) { once(values.get(fallback: nil, combine: self.combine)) }
+        group.notify(queue: queue) {
+            guard !once.testAndSet() else { return }
+            completion(values.get(fallback: nil, combine: self.combine))
+        }
         
         if let timeout {
-            queue.asyncAfter(deadline: .now() + timeout.interval) {
-                once(values.get(fallback: timeout.fallback, combine: self.combine))
+            queue.asyncAfter(delay: timeout.interval) {
+                guard !once.testAndSet() else { return }
+                timeout.onTimeout?()
+                completion(values.get(fallback: timeout.fallback, combine: self.combine))
             }
         }
     }
@@ -105,13 +117,16 @@ public class EventAskEx<Input, Transformed, Output> {
     @inline(__always)
     private func waitSync(on group: DispatchGroup, with values: Values, timeout: Timeout?) -> Output {
         let waitSucceeds = group.wait(interval: timeout?.interval) == .success
+        if !waitSucceeds {
+            timeout?.onTimeout?()
+        }
         return values.get(fallback: waitSucceeds ? nil : timeout?.fallback, combine: combine)
     }
     
     // MARK: Subscribe
     
     public func subscribe(
-        on queue: DispatchQueue = .global(),
+        on queue: DispatchQueue? = .global(),
         transform: @escaping AsyncTransform
     ) -> SubscriptionToken {
         let id = UUID()
@@ -127,12 +142,21 @@ public class EventAskEx<Input, Transformed, Output> {
     ) -> SubscriptionToken {
         subscribe(on: queue) { $1(transform($0)) }
     }
+    
+    public func subscribe(transform: @escaping ConcurrentTransform) -> SubscriptionToken {
+        subscribe(on: nil) { input, reply in
+            Task {
+                reply(await transform(input))
+            }
+        }
+    }
 }
 
 extension EventAskEx {
     public struct Timeout {
         public var interval: TimeInterval
         public var fallback: Fallback?
+        public var onTimeout: (() -> Void)?
         
         public init(_ interval: TimeInterval, fallback: Fallback? = nil) {
             self.interval = interval
