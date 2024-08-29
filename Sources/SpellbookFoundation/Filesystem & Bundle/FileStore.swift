@@ -96,7 +96,7 @@ extension FileStore {
     
     public struct Exact {
         public let location: URL
-        fileprivate let store: FileStore
+        public let store: FileStore
         fileprivate let ifNotExists: T?
         
         public func read(default ifNotExistsOverride: T? = nil) throws -> T {
