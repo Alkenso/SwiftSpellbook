@@ -29,7 +29,8 @@ public protocol SpellbookLog {
         assert: Bool,
         file: StaticString,
         function: StaticString,
-        line: Int
+        line: Int,
+        context: Any?
     )
 }
 
@@ -38,36 +39,40 @@ extension SpellbookLog {
         _ message: @autoclosure () -> Any,
         file: StaticString = #file,
         function: StaticString = #function,
-        line: Int = #line
+        line: Int = #line,
+        context: Any? = nil
     ) {
-        custom(level: .verbose, message: message(), assert: false, file: file, function: function, line: line)
+        custom(level: .verbose, message: message(), assert: false, file: file, function: function, line: line, context: context)
     }
     
     public func debug(
         _ message: @autoclosure () -> Any,
         file: StaticString = #file,
         function: StaticString = #function,
-        line: Int = #line
+        line: Int = #line,
+        context: Any? = nil
     ) {
-        custom(level: .debug, message: message(), assert: false, file: file, function: function, line: line)
+        custom(level: .debug, message: message(), assert: false, file: file, function: function, line: line, context: context)
     }
     
     public func info(
         _ message: @autoclosure () -> Any,
         file: StaticString = #file,
         function: StaticString = #function,
-        line: Int = #line
+        line: Int = #line,
+        context: Any? = nil
     ) {
-        custom(level: .info, message: message(), assert: false, file: file, function: function, line: line)
+        custom(level: .info, message: message(), assert: false, file: file, function: function, line: line, context: context)
     }
     
     public func warning(
         _ message: @autoclosure () -> Any,
         file: StaticString = #file,
         function: StaticString = #function,
-        line: Int = #line
+        line: Int = #line,
+        context: Any? = nil
     ) {
-        custom(level: .warning, message: message(), assert: false, file: file, function: function, line: line)
+        custom(level: .warning, message: message(), assert: false, file: file, function: function, line: line, context: context)
     }
     
     public func error(
@@ -75,9 +80,10 @@ extension SpellbookLog {
         assert: Bool = false,
         file: StaticString = #file,
         function: StaticString = #function,
-        line: Int = #line
+        line: Int = #line,
+        context: Any? = nil
     ) {
-        custom(level: .error, message: message(), assert: assert, file: file, function: function, line: line)
+        custom(level: .error, message: message(), assert: assert, file: file, function: function, line: line, context: context)
     }
     
     public func fatal(
@@ -85,9 +91,10 @@ extension SpellbookLog {
         assert: Bool = false,
         file: StaticString = #file,
         function: StaticString = #function,
-        line: Int = #line
+        line: Int = #line,
+        context: Any? = nil
     ) {
-        custom(level: .fatal, message: message(), assert: assert, file: file, function: function, line: line)
+        custom(level: .fatal, message: message(), assert: assert, file: file, function: function, line: line, context: context)
     }
     
     public func custom(
@@ -96,7 +103,8 @@ extension SpellbookLog {
         assert: Bool,
         file: StaticString = #file,
         function: StaticString = #function,
-        line: Int = #line
+        line: Int = #line,
+        context: Any? = nil
     ) {
         _custom(
             level: level,
@@ -104,18 +112,30 @@ extension SpellbookLog {
             assert: assert,
             file: file,
             function: function,
-            line: line
+            line: line,
+            context: context
         )
     }
 }
 
 public enum SpellbookLogLevel: Int, Hashable {
-    case verbose = 0 /// something generally unimportant.
-    case debug = 1 /// something which help during debugging.
-    case info = 2 /// something which you are really interested but which is not an issue or error.
-    case warning = 3 /// something which may cause big trouble soon.
-    case error = 4 /// something which already get in trouble.
-    case fatal = 5 /// something which will keep you awake at night.
+    /// Something generally unimportant.
+    case verbose = 0
+    
+    /// Something which help during debugging.
+    case debug = 1
+    
+    /// Something which you are really interested but which is not an issue or error.
+    case info = 2
+    
+    /// Something which may cause big trouble soon.
+    case warning = 3
+    
+    /// Something which already get in trouble.
+    case error = 4
+    
+    /// Something which will keep you awake at night.
+    case fatal = 5
 }
 
 extension SpellbookLogLevel: Comparable {
@@ -127,18 +147,20 @@ extension SpellbookLogLevel: Comparable {
 public struct SpellbookLogRecord {
     public var source: SpellbookLogSource
     public var level: SpellbookLogLevel
-    public var message: Any
+    public var message: String
     public var file: StaticString
     public var function: StaticString
     public var line: Int
+    public var context: Any?
     
     public init(
         source: SpellbookLogSource,
         level: SpellbookLogLevel,
-        message: Any,
+        message: String,
         file: StaticString,
         function: StaticString,
-        line: Int
+        line: Int,
+        context: Any?
     ) {
         self.source = source
         self.level = level
@@ -146,12 +168,20 @@ public struct SpellbookLogRecord {
         self.file = file
         self.function = function
         self.line = line
+        self.context = context
     }
 }
 
 public struct SpellbookLogSource {
+    /// Subsystem is usually a big component or a feature of the product.
+    /// For example, `SpellbookFoundation`.
     public var subsystem: String
+    
+    /// Category is usually some part of the subsystem.
+    /// For example, `SpellbookLog` or simply `Log`.
     public var category: String
+    
+    /// Any arbitrary data related to the source.
     public var context: Any?
     
     public init(subsystem: String, category: String, context: Any? = nil) {
@@ -162,11 +192,8 @@ public struct SpellbookLogSource {
 }
 
 extension SpellbookLogSource {
-    public static func `default`(category: String = "Generic") -> Self {
-        SpellbookLogSource(
-            subsystem: Bundle.main.bundleIdentifier ?? "Generic",
-            category: category
-        )
+    public static func `default`(subsystem: String = "Generic", category: String = "Generic") -> Self {
+        SpellbookLogSource(subsystem: subsystem, category: category)
     }
 }
 
@@ -185,8 +212,6 @@ public struct SpellbookLogDestination {
 }
 
 public final class SpellbookLogger {
-    private let queue: DispatchQueue?
-    
     public init(name: String, useQueue: Bool = true) {
         queue = useQueue ? DispatchQueue(label: "SpellbookLog.\(name).queue") : nil
     }
@@ -200,16 +225,27 @@ public final class SpellbookLogger {
     /// If log messages with `assert = true` should really produce asserts.
     public var isAssertsEnabled = true
     
+    public var queue: DispatchQueue?
+    
     /// Create child instance, replacing log source.
     /// Children perform log facilities through their parent.
     public func withSource(_ source: SpellbookLogSource) -> SpellbookLog {
         SubsystemLogger {
-            self.custom(source: source, level: $0, message: $1(), assert: $2, file: $3, function: $4, line: $5)
+            self.custom(
+                source: source,
+                level: $0,
+                message: $1(),
+                assert: $2,
+                file: $3,
+                function: $4,
+                line: $5,
+                context: $6
+            )
         }
     }
     
-    /// Create child instance, replacing log subsystem.
-    /// Children perform log facilities through their parent.
+    /// Create child instance, replacing `category` and `subsystem` if specified.
+    /// Children perform logging through their parent.
     public func with(subsystem: String? = nil, category: String) -> SpellbookLog {
         var source = source
         subsystem.flatMap { source.subsystem = $0 }
@@ -235,7 +271,8 @@ extension SpellbookLogger: SpellbookLog {
         assert: Bool,
         file: StaticString,
         function: StaticString,
-        line: Int
+        line: Int,
+        context: Any?
     ) {
         custom(
             source: source,
@@ -244,7 +281,8 @@ extension SpellbookLogger: SpellbookLog {
             assert: assert,
             file: file,
             function: function,
-            line: line
+            line: line,
+            context: context
         )
     }
     
@@ -255,7 +293,8 @@ extension SpellbookLogger: SpellbookLog {
         assert: Bool,
         file: StaticString,
         function: StaticString,
-        line: Int
+        line: Int,
+        context: Any?
     ) {
         if assert && isAssertsEnabled {
             assertionFailure("\(message())", file: file, line: UInt(line))
@@ -265,8 +304,8 @@ extension SpellbookLogger: SpellbookLog {
         guard !destinations.isEmpty else { return }
         
         let record = SpellbookLogRecord(
-            source: source, level: level, message: message(),
-            file: file, function: function, line: line
+            source: source, level: level, message: "\(message())",
+            file: file, function: function, line: line, context: context
         )
         queue.async {
             destinations.forEach { $0.log(record) }
@@ -281,7 +320,8 @@ private struct SubsystemLogger: SpellbookLog {
         _ assert: Bool,
         _ file: StaticString,
         _ function: StaticString,
-        _ line: Int
+        _ line: Int,
+        _ context: Any?
     ) -> Void
     
     func _custom(
@@ -290,8 +330,9 @@ private struct SubsystemLogger: SpellbookLog {
         assert: Bool,
         file: StaticString,
         function: StaticString,
-        line: Int
+        line: Int,
+        context: Any?
     ) {
-        logImpl(level, message(), assert, file, function, line)
+        logImpl(level, message(), assert, file, function, line, context)
     }
 }
