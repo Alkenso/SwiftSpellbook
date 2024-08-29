@@ -32,7 +32,7 @@ public struct HTTPRequest {
     public var query: [QueryItem: String] = [:]
     public var headers: [Header: String] = [:]
     public var body: Body?
-    public var extended: ((inout URLRequest) throws -> Void)?
+    public var additional: ((inout URLRequest) throws -> Void)?
     
     public init(urlString: String, method: Method) {
         self.url = urlString
@@ -176,7 +176,7 @@ extension HTTPRequest {
             urlRequest.setValue($0.value, forHTTPHeaderField: $0.key.rawValue)
         }
         
-        try extended?(&urlRequest)
+        try additional?(&urlRequest)
         
         return urlRequest
     }
