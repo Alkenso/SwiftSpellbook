@@ -73,16 +73,6 @@ extension FileManager {
         }
     }
     
-    /// Copies contents of given directory to other directory.
-    public func copyContents(ofDirectory src: URL, to target: URL, createTarget: Bool = false) throws {
-        if !fileExists(at: target), createTarget {
-            try createDirectory(at: target, withIntermediateDirectories: true, attributes: nil)
-        }
-        try contentsOfDirectory(at: src, includingPropertiesForKeys: nil)
-            .map { ($0, target.appendingPathComponent($0.lastPathComponent)) }
-            .forEach { try copyItem(at: $0, to: $1) }
-    }
-    
     /// stat file at given URL
     /// - Parameters:
     ///     - url: URL to stat
