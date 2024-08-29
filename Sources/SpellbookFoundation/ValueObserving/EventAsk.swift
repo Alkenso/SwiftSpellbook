@@ -108,8 +108,7 @@ public class EventAskEx<Input, Transformed, Output> {
         if let timeout {
             queue.asyncAfter(delay: timeout.interval) {
                 guard !once.testAndSet() else { return }
-                timeout.onTimeout?()
-                completion(values.get(fallback: timeout.fallback, combine: self.combine))
+                completion(values.get(fallback: timeout.onTimeout(), combine: self.combine))
             }
         }
     }
@@ -117,10 +116,7 @@ public class EventAskEx<Input, Transformed, Output> {
     @inline(__always)
     private func waitSync(on group: DispatchGroup, with values: Values, timeout: Timeout?) -> Output {
         let waitSucceeds = group.wait(interval: timeout?.interval) == .success
-        if !waitSucceeds {
-            timeout?.onTimeout?()
-        }
-        return values.get(fallback: waitSucceeds ? nil : timeout?.fallback, combine: combine)
+        return values.get(fallback: waitSucceeds ? nil : timeout?.onTimeout(), combine: combine)
     }
     
     // MARK: Subscribe
@@ -155,13 +151,16 @@ public class EventAskEx<Input, Transformed, Output> {
 extension EventAskEx {
     public struct Timeout {
         public var interval: TimeInterval
-        public var fallback: Fallback?
-        public var onTimeout: (() -> Void)?
+        public var onTimeout: () -> Fallback? = { nil }
         
-        public init(_ interval: TimeInterval, fallback: Fallback? = nil) {
+        public init(_ interval: TimeInterval, onTimeout: @escaping () -> Fallback? = { nil }) {
             self.interval = interval
-            self.fallback = fallback
+            self.onTimeout = onTimeout
         }
+        
+        public init(_ interval: TimeInterval, fallback: Fallback?) {
+            self.init(interval) { fallback }
+         }
     }
     
     public enum Fallback {
