@@ -6,14 +6,14 @@ class NSErrorTests: XCTestCase {
     func test_errorBuilding_withDebugDescription() {
         XCTAssertEqual(
             NSError(posix: 0)
-                .withDebugDescription("Description")
+                .updatingDebugDescription("Description")
                 .userInfo[NSDebugDescriptionErrorKey] as? String,
             "Description"
         )
         XCTAssertEqual(
             NSError(posix: 0)
-                .withDebugDescription("Description")
-                .withDebugDescription("Description 2")
+                .updatingDebugDescription("Description")
+                .updatingDebugDescription("Description 2")
                 .userInfo[NSDebugDescriptionErrorKey] as? String,
             "Description 2"
         )
@@ -22,21 +22,21 @@ class NSErrorTests: XCTestCase {
     func test_errorBuilding_withUserInfoSingle() {
         XCTAssertEqual(
             NSError(posix: 0)
-                .withUserInfo(10, for: "Key")
+                .updatingUserInfo(10, for: "Key")
                 .userInfo["Key"] as? Int,
             10
         )
         XCTAssertEqual(
             NSError(posix: 0)
-                .withUserInfo(10, for: "Key")
-                .withUserInfo(20, for: "Key")
+                .updatingUserInfo(10, for: "Key")
+                .updatingUserInfo(20, for: "Key")
                 .userInfo["Key"] as? Int,
             20
         )
         
         let userInfo = NSError(posix: 0)
-            .withUserInfo(10, for: "Key")
-            .withUserInfo(20, for: "Key 2")
+            .updatingUserInfo(10, for: "Key")
+            .updatingUserInfo(20, for: "Key 2")
             .userInfo
         XCTAssertEqual(userInfo["Key"] as? Int, 10)
         XCTAssertEqual(userInfo["Key 2"] as? Int, 20)
@@ -44,10 +44,10 @@ class NSErrorTests: XCTestCase {
     
     func test_errorBuilding_withUserInfoMerged() {
         let error = NSError(posix: 0)
-            .withUserInfo(10, for: "Key")
-            .withUserInfo(20, for: "Key 2")
+            .updatingUserInfo(10, for: "Key")
+            .updatingUserInfo(20, for: "Key 2")
         
-        let mergedUserInfo = error.withUserInfo([
+        let mergedUserInfo = error.updatingUserInfo([
             "Key": "Abc",
             "Key 3": 30,
         ]).userInfo

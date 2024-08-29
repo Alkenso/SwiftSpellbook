@@ -57,9 +57,11 @@ extension CommonError: CustomNSError {
 
 extension CommonError: CustomStringConvertible {
     public var description: String {
-        var components = userInfo.map { "\($0.key)=\($0.value)" }
-        components.insert("CommonError: \(code.description)(\(code.rawValue))", at: 0)
-        return components.joined(separator: ". ")
+        Self.makeDescription(nil, components: [
+            "Error Domain=\(Self.errorDomain) Code=\(code.description)(\(code.rawValue))",
+            (userInfo[NSDebugDescriptionErrorKey] as? String).flatMap { "\"\($0)\"" },
+            "UserInfo={\(userInfo.map { "\($0.key)=\($0.value)" }.joined(separator: ", "))}"
+        ])
     }
 }
 
@@ -107,6 +109,12 @@ extension CommonError {
     }
 }
 
+extension CommonError: CustomErrorUpdating {
+    public func replacingUserInfo(_ userInfo: [String : Any]) -> CommonError {
+        .init(code, userInfo: userInfo)
+    }
+}
+
 extension CommonError {
     public static func fatal(_ description: String) -> Self {
         .init(.fatal, description)
@@ -117,48 +125,85 @@ extension CommonError {
     }
     
     public static func unwrapNil(_ name: String, description: Any? = nil) -> Self {
-        let additional = description.flatMap { ". \($0)" } ?? ""
-        return .init(.unwrapNil, "Unexpected nil when unwrapping \(name)" + additional)
+        self.init(.unwrapNil, description: description, components: [
+            "Unexpected nil when unwrapping \(name)"
+        ])
     }
     
     public static func invalidArgument(arg: String, invalidValue: Any?, description: Any? = nil) -> Self {
-        let value = invalidValue.flatMap { " '\($0)'" } ?? ""
-        let additional = description.flatMap { ". \($0)" } ?? ""
-        return .init(.invalidArgument, "Invalid value\(value) for argument '\(arg)'" + additional)
+        self.init(.invalidArgument, description: description, components: [
+            "Invalid value",
+            invalidValue.flatMap { "'\($0)'" },
+            "for argument '\(arg)'",
+        ])
     }
     
     public static func cast<From, To>(name: String? = nil, _ from: From, to: To.Type, description: Any? = nil) -> Self {
-        var fullDescription = "Failed to cast "
-        if let what = name {
-            fullDescription += "'\(what)' of"
-        } else {
-            fullDescription += "from"
-        }
-        fullDescription += " type \(type(of: from)) to \(to)"
-        if let description = description {
-            fullDescription += ". \(description)"
-        }
-        
-        return .init(.cast, fullDescription)
+        self.init(.cast, description: description, components: [
+            "Failed to cast",
+            name.flatMap { "\($0) of" } ?? "from",
+            "type \(type(of: from)) to \(to)"
+        ])
     }
     
     public static func notFound(what: String, value: Any? = nil, where: Any? = nil, description: Any? = nil) -> Self {
-        let valueString = value.flatMap { " = \($0)" } ?? ""
-        let whereString = `where`.flatMap { " in \($0)" } ?? ""
-        let additional = description.flatMap { ". \($0)" } ?? ""
-        return .init(.notFound, "\(what)\(valueString) not found \(whereString)" + additional)
+        self.init(.notFound, description: description, components: [
+            what,
+            value.flatMap { "= '\($0)'" },
+            "not found",
+            `where`.flatMap { "in \($0)" },
+        ])
     }
     
     public static func outOfRange(what: String, value: Any? = nil, where: Any? = nil, limitValue: Any? = nil, description: Any? = nil) -> Self {
-        let valueString = value.flatMap { " = \($0)" } ?? ""
-        let whereString = `where`.flatMap { " in \($0)" } ?? ""
-        let limitValueString = limitValue.flatMap { " (limit = \($0))" } ?? ""
-        let additional = description.flatMap { ". \($0)" } ?? ""
-        return .init(.outOfRange, "\(what)\(valueString) is out of range\(limitValueString) in \(whereString)" + additional)
+        self.init(.outOfRange, description: description, components: [
+            what,
+            value.flatMap { "'\($0)'" },
+            "is out of range",
+            `where`.flatMap { "in \($0)" },
+            limitValue.flatMap { "(limit '\($0)')" }
+        ])
     }
     
     public static func timedOut(what: String, description: Any? = nil) -> Self {
-        let additional = description.flatMap { ". \($0)" } ?? ""
-        return .init(.timedOut, "\(what) timed out" + additional)
+        self.init(.timedOut, description: description, components: [
+            what,
+            "timed out",
+        ])
+    }
+    
+    private init(_ code: Code, description: Any?, components: [Any?]) {
+        let fullDescription = Self.makeDescription(description, components: components)
+        self.init(code, fullDescription)
+    }
+    
+    private static func makeDescription(_ description: Any?, components: [Any?]) -> String {
+        let componentsText = components.compactMap { $0 }.map { "\($0)" }.joined(separator: " ")
+        return [componentsText, description].compactMap { $0 }.map { "\($0)" }.joined(separator: ". ")
+    }
+}
+
+extension CommonError: _ObjectiveCBridgeable {
+    public typealias _ObjectiveCType = NSError
+    
+    public func _bridgeToObjectiveC() -> NSError {
+        .init(domain: Self.errorDomain, code: code.rawValue, userInfo: userInfo)
+    }
+    
+    public static func _forceBridgeFromObjectiveC(_ source: NSError, result: inout CommonError?) {
+        guard source.domain == Self.errorDomain else { return }
+        guard let code = CommonError.Code(rawValue: source.code) else { return }
+        result = .init(code, userInfo: source.userInfo)
+    }
+    
+    public static func _conditionallyBridgeFromObjectiveC(_ source: NSError, result: inout CommonError?) -> Bool {
+        _forceBridgeFromObjectiveC(source, result: &result)
+        return result != nil
+    }
+    
+    public static func _unconditionallyBridgeFromObjectiveC(_ source: NSError?) -> CommonError {
+        var result: CommonError?
+        source.flatMap { _forceBridgeFromObjectiveC($0, result: &result) }
+        return result ?? .init(.unexpected, "Failed to bridge \(String(describing: source)) to \(Self.self)")
     }
 }

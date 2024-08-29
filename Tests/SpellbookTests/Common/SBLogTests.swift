@@ -15,22 +15,22 @@ final class SBLogTests: XCTestCase {
         log.destinations.append(.init(minLevel: .verbose) { logRecord in
             switch logRecord.level {
             case .verbose:
-                XCTAssertEqual(logRecord.message as? String, "verbose")
+                XCTAssertEqual(logRecord.message, "verbose")
                 expVerbose.fulfill()
             case .debug:
-                XCTAssertEqual(logRecord.message as? String, "debug")
+                XCTAssertEqual(logRecord.message, "debug")
                 expDebug.fulfill()
             case .info:
-                XCTAssertEqual(logRecord.message as? String, "info")
+                XCTAssertEqual(logRecord.message, "info")
                 expInfo.fulfill()
             case .warning:
-                XCTAssertEqual(logRecord.message as? String, "warning")
+                XCTAssertEqual(logRecord.message, "warning")
                 expWarning.fulfill()
             case .error:
-                XCTAssertEqual(logRecord.message as? String, "error")
+                XCTAssertEqual(logRecord.message, "error")
                 expError.fulfill()
             case .fatal:
-                XCTAssertEqual(logRecord.message as? String, "fatal")
+                XCTAssertEqual(logRecord.message, "fatal")
                 expFatal.fulfill()
             }
         })

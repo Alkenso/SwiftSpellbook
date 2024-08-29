@@ -328,36 +328,6 @@ extension Result where Success == Void {
     }
 }
 
-// MARK: - Error
-
-extension Error {
-    public func `throw`() throws -> Never {
-        throw self
-    }
-}
-
-extension Error {
-    /// Not all `Error` objects are NSSecureCoding-compilant.
-    /// Such incompatible errors cause raising of NSException during encoding or decoding of XPC messages.
-    /// To avoid this, the method perform manual type-check and converting incompatible errors
-    /// into most close-to-original but compatible form.
-    public func xpcCompatible() -> Error {
-        let nsError = self as NSError
-        guard (try? NSKeyedArchiver.archivedData(withRootObject: nsError, requiringSecureCoding: true)) == nil else {
-            return self
-        }
-        
-        let compatibleError = NSError(
-            domain: nsError.domain,
-            code: nsError.code,
-            userInfo: nsError.userInfo.mapValues {
-                JSONSerialization.isValidJSONObject($0) ? $0 : String(describing: $0)
-            }
-        )
-        return compatibleError
-    }
-}
-
 // MARK: - Range
 
 extension Range {

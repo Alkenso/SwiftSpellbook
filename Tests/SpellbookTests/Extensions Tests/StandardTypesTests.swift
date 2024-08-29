@@ -3,39 +3,6 @@ import SpellbookTestUtils
 
 import XCTest
 
-class ErrorExtensionsTests: XCTestCase {
-    func test_unwrapSafely() {
-        let error: Error? = TestError()
-        let unwrapped = error.safelyUnwrapped
-        XCTAssertNotNil(unwrapped as? TestError)
-        
-        let nilError: Error? = nil
-        let unwrappedNil = nilError.safelyUnwrapped
-        XCTAssertNotNil(unwrappedNil as? CommonError)
-    }
-    
-    func test_xpcCompatible() {
-        let compatibleError = NSError(domain: "test", code: 1, userInfo: [
-            "compatible_key": "compatible_value",
-            "compatible_key2": ["value1", "value2"],
-        ])
-        // No conversion.
-        XCTAssertTrue(compatibleError === (compatibleError.xpcCompatible() as NSError))
-        
-        struct SwiftType {}
-        let error = NSError(domain: "test", code: 1, userInfo: [
-            "compatible_key": "compatible_value",
-            "incompatible_key": SwiftType(),
-            "maybe_incompatible_key": UUID(),
-        ])
-        
-        XCTAssertThrowsError(try NSKeyedArchiver.archivedData(withRootObject: error, requiringSecureCoding: true))
-        
-        let xpcCompatible = error.xpcCompatible()
-        XCTAssertNoThrow(try NSKeyedArchiver.archivedData(withRootObject: xpcCompatible, requiringSecureCoding: true))
-    }
-}
-
 class ResultExtensionsTests: XCTestCase {
     func test_success_failure() {
         let resultWithValue: Result<Bool, Error> = .success(true)
@@ -281,6 +248,16 @@ class OptionalExtensionsTests: XCTestCase {
         var dict: [String: Stru] = ["key": Stru()]
         dict["key"]?.value[default: 10] += 1
         XCTAssertEqual(dict["key"]?.value, 11)
+    }
+    
+    func test_unwrapSafely() {
+        let error: Error? = TestError()
+        let unwrapped = error.safelyUnwrapped
+        XCTAssertNotNil(unwrapped as? TestError)
+        
+        let nilError: Error? = nil
+        let unwrappedNil = nilError.safelyUnwrapped
+        XCTAssertNotNil(unwrappedNil as? CommonError)
     }
     
     func test_Optional_coalesce() {

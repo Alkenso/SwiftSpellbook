@@ -54,60 +54,12 @@ extension NSError {
             userInfo: nil
         )
     }
-    
-    public func appendingUnderlyingError(_ error: Error) -> NSError {
-        withUserInfo(error, for: NSUnderlyingErrorKey)
+}
+
+extension NSError: CustomErrorUpdating {
+    public func replacingUserInfo(_ userInfo: [String: Any]) -> Self {
+        .init(domain: domain, code: code, userInfo: userInfo)
     }
-    
-    /// Build new error with specified (or replaced) `userInfo` value for `NSDebugDescriptionErrorKey`
-    public func withDebugDescription(_ debugDescription: String) -> NSError {
-        withUserInfo(debugDescription, for: NSDebugDescriptionErrorKey)
-    }
-    
-    /// Build new error with specified (or replaced) `userInfo` value for given key
-    public func withUserInfo(_ value: Any, for key: String) -> NSError {
-        withUserInfo([key: value])
-    }
-    
-    /// Build new error with `userInfo`, merged with given `userInfo`
-    /// If key in new `userInfo` already exists, the value is replaced
-    /// If key exists and is `NSUnderlyingErrorKey` or `NSMultipleUnderlyingErrorsKey`, the error(s) is appended
-    public func withUserInfo(_ userInfo: [String: Any]) -> NSError {
-        NSError(domain: domain, code: code, userInfo: Self.mergeUserInfo(existing: self.userInfo, new: userInfo))
-    }
-    
-    private static func mergeUserInfo(existing: [String: Any], new: [String: Any]) -> [String: Any] {
-        var merged = existing
-        new.forEach {
-            switch $0.key {
-            case NSUnderlyingErrorKey:
-                if merged[NSUnderlyingErrorKey] == nil {
-                    merged[NSUnderlyingErrorKey] = $0.value
-                } else {
-                    let errors = merged[Self.multipleUnderlyingErrorsKey] as? [Any] ?? []
-                    merged[Self.multipleUnderlyingErrorsKey] = errors.appending($0.value)
-                }
-            case Self.multipleUnderlyingErrorsKey:
-                guard let newErrors = $0.value as? [Error] else {
-                    assertionFailure("Value for Error userInfo key \($0.key) MUST be of type [Error]")
-                    return
-                }
-                let errors = merged[$0.key] as? [Any] ?? []
-                merged[$0.key] = errors + newErrors
-            default:
-                merged[$0.key] = $0.value
-            }
-        }
-        return merged
-    }
-    
-    public static let multipleUnderlyingErrorsKey: String = {
-        if #available(macOS 11.3, iOS 14.5, tvOS 14.5, watchOS 7.4, *) {
-            return NSMultipleUnderlyingErrorsKey
-        } else {
-            return "NSMultipleUnderlyingErrorsKey"
-        }
-    }()
 }
 
 // MARK: - NSError Try
@@ -231,7 +183,7 @@ extension NSError.TryBuilder where Tag == NSError.OSStatusTryTag {
     }
     
     private func osError(_ error: Error?) -> NSError? {
-        (error as NSError?)?.withUserInfo(userInfo)
+        (error as NSError?)?.updatingUserInfo(userInfo)
     }
 }
 
@@ -251,8 +203,7 @@ extension NSError.TryBuilder where Tag == NSError.POSIXTryTag {
     }
     
     private func posixError() -> NSError {
-        NSError(posix: errno)
-            .withUserInfo(userInfo)
+        NSError(posix: errno).updatingUserInfo(userInfo)
     }
 }
 
@@ -274,7 +225,6 @@ extension NSError.TryBuilder where Tag == NSError.MachTryTag {
     
     private func machError(_ status: kern_return_t) -> NSError? {
         guard status != KERN_SUCCESS else { return nil }
-        return NSError(mach: status)
-            .withUserInfo(userInfo)
+        return NSError(mach: status).updatingUserInfo(userInfo)
     }
 }
