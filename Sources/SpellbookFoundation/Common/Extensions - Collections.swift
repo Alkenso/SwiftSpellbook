@@ -118,58 +118,9 @@ extension Dictionary {
     }
 }
 
-// MARK: - Array
+// MARK: - Sequence
 
-extension Array {
-    public mutating func mutateElements(mutate: (inout Element) throws -> Void) rethrows {
-        self = try mutatingMap(mutate: mutate)
-    }
-    
-    /// Creates new array by appending `newElement` to the end of current one.
-    public func appending(_ newElement: Element) -> Self {
-        var appended = self
-        appended.append(newElement)
-        return appended
-    }
-}
-
-extension Array {
-    /// Bounds-safe access to the element at index.
-    public subscript(safe index: Index) -> Element? {
-        index < count ? self[index] : nil
-    }
-    
-    /// If exists, removes the first element from the array and returns it. Otherwise returns `nil`.
-    /// Simply combination of `isEmpty` + `removeFirst`.
-    public mutating func popFirst() -> Element? {
-        guard !isEmpty else { return nil }
-        return removeFirst()
-    }
-    
-    /// Removes the all elements from the array and returns them.
-    public mutating func popAll(keepingCapacity: Bool = false) -> Self {
-        guard !isEmpty else { return [] }
-        let removed = self
-        removeAll(keepingCapacity: keepingCapacity)
-        return removed
-    }
-    
-    /// Removes the all elements from the array and returns them.
-    public mutating func popAll(where: (Element) -> Bool) -> Self {
-        guard !isEmpty else { return [] }
-        var removed: [Element] = []
-        for (offset, element) in enumerated().reversed() {
-            if `where`(element) {
-                removed.append(remove(at: offset))
-            }
-        }
-        return removed.reversed()
-    }
-}
-
-// MARK: - Collection
-
-extension Collection {
+extension Sequence {
     public func mutatingMap(mutate: (inout Element) throws -> Void) rethrows -> [Element] {
         try map {
             var mutated = $0
@@ -178,6 +129,8 @@ extension Collection {
         }
     }
     
+    /// Searches for first element that can be transformed with given predicate
+    /// and returns transformed one.
     public func firstMapped<T>(where transform: (Element) throws -> T?) rethrows -> T? {
         for element in self {
             if let mapped = try transform(element) {
@@ -188,7 +141,7 @@ extension Collection {
     }
 }
 
-extension Collection {
+extension Sequence {
     /// Returns an array containing, in order, the elements of the sequence
     /// that satisfy the given predicate.
     /// Collects unsatisfied elements into `remaining` array.
@@ -225,18 +178,6 @@ extension Collection {
     }
 }
 
-extension RangeReplaceableCollection {
-    @discardableResult
-    public mutating func removeFirst(where predicate: (Element) throws -> Bool) rethrows -> Element? {
-        guard let idx = try firstIndex(where: predicate) else { return nil }
-        let element = self[idx]
-        remove(at: idx)
-        return element
-    }
-}
-
-// MARK: - Sequence
-
 extension Sequence {
     public func sorted<T: Comparable>(by keyPath: KeyPath<Element, T>) -> [Element] {
         sorted {
@@ -258,5 +199,126 @@ extension Sequence {
             let rhs = $1[keyPath: keyPath]
             return lhs.compare(rhs, options: options) == .orderedAscending
         }
+    }
+}
+
+extension Sequence {
+    /// Returns the result of combining the elements of the sequence into the dictionary
+    /// using the given KeyPath to produce dictionary keys.
+    ///
+    /// Use the `reduce(into:_:)` method to produce a dictionary from the
+    /// elements of an entire sequence.
+    ///
+    /// The `keyPath` KeyPath is applied sequentially to each element
+    /// of the sequence and returns optional `Key`.
+    /// If returned key is `nil`, it will not be included into resulting dictionary.
+    ///
+    /// - Parameters:
+    ///   - initialDictionary: The value to use as the initial accumulating dictionary.
+    ///   - keyPath: Keypath used to extract the `Key` from an element of the sequence.
+    /// - Returns: The final accumulated dictionary. If the sequence has no elements,
+    ///   the result is `initialDictionary`.
+    public func reduce<Key: Hashable>(
+        into initialDictionary: [Key: Element] = [:],
+        keyedBy keyPath: KeyPath<Element, Key?>
+    ) -> [Key: Element] {
+        reduce(into: initialDictionary) { $0[keyPath: keyPath] }
+    }
+    
+    /// Returns the result of combining the elements of the sequence into the dictionary
+    /// using the given KeyPath to produce dictionary keys.
+    ///
+    /// Use the `reduce(into:_:)` method to produce a dictionary from the
+    /// elements of an entire sequence.
+    ///
+    /// The `keyPath` KeyPath is applied sequentially to each element
+    /// of the sequence and returns `Key`.
+    ///
+    /// - Parameters:
+    ///   - initialDictionary: The value to use as the initial accumulating dictionary.
+    ///   - keyPath: Keypath used to extract the `Key` from an element of the sequence.
+    /// - Returns: The final accumulated dictionary. If the sequence has no elements,
+    ///   the result is `initialDictionary`.
+    public func reduce<Key: Hashable>(
+        into initialDictionary: [Key: Element] = [:],
+        keyedBy keyPath: KeyPath<Element, Key>
+    ) -> [Key: Element] {
+        reduce(into: initialDictionary) { $0[keyPath: keyPath] }
+    }
+    
+    /// Returns the result of combining the elements of the sequence into the dictionary
+    /// using the given closure to produce dictionary keys.
+    ///
+    /// Use the `reduce(into:_:)` method to produce a dictionary from the
+    /// elements of an entire sequence.
+    ///
+    /// The `extractKey` closure is called sequentially with each element
+    /// of the sequence and returns optional `Key`.
+    /// If returned key is `nil`, it will not be included into resulting dictionary.
+    ///
+    /// - Parameters:
+    ///   - initialDictionary: The value to use as the initial accumulating dictionary.
+    ///   - extractKey: A closure that extracts the `Key` from an element of the sequence.
+    /// - Returns: The final accumulated dictionary. If the sequence has no elements,
+    ///   the result is `initialDictionary`.
+    public func reduce<Key: Hashable>(
+        into initialDictionary: [Key: Element] = [:],
+        keyedBy extractKey: (Element) throws -> Key?
+    ) rethrows -> [Key: Element] {
+        try reduce(into: initialDictionary) {
+            if let key = try extractKey($1) {
+                $0[key] = $1
+            }
+        }
+    }
+}
+
+// MARK: - Collection
+
+extension RangeReplaceableCollection {
+    /// Bounds-safe access to the element at index.
+    public subscript(safe index: Index) -> Element? {
+        index < endIndex ? self[index] : nil
+    }
+    
+    public mutating func mutateElements(mutate: (inout Element) throws -> Void) rethrows {
+        self = try Self(mutatingMap(mutate: mutate))
+    }
+    
+    /// Creates new collection by appending `newElement` to the end of current one.
+    public func appending(_ newElement: Element) -> Self {
+        var appended = Self(self)
+        appended.append(newElement)
+        return appended
+    }
+    
+    /// Removes the first element from the array and returns it.`.
+    /// If collection is empty, returns `nil`.
+    /// Simply combination of `isEmpty` + `removeFirst`.
+    public mutating func popFirst() -> Element? {
+        guard !isEmpty else { return nil }
+        return removeFirst()
+    }
+    
+    /// Removes all elements from the array and returns them.
+    public mutating func popAll(keepingCapacity: Bool = false) -> Self {
+        defer { removeAll(keepingCapacity: keepingCapacity) }
+        return Self(self)
+    }
+    
+    /// Removes all elements from the array satisfying predicate and returns them.
+    public mutating func popAll(where: (Element) -> Bool) -> Self {
+        var remaining: [Element] = []
+        self = Self(filter(remaining: &remaining) { !`where`($0) })
+        return Self(remaining)
+    }
+    
+    /// Removes and returns the first element of the collection.
+    ///
+    /// - Returns: The first element of the collection or `nil` if collection is empty.
+    @discardableResult
+    public mutating func removeFirst(where predicate: (Element) throws -> Bool) rethrows -> Element? {
+        guard let idx = try firstIndex(where: predicate) else { return nil }
+        return remove(at: idx)
     }
 }
