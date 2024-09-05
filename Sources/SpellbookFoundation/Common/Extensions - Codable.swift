@@ -168,15 +168,15 @@ public struct PropertyListSerializable<T> {
 extension PropertyListSerializable: Serializable {
     fileprivate static var formatName: String { "plist" }
     
-    fileprivate static func isValidObject(_ object: Any) -> Bool {
+    fileprivate static func isValidObject(_ object: T) -> Bool {
         PropertyListSerialization.propertyList(object, isValidFor: .xml)
     }
     
-    fileprivate static func objectToData(_ object: Any) throws -> Data {
+    fileprivate static func objectToData(_ object: T) throws -> Data {
         try PropertyListSerialization.data(fromPropertyList: object, format: .xml, options: 0)
     }
     
-    fileprivate static func dataToObject(_ data: Data) throws -> Any {
+    fileprivate static func dataToObject(_ data: Data) throws -> Any? {
         try PropertyListSerialization.propertyList(from: data, format: nil)
     }
 }
@@ -213,16 +213,66 @@ public struct JSONSerializable<T> {
 extension JSONSerializable: Serializable {
     fileprivate static var formatName: String { "json" }
     
-    fileprivate static func isValidObject(_ object: Any) -> Bool {
+    fileprivate static func isValidObject(_ object: T) -> Bool {
         JSONSerialization.isValidJSONObject(object)
     }
     
-    fileprivate static func objectToData(_ object: Any) throws -> Data {
+    fileprivate static func objectToData(_ object: T) throws -> Data {
         try JSONSerialization.data(withJSONObject: object)
     }
     
-    fileprivate static func dataToObject(_ data: Data) throws -> Any {
+    fileprivate static func dataToObject(_ data: Data) throws -> Any? {
         try JSONSerialization.jsonObject(with: data)
+    }
+}
+
+/// Property wrapper around object conforming to `NSCoding` protocol with NSKeyedArchiver routines.
+///
+/// Assume we have some struct we want to be Codable:
+/// ```
+/// struct Foo: Codable {
+///     var name: String
+///     var image: NSImage // NOT Codable-compatible
+/// }
+/// ```
+/// In such case we can use `KeyedArchiveSerializable` property wrapper:
+/// ```
+/// struct Foo: Codable {
+///     var name: String
+///     @KeyedArchiveSerializable var image: NSImage // OK
+/// }
+/// ```
+/// Under the hood, `KeyedArchiveSerializable` stores the `image` as Data
+/// using `NSKeyedArchiver` and `NSKeyedUnarchiver` classes to perform data<->object convertions.
+@propertyWrapper
+public struct KeyedArchiveSerializable<T> where T: NSObject, T: NSCoding {
+    public var wrappedValue: T
+    
+    public init(wrappedValue: T) {
+        self.wrappedValue = wrappedValue
+    }
+}
+
+extension KeyedArchiveSerializable: Serializable {
+    private static var encodingKey: String { "payload" }
+    
+    fileprivate static var formatName: String { "NSKeyedArchive" }
+    
+    fileprivate static func isValidObject(_ object: T) -> Bool {
+        true
+    }
+    
+    fileprivate static func objectToData(_ object: T) throws -> Data {
+        try NSException.catchingAll {
+            try NSKeyedArchiver.archivedData(withRootObject: object, requiringSecureCoding: false)
+        }
+    }
+    
+    fileprivate static func dataToObject(_ data: Data) throws -> Any? {
+        try NSException.catchingAll {
+            let object = try NSKeyedUnarchiver.unarchivedObject(ofClass: T.self, from: data)
+            return try object.get(name: "\(formatName) root object")
+        }
     }
 }
 
@@ -232,9 +282,9 @@ private protocol Serializable: Codable {
     init(wrappedValue: T)
     
     static var formatName: String { get }
-    static func isValidObject(_ object: Any) -> Bool
-    static func objectToData(_ object: Any) throws -> Data
-    static func dataToObject(_ data: Data) throws -> Any
+    static func isValidObject(_ object: T) -> Bool
+    static func objectToData(_ object: T) throws -> Data
+    static func dataToObject(_ data: Data) throws -> Any?
 }
 
 extension Serializable {
