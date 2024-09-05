@@ -55,6 +55,14 @@ extension CommonError: CustomNSError {
     public var errorUserInfo: [String: Any] { userInfo }
 }
 
+extension CommonError: _ObjectiveCBridgeableError {
+    public init?(_bridgedNSError: NSError) {
+        guard _bridgedNSError.domain == Self.errorDomain else { return nil }
+        guard let code = Code(rawValue: _bridgedNSError.code) else { return nil }
+        self.init(code, userInfo: _bridgedNSError.userInfo)
+    }
+}
+
 extension CommonError: CustomStringConvertible {
     public var description: String {
         Self.makeDescription(nil, components: [
@@ -180,30 +188,5 @@ extension CommonError {
     private static func makeDescription(_ description: Any?, components: [Any?]) -> String {
         let componentsText = components.compactMap { $0 }.map { "\($0)" }.joined(separator: " ")
         return [componentsText, description].compactMap { $0 }.map { "\($0)" }.joined(separator: ". ")
-    }
-}
-
-extension CommonError: _ObjectiveCBridgeable {
-    public typealias _ObjectiveCType = NSError
-    
-    public func _bridgeToObjectiveC() -> NSError {
-        .init(domain: Self.errorDomain, code: code.rawValue, userInfo: userInfo)
-    }
-    
-    public static func _forceBridgeFromObjectiveC(_ source: NSError, result: inout CommonError?) {
-        guard source.domain == Self.errorDomain else { return }
-        guard let code = CommonError.Code(rawValue: source.code) else { return }
-        result = .init(code, userInfo: source.userInfo)
-    }
-    
-    public static func _conditionallyBridgeFromObjectiveC(_ source: NSError, result: inout CommonError?) -> Bool {
-        _forceBridgeFromObjectiveC(source, result: &result)
-        return result != nil
-    }
-    
-    public static func _unconditionallyBridgeFromObjectiveC(_ source: NSError?) -> CommonError {
-        var result: CommonError?
-        source.flatMap { _forceBridgeFromObjectiveC($0, result: &result) }
-        return result ?? .init(.unexpected, "Failed to bridge \(String(describing: source)) to \(Self.self)")
     }
 }
