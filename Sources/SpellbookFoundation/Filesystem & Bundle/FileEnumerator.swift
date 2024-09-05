@@ -47,15 +47,23 @@ public final class FileEnumerator {
 }
 
 extension FileEnumerator {
-    public enum FilterVerdict {
+    public struct FilterVerdict {
+        public var current: Bool
+        public var children: Bool
+        
+        public init(current: Bool, children: Bool) {
+            self.current = current
+            self.children = children
+        }
+        
         /// URL is included into results.
-        case proceed
+        public static let proceed = Self(current: true, children: true)
         
         /// URL is excluded from results.
-        case skip
+        public static let skip = Self(current: false, children: true)
         
         /// URL and all descendants are excluded from results.
-        case skipRecursive
+        public static let skipRecursive = Self(current: false, children: false)
     }
 }
 
@@ -94,7 +102,7 @@ extension FileEnumerator: Sequence, IteratorProtocol {
             //  If directory is not interested, skip whole content.
             if type == .directory {
                 filterVerdict = locationFilter?(next)
-                if filterVerdict == .skipRecursive {
+                if filterVerdict?.children == false {
                     enumerator?.skipDescendants()
                 }
             }
@@ -106,7 +114,7 @@ extension FileEnumerator: Sequence, IteratorProtocol {
             }
             
             //  Check if `next` is interested according to its URL.
-            if let verdict = filterVerdict ?? locationFilter?(next), verdict != .proceed {
+            if let verdict = filterVerdict ?? locationFilter?(next), !verdict.current {
                 continue
             }
             

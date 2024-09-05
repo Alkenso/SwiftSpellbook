@@ -58,14 +58,19 @@ class FileEnumeratorTests: XCTestCase {
         try expectedFiles.append(tempDir.directory("subdir/folder1").setUp().location)
         try expectedFiles.append(tempDir.createFile(name: "subdir/file3", content: Data()))
         
+        try expectedFiles.append(tempDir.directory("subdir2").setUp().location)
+        _ = try tempDir.createFile(name: "subdir2/file4", content: Data())
+        
         try tempDir.directory("subdir/nested").setUp()
-        _ = try tempDir.createFile(name: "subdir/nested/file4", content: Data())
+        _ = try tempDir.createFile(name: "subdir/nested/file5", content: Data())
         
         let enumerator = FileEnumerator(tempDir.location)
         enumerator.locationFilter = {
             switch $0.lastPathComponent {
             case "subdir":
                 return .skip
+            case "subdir2":
+                return .init(current: true, children: false)
             case "nested":
                 return .skipRecursive
             default:
