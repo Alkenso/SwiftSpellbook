@@ -33,7 +33,7 @@ extension Error {
     /// Such incompatible errors cause raising of NSException during encoding or decoding, especially in XPC messages.
     /// To avoid this, the method perform manual type-check and converting incompatible errors
     /// into most close-to-original but compatible form.
-    public func secureCodingCompatible() -> Error {
+    public func secureCodingCompliant() -> Error {
         let nsError = self as NSError
         guard (try? NSKeyedArchiver.archivedData(withRootObject: nsError, requiringSecureCoding: true)) == nil else {
             return self
