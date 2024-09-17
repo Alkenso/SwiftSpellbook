@@ -22,7 +22,7 @@
 
 import Foundation
 
-public final class ConcurrentBlockOperation: Operation {
+public final class ConcurrentBlockOperation: Operation, @unchecked Sendable {
     @Atomic private var state: Bool?
     private let block: (ValueView<Bool>, @escaping () -> Void) -> Void
     

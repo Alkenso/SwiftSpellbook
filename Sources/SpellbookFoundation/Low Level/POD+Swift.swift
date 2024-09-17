@@ -79,19 +79,19 @@ public protocol UnsafePOD: PODUnsafeHashable {}
 
 // MARK: - Oftenly used POD types
 
-extension timespec: SafePOD, UnsafePOD {}
-extension fsid_t: SafePOD, UnsafePOD {}
-extension attrlist: SafePOD, UnsafePOD {}
-extension attribute_set: SafePOD, UnsafePOD {}
-extension attrreference: SafePOD, UnsafePOD {}
-extension diskextent: SafePOD, UnsafePOD {}
+extension timespec: SpellbookFoundation.SafePOD, SpellbookFoundation.UnsafePOD {}
+extension fsid_t: SpellbookFoundation.SafePOD, SpellbookFoundation.UnsafePOD {}
+extension attrlist: SpellbookFoundation.SafePOD, SpellbookFoundation.UnsafePOD {}
+extension attribute_set: SpellbookFoundation.SafePOD, SpellbookFoundation.UnsafePOD {}
+extension attrreference: SpellbookFoundation.SafePOD, SpellbookFoundation.UnsafePOD {}
+extension diskextent: SpellbookFoundation.SafePOD, SpellbookFoundation.UnsafePOD {}
 
-extension stat: SafePOD {}
-extension statfs: SafePOD {}
+extension stat: SpellbookFoundation.SafePOD {}
+extension statfs: SpellbookFoundation.SafePOD {}
 
-extension timeval: SafePOD {}
+extension timeval: SpellbookFoundation.SafePOD {}
 
-extension stat: Hashable {
+extension stat: @retroactive Hashable {
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.st_dev == rhs.st_dev &&
             lhs.st_mode == rhs.st_mode &&
@@ -135,7 +135,7 @@ extension stat: Hashable {
     }
 }
 
-extension statfs: Hashable {
+extension statfs: @retroactive Hashable {
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.f_bsize == rhs.f_bsize &&
             lhs.f_iosize == rhs.f_iosize &&
@@ -175,7 +175,7 @@ extension statfs: Hashable {
     }
 }
 
-extension timeval: Hashable {
+extension timeval: @retroactive Hashable {
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.tv_sec == rhs.tv_sec &&
             lhs.tv_usec == rhs.tv_usec

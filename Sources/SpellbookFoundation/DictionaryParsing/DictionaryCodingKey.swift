@@ -27,36 +27,9 @@ public enum DictionaryCodingKey {
     case index(Int)
 }
 
-extension DictionaryCodingKey: CodingKey {
-    public init(stringValue: String) {
-        self = .key(stringValue)
-    }
-    
-    public var stringValue: String {
-        switch self {
-        case .key(let key):
-            return "\(key)"
-        case .index(let index):
-            return "\(index)"
-        }
-    }
-    
-    public init(intValue: Int) {
-        self = .index(intValue)
-    }
-    
-    public var intValue: Int? {
-        if case .index(let index) = self {
-            return index
-        } else {
-            return nil
-        }
-    }
-}
-
 extension DictionaryCodingKey: ExpressibleByStringLiteral {
     public init(stringLiteral value: StringLiteralType) {
-        self.init(stringValue: value)
+        self = .key(String(value))
     }
 }
 

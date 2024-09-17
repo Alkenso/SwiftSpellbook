@@ -81,7 +81,7 @@ private struct Dummy<T> {
 extension Dummy {
     func asyncValue() async -> T {
         await withCheckedContinuation { continuation in
-            value(reply: continuation.resume(returning:))
+            value { continuation.resume(returning: $0) }
         }
     }
     

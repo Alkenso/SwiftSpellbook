@@ -58,8 +58,8 @@ public class EventAskEx<Input, Transformed, Output> {
     }
     
     public func ask(_ value: Input, timeout: Timeout? = nil) async -> Output {
-        await withCheckedContinuation {
-            askAsync(value, timeout: timeout, completion: $0.resume(returning:))
+        await withCheckedContinuation { continuation in
+            askAsync(value, timeout: timeout) { continuation.resume(returning: $0) }
         }
     }
     

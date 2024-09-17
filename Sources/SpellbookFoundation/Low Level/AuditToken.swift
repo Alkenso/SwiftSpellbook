@@ -62,7 +62,7 @@ extension audit_token_t {
     public var pidversion: Int32 { audit_token_to_pidversion(self) }
 }
 
-extension audit_token_t: SafePOD, UnsafePOD {}
+extension audit_token_t: SpellbookFoundation.SafePOD, SpellbookFoundation.UnsafePOD {}
 
 extension NSXPCConnection {
     public var auditToken: audit_token_t {

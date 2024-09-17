@@ -49,7 +49,7 @@ extension Date {
         
         let seconds = timeIntervalSince(ProcessInfo.processInfo.systemBootDate)
         let nanos = seconds * TimeInterval(NSEC_PER_SEC)
-        let machTime =  nanos * TimeInterval(timebase.denom) / TimeInterval(timebase.numer)
+        let machTime = nanos * TimeInterval(timebase.denom) / TimeInterval(timebase.numer)
         return UInt64(machTime)
     }
 }
