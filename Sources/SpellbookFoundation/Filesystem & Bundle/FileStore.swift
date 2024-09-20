@@ -46,17 +46,22 @@ public struct FileStore<T> {
 }
 
 extension FileStore where T == Data {
-    public static var standard = FileStore(
-        read: { location, ifNotExists in
-            try Data(contentsOf: location, ifNoFile: ifNotExists)
-        },
-        write: { data, location, createDirectories in
-            if createDirectories {
-                try FileManager.default.createDirectoryTree(for: location)
+    @available(*, deprecated, renamed: "standard(writingOptions:)")
+    public static let standard: FileStore = .standard()
+    
+    public static func standard(writingOptions: Data.WritingOptions = .atomic) -> FileStore {
+        .init(
+            read: { location, ifNotExists in
+                try Data(contentsOf: location, ifNoFile: ifNotExists)
+            },
+            write: { data, location, createDirectories in
+                if createDirectories {
+                    try FileManager.default.createDirectoryTree(for: location)
+                }
+                try data.write(to: location, options: writingOptions)
             }
-            try data.write(to: location)
-        }
-    )
+        )
+    }
 }
 
 extension FileStore {

@@ -20,7 +20,7 @@ class FileStoreTests: XCTestCase {
     
     func test_standard() throws {
         let url = tempDir.location.appendingPathComponent("test.file")
-        let store = FileStore.standard
+        let store = FileStore.standard()
         XCTAssertThrowsError(try store.read(from: url))
         XCTAssertEqual(try store.read(from: url, default: Data(pod: 100500)), Data(pod: 100500))
         
@@ -36,11 +36,11 @@ class FileStoreTests: XCTestCase {
     
     func test_exact() throws {
         let url = tempDir.location.appendingPathComponent("test.file")
-        let store = FileStore.standard.exact(url)
+        let store = FileStore.standard().exact(url)
         XCTAssertThrowsError(try store.read())
         XCTAssertEqual(try store.read(default: Data(pod: 20)), Data(pod: 20))
         
-        let storeWithDefault = FileStore.standard.exact(url, default: Data(pod: 10))
+        let storeWithDefault = FileStore.standard().exact(url, default: Data(pod: 10))
         XCTAssertEqual(try storeWithDefault.read(), Data(pod: 10))
         XCTAssertEqual(try storeWithDefault.read(default: Data(pod: 20)), Data(pod: 20))
         
@@ -49,7 +49,7 @@ class FileStoreTests: XCTestCase {
     
     func test_codable() throws {
         let url = tempDir.location.appendingPathComponent("test.file")
-        let store = FileStore.standard.codable(Int.self, using: .json()).exact(url)
+        let store = FileStore.standard().codable(Int.self, using: .json()).exact(url)
         XCTAssertThrowsError(try store.read())
         XCTAssertEqual(try store.read(default: 20), 20)
         XCTAssertFalse(FileManager.default.fileExists(at: url))
