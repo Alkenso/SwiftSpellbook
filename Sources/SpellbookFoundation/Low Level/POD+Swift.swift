@@ -91,7 +91,7 @@ extension statfs: SpellbookFoundation.SafePOD {}
 
 extension timeval: SpellbookFoundation.SafePOD {}
 
-extension stat: @retroactive Hashable {
+extension stat: Swift.Hashable {
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.st_dev == rhs.st_dev &&
             lhs.st_mode == rhs.st_mode &&
@@ -135,7 +135,7 @@ extension stat: @retroactive Hashable {
     }
 }
 
-extension statfs: @retroactive Hashable {
+extension statfs: Swift.Hashable {
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.f_bsize == rhs.f_bsize &&
             lhs.f_iosize == rhs.f_iosize &&
@@ -175,7 +175,7 @@ extension statfs: @retroactive Hashable {
     }
 }
 
-extension timeval: @retroactive Hashable {
+extension timeval: Swift.Hashable {
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.tv_sec == rhs.tv_sec &&
             lhs.tv_usec == rhs.tv_usec
