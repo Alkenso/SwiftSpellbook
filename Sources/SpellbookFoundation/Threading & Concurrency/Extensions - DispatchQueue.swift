@@ -55,13 +55,30 @@ extension DispatchQueue {
         delay: TimeInterval,
         qos: DispatchQoS = .unspecified,
         flags: DispatchWorkItemFlags = [],
-        execute work: @escaping @convention(block) () -> Void
+        execute work: @escaping () -> Void
     ) {
         asyncAfter(deadline: .now() + delay, qos: qos, flags: flags, execute: work)
     }
     
     public func asyncAfter(delay: TimeInterval, execute: DispatchWorkItem) {
         asyncAfter(deadline: .now() + delay, execute: execute)
+    }
+    
+    public func asyncPeriodically(
+        interval: TimeInterval,
+        immediately: Bool,
+        qos: DispatchQoS = .unspecified,
+        flags: DispatchWorkItemFlags = [],
+        execute: @escaping () -> Bool
+    ) {
+        func schedule(firstRun: Bool) {
+            asyncAfter(delay: (firstRun && immediately) ? 0 : interval, qos: qos, flags: flags) {
+                if execute() {
+                    schedule(firstRun: false)
+                }
+            }
+        }
+        schedule(firstRun: true)
     }
 }
 
