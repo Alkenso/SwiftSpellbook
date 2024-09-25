@@ -30,6 +30,28 @@ class DictionaryTests: XCTestCase {
     }
 }
 
+class ArrayTests: XCTestCase {
+    func test_initCreate() {
+        XCTAssertEqual(Array<Int>(count: 3, create: { 1 }), [1, 1, 1])
+        XCTAssertEqual(Array<Int>(count: 3, create: 1), [1, 1, 1])
+        
+        class Foo {}
+        let refsFoo = Array<Foo>(count: 2, create: Foo.init)
+        XCTAssertTrue(refsFoo[0] !== refsFoo[1])
+        
+        struct Bar {
+            var value: Int
+        }
+        var counter = 0
+        let refsBar = Array<Bar>(count: 2) {
+            defer { counter += 1 }
+            return Bar(value: counter)
+        }
+        XCTAssertEqual(refsBar[0].value, 0)
+        XCTAssertEqual(refsBar[1].value, 1)
+    }
+}
+
 class SequenceTests: XCTestCase {
     func test_mutatingMap() {
         XCTAssertEqual((1...3).mutatingMap { $0 += 5 }, [6, 7, 8])
