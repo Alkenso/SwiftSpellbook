@@ -25,30 +25,32 @@ import Foundation
 private let log = SpellbookLogger.internal(category: "CustomErrorUpdating")
 
 public protocol CustomErrorUpdating where Self: Error {
+    associatedtype UpdatedError: Error
+    
     var userInfo: [String: Any] { get }
-    func replacingUserInfo(_ userInfo: [String: Any]) -> Self
+    func replacingUserInfo(_ userInfo: [String: Any]) -> UpdatedError
 }
 
 extension CustomErrorUpdating {
     /// Build new error appending underlying error.
-    public func appendingUnderlyingError(_ error: Error) -> Self {
+    public func appendingUnderlyingError(_ error: Error) -> UpdatedError {
         updatingUserInfo(error, for: NSUnderlyingErrorKey)
     }
     
     /// Build new error with specified (or replaced) `userInfo` value for `NSDebugDescriptionErrorKey`.
-    public func updatingDebugDescription(_ debugDescription: String) -> Self {
+    public func updatingDebugDescription(_ debugDescription: String) -> UpdatedError {
         updatingUserInfo(debugDescription, for: NSDebugDescriptionErrorKey)
     }
     
     /// Build new error with specified (or replaced) `userInfo` value for given key.
-    public func updatingUserInfo(_ value: Any, for key: String) -> Self {
+    public func updatingUserInfo(_ value: Any, for key: String) -> UpdatedError {
         updatingUserInfo([key: value])
     }
     
     /// Build new error with `userInfo`, merged with given `userInfo`.
     /// If key in new `userInfo` already exists, the value is replaced.
     /// If key exists and is `NSUnderlyingErrorKey` or `NSMultipleUnderlyingErrorsKey`, the error(s) is appended.
-    public func updatingUserInfo(_ userInfo: [String: Any]) -> Self {
+    public func updatingUserInfo(_ userInfo: [String: Any]) -> UpdatedError {
         let mergedUserInfo = Self.mergeUserInfo(existing: self.userInfo, new: userInfo)
         return replacingUserInfo(mergedUserInfo)
     }

@@ -57,8 +57,8 @@ extension NSError {
 }
 
 extension NSError: CustomErrorUpdating {
-    public func replacingUserInfo(_ userInfo: [String: Any]) -> Self {
-        .init(domain: domain, code: code, userInfo: userInfo)
+    public func replacingUserInfo(_ userInfo: [String: Any]) -> NSError {
+        NSError(domain: domain, code: code, userInfo: userInfo)
     }
 }
 
