@@ -34,7 +34,7 @@ public final class FileEnumerator {
     public var locationFilter: ((URL) -> FilterVerdict)?
     
     /// Forward flags to underlying `FileManager.DirectoryEnumerator`.
-    public var options: FileManager.DirectoryEnumerationOptions = []
+    public var options: (URL) -> FileManager.DirectoryEnumerationOptions = { _ in [] }
     
     /// Creates `FileEnumerator` that enumerates given locations recursively
     /// - Parameters:
@@ -99,7 +99,7 @@ extension FileEnumerator: Sequence, IteratorProtocol {
             let type = try? next.resourceValues(forKeys: [.fileResourceTypeKey]).fileResourceType
             var filterVerdict: FilterVerdict?
             
-            //  If directory is not interested, skip whole content.
+            // If directory is not interested, skip whole content.
             if type == .directory {
                 filterVerdict = locationFilter?(next)
                 if filterVerdict?.children == false {
@@ -107,13 +107,13 @@ extension FileEnumerator: Sequence, IteratorProtocol {
                 }
             }
             
-            //  Check if `next` is interested according to its type.
+            // Check if `next` is interested according to its type.
             if !types.isEmpty {
                 guard let type else { continue }
                 guard types.contains(type) else { continue }
             }
             
-            //  Check if `next` is interested according to its URL.
+            // Check if `next` is interested according to its URL.
             if let verdict = filterVerdict ?? locationFilter?(next), !verdict.current {
                 continue
             }
@@ -125,25 +125,29 @@ extension FileEnumerator: Sequence, IteratorProtocol {
     }
     
     private func nextUnfiltered() -> URL? {
-        //  If next file exists, just return it.
+        // If next file exists, just return it.
         if let next = enumerator?.nextObject() as? URL {
             return next
         }
         
-        //  All files/locations enumerated. 'nil' means the end of the sequence.
+        // All files/locations enumerated. 'nil' means the end of the sequence.
         guard let nextLocation = locations.popLast() else {
             return nil
         }
         
-        //  If location doesn't exists, just skip it.
+        // If location doesn't exists, just skip it.
         var isDirectory = false
         guard FileManager.default.fileExists(at: nextLocation, isDirectory: &isDirectory) else {
             return nextUnfiltered()
         }
         
-        //  If location is directory, update enumerator.
+        // If location is directory, update enumerator.
         if isDirectory {
-            enumerator = FileManager.default.enumerator(at: nextLocation, includingPropertiesForKeys: [.fileResourceTypeKey], options: options)
+            enumerator = FileManager.default.enumerator(
+                at: nextLocation,
+                includingPropertiesForKeys: [.fileResourceTypeKey],
+                options: options(nextLocation)
+            )
         }
         
         return nextLocation
