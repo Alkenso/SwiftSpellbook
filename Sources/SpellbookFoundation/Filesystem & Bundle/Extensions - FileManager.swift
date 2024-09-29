@@ -25,8 +25,13 @@ import Foundation
 extension FileManager {
     /// Sets the attributes of the specified file or directory recursively.
     public func setAttributes(_ attributes: [FileAttributeKey: Any], recursivelyOfItemAt url: URL) throws {
-        try FileEnumerator(locations: [url])
+        try FileEnumerator(url)
             .forEach { try setAttributes(attributes, ofItemAtPath: $0.path) }
+    }
+    
+    /// Sets the attributes of the specified file or directory recursively.
+    public func setAttributes(_ attributes: [FileAttributeKey: Any], recursivelyOfItemAtPath path: String) throws {
+        try setAttributes(attributes, recursivelyOfItemAt: URL(fileURLWithPath: path))
     }
     
     /// Returns a Boolean value that indicates whether a url is directory and it exists.
