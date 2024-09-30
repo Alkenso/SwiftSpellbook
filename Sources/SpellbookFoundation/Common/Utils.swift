@@ -31,3 +31,15 @@ public func updateSwap<T>(_ a: inout T, _ b: T) -> T {
 public func throwingCast<T>(name: String? = nil, _ object: Any, to: T.Type) throws -> T {
     try (object as? T).get(CommonError.cast(name: name, object, to: to))
 }
+
+public func updateValue<Value>(_ value: Value, using transform: (inout Value) -> Void) -> Value {
+    var value = value
+    transform(&value)
+    return value
+}
+
+public func updateValue<Root, Property>(_ value: Root, at keyPath: WritableKeyPath<Root, Property>, with property: Property) -> Root {
+    var value = value
+    value[keyPath: keyPath] = property
+    return value
+}
