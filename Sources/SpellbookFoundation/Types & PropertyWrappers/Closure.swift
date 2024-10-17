@@ -32,7 +32,7 @@ public struct Closure<T, R> {
     }
     
     public func callAsFunction<each Arg>(_ args: repeat each Arg) -> R where T == (repeat each Arg) {
-        body((repeat each args))
+        body(makeTuple(repeat each args))
     }
 }
 
@@ -64,7 +64,7 @@ public struct ThrowingClosure<T, R> {
     }
     
     public func callAsFunction<each Arg>(_ args: repeat each Arg) throws -> R where T == (repeat each Arg) {
-        try body((repeat each args))
+        try body(makeTuple(repeat each args))
     }
 }
 
@@ -81,4 +81,9 @@ extension ThrowingClosure {
     public func sync(on queue: DispatchQueue) -> Self {
         ThrowingClosure { value in try queue.sync { try self(value) } }
     }
+}
+
+// Workaround to make Swift 5.9/5.10 compilers happy.
+private func makeTuple<each Element>(_ element: repeat each Element) -> (repeat each Element) {
+    (repeat each element)
 }
