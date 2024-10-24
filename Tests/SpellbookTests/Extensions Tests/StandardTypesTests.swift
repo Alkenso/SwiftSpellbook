@@ -160,6 +160,17 @@ class URLExtensionsTests: XCTestCase {
         
         XCTAssertThrowsError(try URL(staticString: "https://remote.com").ensureFileURL())
     }
+    
+    func test_ensureFileExists() throws {
+        XCTAssertThrowsError(try URL(fileURLWithPath: "relative").ensureFileExists())
+        XCTAssertThrowsError(try URL(fileURLWithPath: "/absolute").ensureFileExists())
+        XCTAssertThrowsError(try URL(fileURLWithPath: "/absolute/dir").ensureFileExists())
+        XCTAssertThrowsError(try URL(staticString: "https://remote.com").ensureFileExists())
+        
+        XCTAssertNoThrow(try FileManager.default.homeDirectoryForCurrentUser.ensureFileURL())
+        XCTAssertNoThrow(try testBundle.bundleURL.ensureFileURL())
+        XCTAssertNoThrow(try testBundle.executableURL?.ensureFileURL())
+    }
 }
 
 class UUIDExtensionsTests: XCTestCase {

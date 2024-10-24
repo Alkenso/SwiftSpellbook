@@ -145,13 +145,22 @@ extension URL {
 extension URL {
     /// Determines file type of given URL.
     /// Does NOT resolve symlinks.
-    /// - returns: file type or nil if URL is not a file URL or file can't be stat'ed.
+    /// - throws: `URLError.Code.unsupportedURL` if URL is not a file URL or file can't be stat'ed.
     public func ensureFileURL() throws {
         if !isFileURL {
             throw URLError(
                 .unsupportedURL,
                 userInfo: [NSDebugDescriptionErrorKey: "URL is not a file: \(self)"]
             )
+        }
+    }
+    
+    /// Determines if file exists.
+    /// - throws: `CocoaError.Code.fileNoSuchFile` if the file does not exist.
+    /// - warning: Does NOT resolve symlinks.
+    public func ensureFileExists() throws {
+        guard FileManager.default.fileExists(at: self) else {
+            throw CocoaError(.fileNoSuchFile, userInfo: [NSURLErrorKey: self])
         }
     }
 }
