@@ -304,7 +304,7 @@ extension Sequence {
 extension RangeReplaceableCollection {
     /// Bounds-safe access to the element at index.
     public subscript(safe index: Index) -> Element? {
-        index < endIndex ? self[index] : nil
+        (startIndex..<endIndex).contains(index) ? self[index] : nil
     }
     
     public mutating func mutateElements(mutate: (inout Element) throws -> Void) rethrows {

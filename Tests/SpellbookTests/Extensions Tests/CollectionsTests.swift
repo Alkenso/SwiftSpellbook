@@ -114,6 +114,8 @@ class CollectionTests: XCTestCase {
         XCTAssertEqual([Int]()[safe: 0], nil)
         XCTAssertEqual([10][safe: 0], 10)
         XCTAssertEqual([10][safe: 1], nil)
+        XCTAssertEqual([10][safe: -1], nil)
+        XCTAssertEqual(Array<Int>()[safe: -1], nil)
     }
     
     func test_subscript_popFirst() {
