@@ -56,8 +56,13 @@ extension FileManager {
     
     /// Returns a Boolean value that indicates whether a file or directory exists at a specified url.
     public func fileExists(at url: URL, isDirectory: inout Bool) -> Bool {
+        fileExists(atPath: url.path, isDirectory: &isDirectory)
+    }
+    
+    /// Returns a Boolean value that indicates whether a file or directory exists at a specified path.
+    public func fileExists(atPath path: String, isDirectory: inout Bool) -> Bool {
         var isDirectoryObjc = ObjCBool(false)
-        let exists = fileExists(atPath: url.path, isDirectory: &isDirectoryObjc)
+        let exists = fileExists(atPath: path, isDirectory: &isDirectoryObjc)
         isDirectory = isDirectoryObjc.boolValue
         return exists
     }
