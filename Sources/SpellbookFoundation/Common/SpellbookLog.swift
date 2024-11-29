@@ -144,6 +144,19 @@ extension SpellbookLogLevel: Comparable {
     }
 }
 
+extension SpellbookLogLevel: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .verbose: "VERBOSE"
+        case .debug: "DEBUG"
+        case .info: "INFO"
+        case .warning: "WARNING"
+        case .error: "ERROR"
+        case .fatal: "FATAL"
+        }
+    }
+}
+
 public struct SpellbookLogRecord {
     public var source: SpellbookLogSource
     public var level: SpellbookLogLevel
