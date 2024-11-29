@@ -87,6 +87,18 @@ class StoreTests: XCTestCase {
         XCTAssertEqual(nestedValStore.value, 30)
     }
     
+    func test_update_return() {
+        let store = ValueStore(initialValue: TestStru())
+        let nestedStore = store.scope(\.nested)
+        let valStore = store.scope(\.val)
+        let nestedValStore = nestedStore.scope(\.val1)
+        
+        XCTAssertEqual(store.update { _ in 1 }, 1)
+        XCTAssertEqual(nestedStore.update { _ in 2 }, 2)
+        XCTAssertEqual(valStore.update { _ in 3 }, 3)
+        XCTAssertEqual(nestedValStore.update { _ in 4 }, 4)
+    }
+    
     func test_scope_subscribe() {
         let store = ValueStore(initialValue: TestStru())
         

@@ -47,7 +47,7 @@ public final class ValueStore<Value>: ValueObserving {
     private var currentValue: Value
     private var updateDepth = 0
     
-    private var parentUpdate: ((_ context: Any?, _ body: (inout Value) -> Void) -> Void)?
+    private var parentUpdate: ((_ context: Any?, _ body: (inout Value) -> Any) -> Any)?
     private var parentSubscription: SubscriptionToken?
     private var updateChildren = EventNotify<Value>()
     
@@ -84,12 +84,12 @@ public final class ValueStore<Value>: ValueObserving {
     /// This is designated implementation of value update.
     /// Use it carefully: `body` closure is invoked under internal lock.
     /// Careless use may lead to performance problems or even deadlock.
-    public func update(context: Any? = nil, body: (inout Value) -> Void) {
-        if let parentUpdate = parentUpdate {
-            parentUpdate(context, body)
-        } else {
-            directUpdate(context, body: body)
+    public func update<R>(context: Any? = nil, body: (inout Value) -> R) -> R {
+        let result = updateImpl(context: context, body: body)
+        guard let result = result as? R else {
+            fatalError("Internal inconsistency: failed to cast \(result) to expected type \(R.self)")
         }
+        return result
     }
     
     public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
@@ -113,9 +113,17 @@ public final class ValueStore<Value>: ValueObserving {
         }
     }
     
-    private func directUpdate(_ context: Any?, body: (inout Value) -> Void) {
+    private func updateImpl(context: Any?, body: (inout Value) -> Any) -> Any {
+        if let parentUpdate = parentUpdate {
+            parentUpdate(context, body)
+        } else {
+            directUpdate(context, body: body)
+        }
+    }
+    
+    private func directUpdate(_ context: Any?, body: (inout Value) -> Any) -> Any {
         lock.withLock {
-            body(&currentValue)
+            let result = body(&currentValue)
             
             valueLock.withLock {
                 updateDepth += 1
@@ -129,6 +137,8 @@ public final class ValueStore<Value>: ValueObserving {
                 currentValueGet.removeFirst()
                 updateDepth -= 1
             }
+            
+            return result
         }
     }
 }
@@ -146,15 +156,16 @@ extension ValueStore {
             let scoped = ValueStore<U>(initialValue: transform(value))
             
             scoped.parentUpdate = { context, localBody in
-                self.update(context: context) { globalValue in
+                self.updateImpl(context: context) { globalValue in
                     var localValue = transform(globalValue)
-                    localBody(&localValue)
+                    let result = localBody(&localValue)
                     merge(&globalValue, localValue)
+                    return result
                 }
             }
             
             scoped.parentSubscription = updateChildren.subscribe { [weak scoped] globalValue, context in
-                scoped?.directUpdate(context) { localValue in
+                _ = scoped?.directUpdate(context) { localValue in
                     localValue = transform(globalValue)
                 }
             }
