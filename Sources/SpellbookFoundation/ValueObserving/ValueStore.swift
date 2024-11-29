@@ -61,8 +61,9 @@ public final class ValueStore<Value>: ValueObserving {
         valueLock.withLock { currentValueGet[updateDepth > 0 ? updateDepth - 1 : 0] }
     }
     
-    public func update(_ value: Value, context: Any? = nil) {
-        update(context: context) { $0 = value }
+    @discardableResult
+    public func update(_ value: Value, context: Any? = nil) -> Value {
+        update(context: context) { updateSwap(&$0, value) }
     }
     
     public func update<Property>(
@@ -220,5 +221,83 @@ extension ValueStore {
     
     public var view: ValueView<Value> {
         .init { self.value }
+    }
+}
+
+extension ValueStore {
+    public convenience init() where Value: ExpressibleByArrayLiteral {
+        self.init(initialValue: [])
+    }
+    
+    public func append(_ element: Value.Element) where Value: RangeReplaceableCollection {
+        update { $0.append(element) }
+    }
+    
+    public func removeAll(where shouldBeRemoved: (Value.Element) -> Bool) where Value: RangeReplaceableCollection {
+        update { $0.removeAll(where: shouldBeRemoved) }
+    }
+}
+
+extension ValueStore {
+    public convenience init<Element: Hashable>() where Value == Set<Element> {
+        self.init(initialValue: [])
+    }
+    
+    @discardableResult
+    public func insert<Element: Hashable>(
+        _ element: Element
+    ) -> (inserted: Bool, memberAfterInsert: Element) where Value == Set<Element> {
+        update { $0.insert(element) }
+    }
+    
+    @discardableResult
+    public func remove<Element: Hashable>(_ element: Element) -> Element? where Value == Set<Element> {
+        update { $0.remove(element) }
+    }
+    
+    public func popFirst<Element: Hashable>() -> Element? where Value == Set<Element> {
+        update { $0.popFirst() }
+    }
+    
+    public func formUnion<Element: Hashable, S>(
+        _ other: S
+    ) where Value == Set<Element>, S: Sequence, Element == S.Element {
+        update { $0.formUnion(other) }
+    }
+    
+    public func subtract<Element: Hashable, S>(
+        _ other: S
+    ) where Value == Set<Element>, S: Sequence, Element == S.Element {
+        update { $0.subtract(other) }
+    }
+    
+    public func formIntersection<Element: Hashable, S>(
+        _ other: S
+    ) where Value == Set<Element>, S: Sequence, Element == S.Element {
+        update { $0.formIntersection(other) }
+    }
+    
+    public func formSymmetricDifference<Element: Hashable, S>(
+        _ other: S
+    ) where Value == Set<Element>, S: Sequence, Element == S.Element {
+        update { $0.formSymmetricDifference(other) }
+    }
+}
+ 
+extension ValueStore {
+    public func popFirst<Key: Hashable, Element>() -> Value.Element? where Value == [Key: Element] {
+        update { $0.popFirst() }
+    }
+    
+    @discardableResult
+    public func updateValue<Key: Hashable, Element>(
+        _ value: Element, forKey key: Key
+    ) -> Element? where Value == [Key: Element] {
+        update { $0.updateValue(value, forKey: key) }
+    }
+    
+    @discardableResult
+    public func removeValue<Key: Hashable, Element>(forKey key: Key) -> Element? where Value == [Key: Element] {
+        update { $0.removeValue(forKey: key) }
     }
 }
