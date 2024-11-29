@@ -20,8 +20,12 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+#if canImport(CoreGraphics)
+
 import CoreGraphics
 import Foundation
+import ImageIO
+import UniformTypeIdentifiers
 
 extension CGRect {
     /// Center given rect relative to another one.
@@ -48,3 +52,70 @@ extension CGRect {
         self = flippedY(fullHeight: fullHeight)
     }
 }
+
+extension CGImage {
+    /// Creates `Data` representation of the image.
+    /// - Parameters:
+    ///     - format: Desired format of the image representation.
+    /// - Returns: `Data` in requested format or `nil` if error occurs.
+    @available(macOS 11.0, iOS 14, tvOS 14.0, watchOS 7.0, *)
+    public func representation(in format: UTType) -> Data? {
+        let data = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(data, format.identifier as CFString, 1, nil) else {
+            return nil
+        }
+        
+        CGImageDestinationAddImage(destination, self, nil)
+        guard CGImageDestinationFinalize(destination) else { return nil }
+        
+        return data as Data
+    }
+    
+    /// Creates `CGImage` from its representation.
+    /// - Parameters:
+    ///     - data: Binary representation data.
+    /// - Returns: `CGImage` or `nil` if error occurs.
+    public static func fromRepresentation(_ data: Data) -> CGImage? {
+        guard let dataProvider = CGDataProvider(data: data as CFData) else { return nil }
+        guard let source = CGImageSourceCreateWithDataProvider(dataProvider, nil) else { return nil }
+        return CGImageSourceCreateImageAtIndex(source, 0, nil)
+    }
+    
+    /// Writes image to the file on disk.
+    /// - Parameters:
+    ///     - url: Location on disk to write the image.
+    ///     - format: Desired format of the image representation.
+    ///     If `nil`, format is tried to be obtained from `url` path extension.
+    /// - Returns: Boolean indicating the write succeeds.
+    @available(macOS 11.0, iOS 14, tvOS 14.0, watchOS 7.0, *)
+    public func writeToFile(_ url: URL, in format: UTType?) -> Bool {
+        guard let format = format ?? UTType(filenameExtension: url.lastPathComponent, conformingTo: .image) else {
+            return false
+        }
+        guard let destination = CGImageDestinationCreateWithURL(
+            url as CFURL,
+            format.identifier as CFString,
+            1,
+            nil
+        ) else {
+            return false
+        }
+        
+        CGImageDestinationAddImage(destination, self, nil)
+        guard CGImageDestinationFinalize(destination) else { return false }
+        
+        return true
+    }
+    
+    /// Creates `CGImage` from file on disk.
+    /// - Parameters:
+    ///     - url: Location on disk to read the image from.
+    /// - Returns: `CGImage` or `nil` if error occurs.
+    public static func readFromFile(_ url: URL) -> CGImage? {
+        guard let dataProvider = CGDataProvider(url: url as CFURL) else { return nil }
+        guard let source = CGImageSourceCreateWithDataProvider(dataProvider, nil) else { return nil }
+        return CGImageSourceCreateImageAtIndex(source, 0, nil)
+    }
+}
+
+#endif
