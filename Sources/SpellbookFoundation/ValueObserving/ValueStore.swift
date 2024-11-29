@@ -41,6 +41,7 @@ public final class ValueStored<Value> {
 @dynamicMemberLookup
 public final class ValueStore<Value>: ValueObserving {
     private let lock = NSRecursiveLock()
+    private let valueLock = UnfairLock()
     private let subscriptions: EventNotify<Value>
     private var currentValueGet: [Value]
     private var currentValue: Value
@@ -57,7 +58,7 @@ public final class ValueStore<Value>: ValueObserving {
     }
     
     public var value: Value {
-        lock.withLock { currentValueGet[updateDepth > 0 ? updateDepth - 1 : 0] }
+        valueLock.withLock { currentValueGet[updateDepth > 0 ? updateDepth - 1 : 0] }
     }
     
     public func update(_ value: Value, context: Any? = nil) {
@@ -114,16 +115,20 @@ public final class ValueStore<Value>: ValueObserving {
     
     private func directUpdate(_ context: Any?, body: (inout Value) -> Void) {
         lock.withLock {
-            updateDepth += 1
-            defer { updateDepth -= 1 }
-            
             body(&currentValue)
             
-            currentValueGet.append(currentValue)
-            defer { currentValueGet.removeFirst() }
+            valueLock.withLock {
+                updateDepth += 1
+                currentValueGet.append(currentValue)
+            }
             
             updateChildren.notify(currentValue, context: context)
             subscriptions.notify(currentValue, context: context)
+            
+            valueLock.withLock {
+                currentValueGet.removeFirst()
+                updateDepth -= 1
+            }
         }
     }
 }

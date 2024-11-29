@@ -221,4 +221,37 @@ class StoreTests: XCTestCase {
         
         waitForExpectations()
     }
+    
+    func test_get() {
+        let s1 = DispatchSemaphore(value: 0)
+        let s2 = DispatchSemaphore(value: 0)
+        
+        let store = ValueStore<Pair<Int, Int>>(initialValue: .init(0, 0))
+        let firstStore = store.scope(\.first)
+        DispatchQueue.global().async {
+            store.update {
+                s1.signal()
+                s2.wait()
+                $0 = .init(10, 10)
+                s1.signal()
+                s2.wait()
+            }
+            s1.signal()
+        }
+        
+        s1.wait()
+        XCTAssertEqual(store.value, .init(0, 0))
+        XCTAssertEqual(firstStore.value, 0)
+        s2.signal()
+        
+        s1.wait()
+        XCTAssertEqual(store.value, .init(0, 0))
+        XCTAssertEqual(firstStore.value, 0)
+        s2.signal()
+        
+        s1.wait()
+        XCTAssertEqual(store.value, .init(10, 10))
+        XCTAssertEqual(firstStore.value, 10)
+        s2.signal()
+    }
 }
