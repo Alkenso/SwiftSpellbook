@@ -100,6 +100,10 @@ extension HTTPClient {
             return .failure(URLError.badResponse(error))
         }
     }
+    
+    private static func decodeResponse(_ data: Data, decoder: ObjectDecoder<EmptyCodable>) -> Result<EmptyCodable, Error> {
+        .success(.init())
+    }
 }
 
 @available(macOS 12.0, iOS 15, tvOS 15.0, watchOS 8.0, *)
