@@ -26,78 +26,22 @@ import Foundation
 
 public struct HTTPRequest {
     public var url: String
-    public var method: Method
+    public var method: HTTPMethod
     public var port: UInt16?
     
-    public var query: [QueryItem: String] = [:]
-    public var headers: [Header: String] = [:]
+    public var query = HTTPParameters<HTTPQueryItem>()
+    public var headers = HTTPParameters<HTTPHeader>()
     public var body: Body?
     public var additional: ((inout URLRequest) throws -> Void)?
     
-    public init(urlString: String, method: Method) {
+    public init(urlString: String, method: HTTPMethod) {
         self.url = urlString
         self.method = method
     }
     
-    public init(url: URL, method: Method) {
+    public init(url: URL, method: HTTPMethod) {
         self.init(urlString: url.absoluteString, method: method)
     }
-}
-
-extension HTTPRequest {
-    public struct Method: RawRepresentable, Hashable {
-        public var rawValue: String
-        public init(rawValue: String) { self.rawValue = rawValue }
-    }
-}
-
-extension HTTPRequest.Method {
-    public static let get = Self(rawValue: "GET")
-    public static let post = Self(rawValue: "POST")
-}
-    
-extension HTTPRequest {
-    public struct QueryItem: RawRepresentable, Hashable, ExpressibleByStringLiteral {
-        public var rawValue: String
-        public init(rawValue: String) { self.rawValue = rawValue }
-        public init(stringLiteral value: StringLiteralType) { self.rawValue = value }
-    }
-}
- 
-extension HTTPRequest {
-    public struct Header: RawRepresentable, Hashable {
-        public var rawValue: String
-        public init(rawValue: String) { self.rawValue = rawValue }
-    }
-}
-
-extension HTTPRequest.Header {
-    public static let userAgent = Self(rawValue: "user-agent")
-}
-
-extension HTTPRequest.Header: ExpressibleByStringLiteral {
-    public init(stringLiteral value: StringLiteralType) { self.rawValue = value }
-}
-
-extension HTTPRequest {
-    public static func authorization(_ type: HTTPRequest.AuthorizationType, _ token: String) -> String {
-        "\(type.rawValue) \(token)"
-    }
-}
-
-extension HTTPRequest {
-    public struct AuthorizationType: RawRepresentable, Hashable {
-        public var rawValue: String
-        public init(rawValue: String) { self.rawValue = rawValue }
-    }
-}
-
-extension HTTPRequest.AuthorizationType: ExpressibleByStringLiteral {
-    public init(stringLiteral value: StringLiteralType) { self.rawValue = value }
-}
-
-extension HTTPRequest.AuthorizationType: ExpressibleByStringInterpolation {
-    public init(stringInterpolation: DefaultStringInterpolation) { self.rawValue = stringInterpolation.description }
 }
 
 extension HTTPRequest {
@@ -149,8 +93,8 @@ extension HTTPRequest {
                 SBRelatedObjectErrorKey: url,
             ])
         }
-        if !query.isEmpty {
-            components.queryItems = query.map { URLQueryItem(name: $0.key.rawValue, value: $0.value) }
+        if !query.items.isEmpty {
+            components.queryItems = query.items.map { URLQueryItem(name: $0.key.rawValue, value: $0.value) }
         }
         if let port  {
             components.port = Int(port)
@@ -172,8 +116,8 @@ extension HTTPRequest {
                 urlRequest.addValue(contentType, forHTTPHeaderField: "Content-Type")
             }
         }
-        headers.forEach {
-            urlRequest.setValue($0.value, forHTTPHeaderField: $0.key.rawValue)
+        headers.items.forEach {
+            urlRequest.addValue($0.value, forHTTPHeaderField: $0.key.rawValue)
         }
         
         try additional?(&urlRequest)

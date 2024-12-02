@@ -25,10 +25,15 @@ import SpellbookFoundation
 import Foundation
 
 open class HTTPClient {
+    private var additionalHeaders = Synchronized<HTTPParameters<HTTPHeader>>(.unfair, .init())
     private let session: URLSession
     
     public init(session: URLSession = .shared) {
         self.session = session
+    }
+    
+    public func updateHeaders(_ update: (inout HTTPParameters<HTTPHeader>) -> Void) {
+        additionalHeaders.write(update)
     }
 }
  
@@ -38,12 +43,17 @@ extension HTTPClient {
     }
     
     public func data(for request: @autoclosure () throws -> URLRequest, completion: @escaping (Result<HTTPResult<Data>, Error>) -> Void) {
-        let urlRequest: URLRequest
+        var urlRequest: URLRequest
         do {
             urlRequest = try request()
         } catch {
             completion(.failure(error))
             return
+        }
+        for additionalHeader in additionalHeaders.read().items {
+            if urlRequest.value(forHTTPHeaderField: additionalHeader.key.rawValue) == nil {
+                urlRequest.setValue(additionalHeader.value, forHTTPHeaderField: additionalHeader.key.rawValue)
+            }
         }
         
         session.dataTask(with: urlRequest) { data, response, error in
