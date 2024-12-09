@@ -47,18 +47,6 @@ public final class Atomic<Value> {
     public func exchange(_ value: Value) -> Value {
         storage.write { updateSwap(&$0, value) }
     }
-    
-    public func initialize<T>(_ initialize: @autoclosure () -> T) -> T where Value == T? {
-        storage.write {
-            if let value = $0 {
-                return value
-            } else {
-                let newValue = initialize()
-                $0 = newValue
-                return newValue
-            }
-        }
-    }
 }
 
 extension Atomic where Value: AdditiveArithmetic {

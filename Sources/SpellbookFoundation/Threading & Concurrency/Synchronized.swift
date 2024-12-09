@@ -112,16 +112,20 @@ extension Synchronized {
         self.init(primitive, nil)
     }
     
-    public func initialize<T>(_ initialize: @autoclosure () throws -> T) rethrows -> T where Value == T? {
+    public func initialize<T>(produceValue: () throws -> T) rethrows -> T where Value == T? {
         try write {
             if let value = $0 {
                 return value
             } else {
-                let newValue = try initialize()
+                let newValue = try produceValue()
                 $0 = newValue
                 return newValue
             }
         }
+    }
+    
+    public func initialize<T>(_ value: T) -> T where Value == T? {
+        initialize { value }
     }
 }
 
