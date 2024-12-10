@@ -127,7 +127,7 @@ extension SpellbookLog {
         function: StaticString = #function,
         line: Int = #line,
         context: Any? = nil,
-        body: () throws -> R
+        _ body: () throws -> R
     ) -> R? {
         do {
             return try body()
@@ -153,7 +153,7 @@ extension SpellbookLog {
         function: StaticString = #function,
         line: Int = #line,
         context: Any? = nil,
-        body: () throws -> R
+        _ body: () throws -> R
     ) -> R? {
         do {
             return try body()
