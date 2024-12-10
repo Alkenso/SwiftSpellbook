@@ -129,6 +129,12 @@ extension Synchronized {
     }
 }
 
+extension Synchronized: _ValueUpdateWrapping {
+    public func _updateValue<R>(body: (inout Value) -> R) -> R {
+        write(body)
+    }
+}
+
 public extension Synchronized where Value: AdditiveArithmetic {
     static func + (lhs: Synchronized, rhs: Value) -> Value {
         lhs.read() + rhs
