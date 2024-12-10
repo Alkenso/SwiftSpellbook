@@ -31,6 +31,21 @@ public protocol HTTPClientProtocol {
     func data(for request: () throws -> URLRequest, delegate: URLSessionTaskDelegate?) async throws -> HTTPResult<Data>
 }
 
+@available(macOS 12.0, iOS 15, tvOS 15.0, watchOS 8.0, *)
+extension HTTPClientProtocol {
+    public func data(for request: () throws -> URLRequest, completion: @escaping (Result<HTTPResult<Data>, any Error>) -> Void) {
+        let request = Result(catching: request)
+        Task {
+            do {
+                let result = try await data(for: request.get, delegate: nil)
+                completion(.success(result))
+            } catch {
+                completion(.failure(error))
+            }
+        }
+    }
+}
+
 open class HTTPClient: HTTPClientProtocol {
     private var additionalHeaders = Synchronized<HTTPParameters<HTTPHeader>>(.unfair, .init())
     private let session: URLSession
