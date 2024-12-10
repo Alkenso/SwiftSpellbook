@@ -21,6 +21,7 @@
 //  SOFTWARE.
 
 import Foundation
+import os
 
 public protocol SpellbookLog {
     func _custom(
@@ -116,6 +117,59 @@ extension SpellbookLog {
             context: context
         )
     }
+    
+    @discardableResult
+    public func `try`<R>(
+        level: SpellbookLogLevel = .error,
+        _ message: @autoclosure () -> Any,
+        assert: Bool = false,
+        file: StaticString = #file,
+        function: StaticString = #function,
+        line: Int = #line,
+        context: Any? = nil,
+        body: () throws -> R
+    ) -> R? {
+        do {
+            return try body()
+        } catch {
+            custom(
+                level: level,
+                message: "\(message()). Error: \(error)",
+                assert: assert,
+                file: file,
+                function: function,
+                line: line,
+                context: context
+            )
+            return nil
+        }
+    }
+    
+    @discardableResult
+    public func `try`<R>(
+        level: SpellbookLogLevel = .error,
+        assert: Bool = false,
+        file: StaticString = #file,
+        function: StaticString = #function,
+        line: Int = #line,
+        context: Any? = nil,
+        body: () throws -> R
+    ) -> R? {
+        do {
+            return try body()
+        } catch {
+            custom(
+                level: level,
+                message: "\(error)",
+                assert: assert,
+                file: file,
+                function: function,
+                line: line,
+                context: context
+            )
+            return nil
+        }
+    }
 }
 
 public enum SpellbookLogLevel: Int, Hashable {
@@ -164,6 +218,7 @@ public struct SpellbookLogRecord {
     public var file: StaticString
     public var function: StaticString
     public var line: Int
+    public var date: Date
     public var context: Any?
     
     public init(
@@ -173,6 +228,7 @@ public struct SpellbookLogRecord {
         file: StaticString,
         function: StaticString,
         line: Int,
+        date: Date,
         context: Any?
     ) {
         self.source = source
@@ -181,8 +237,24 @@ public struct SpellbookLogRecord {
         self.file = file
         self.function = function
         self.line = line
+        self.date = date
         self.context = context
     }
+}
+
+extension SpellbookLogRecord {
+    public var fullDescription: String {
+        let date = Self.dateFormatter.string(from: date)
+        let file = String("\(file)").lastPathComponent.deletingPathExtension
+        return "\(date) \(file).\(function):\(line) [\(source)] \(level.description.uppercased()): \(message)"
+    }
+    
+    private static let dateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSSSSS ZZZZZ"
+        return formatter
+    }()
 }
 
 public struct SpellbookLogSource {
@@ -221,6 +293,16 @@ public struct SpellbookLogDestination {
     public init(minLevel: SpellbookLogLevel = .info, log: @escaping (SpellbookLogRecord) -> Void) {
         self.log = log
         self.minLevel = minLevel
+    }
+}
+
+extension SpellbookLogDestination {
+    public static func print(minLevel: SpellbookLogLevel = .info) -> Self {
+        .init(minLevel: minLevel) { Swift.print($0.fullDescription) }
+    }
+    
+    public static func nslog(minLevel: SpellbookLogLevel = .info) -> Self {
+        .init(minLevel: minLevel) { NSLog($0.fullDescription) }
     }
 }
 
@@ -318,7 +400,7 @@ extension SpellbookLogger: SpellbookLog {
         
         let record = SpellbookLogRecord(
             source: source, level: level, message: "\(message())",
-            file: file, function: function, line: line, context: context
+            file: file, function: function, line: line, date: Date(), context: context
         )
         queue.async {
             destinations.forEach { $0.log(record) }

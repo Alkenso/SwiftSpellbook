@@ -139,4 +139,24 @@ final class SBLogTests: XCTestCase {
         
         waitForExpectations(timeout: 0.1)
     }
+    
+    func test_try() {
+        let log = SpellbookLogger(name: "test")
+        let exp = expectation(description: "logged")
+        exp.expectedFulfillmentCount = 2
+        var records: [SpellbookLogRecord] = []
+        log.destinations.append(.init {
+            records.append($0)
+            exp.fulfill()
+        })
+        
+        log.try(level: .error, "foo failed") { throw TestError("foo error") }
+        XCTAssertEqual(log.try(level: .warning, "bar not failed") { 10 }, 10)
+        log.try { throw TestError("baz error") }
+        
+        waitForExpectations()
+        
+        XCTAssertTrue(records.contains { $0.message == "foo failed. Error: foo error" })
+        XCTAssertTrue(records.contains { $0.message == "baz error" })
+    }
 }

@@ -22,7 +22,7 @@
 
 import Foundation
 
-public struct TestError: Error {
+public struct TestError: Error, CustomStringConvertible {
     public let description: String
     public let underlyingError: Error?
     
