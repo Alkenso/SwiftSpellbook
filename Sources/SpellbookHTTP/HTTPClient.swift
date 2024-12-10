@@ -24,7 +24,14 @@ import SpellbookFoundation
 
 import Foundation
 
-open class HTTPClient {
+public protocol HTTPClientProtocol {
+    func data(for request: () throws -> URLRequest, completion: @escaping (Result<HTTPResult<Data>, Error>) -> Void)
+    
+    @available(macOS 12.0, iOS 15, tvOS 15.0, watchOS 8.0, *)
+    func data(for request: () throws -> URLRequest, delegate: URLSessionTaskDelegate?) async throws -> HTTPResult<Data>
+}
+
+open class HTTPClient: HTTPClientProtocol {
     private var additionalHeaders = Synchronized<HTTPParameters<HTTPHeader>>(.unfair, .init())
     private let session: URLSession
     
@@ -35,14 +42,11 @@ open class HTTPClient {
     public func updateHeaders(_ update: (inout HTTPParameters<HTTPHeader>) -> Void) {
         additionalHeaders.write(update)
     }
-}
- 
-extension HTTPClient {
-    public func data(for request: HTTPRequest, completion: @escaping (Result<HTTPResult<Data>, Error>) -> Void) {
-        data(for: try request.urlRequest(), completion: completion)
-    }
     
-    public func data(for request: @autoclosure () throws -> URLRequest, completion: @escaping (Result<HTTPResult<Data>, Error>) -> Void) {
+    public func data(
+        for request: () throws -> URLRequest,
+        completion: @escaping (Result<HTTPResult<Data>, Error>) -> Void
+    ) {
         var urlRequest: URLRequest
         do {
             urlRequest = try request()
@@ -69,22 +73,45 @@ extension HTTPClient {
         }.resume()
     }
     
+    @available(macOS 12.0, iOS 15, tvOS 15.0, watchOS 8.0, *)
+    public func data(
+        for request: () throws -> URLRequest,
+        delegate: URLSessionTaskDelegate? = nil
+    ) async throws -> HTTPResult<Data> {
+        let (data, response) = try await session.data(for: request(), delegate: delegate)
+        guard let response = response as? HTTPURLResponse else {
+            throw URLError.badResponseType(response)
+        }
+        
+        return .init(value: data, response: response)
+    }
+}
+ 
+extension HTTPClientProtocol {
+    public func data(for request: HTTPRequest, completion: @escaping (Result<HTTPResult<Data>, Error>) -> Void) {
+        data(for: request.urlRequest, completion: completion)
+    }
+    
+    func data(for request: URLRequest, completion: @escaping (Result<HTTPResult<Data>, Error>) -> Void) {
+        data(for: { request }, completion: completion)
+    }
+    
     public func object<T>(
         _ type: T.Type = T.self,
         for request: HTTPRequest,
         decoder: ObjectDecoder<T>,
         completion: @escaping (Result<HTTPResult<T>, Error>) -> Void
     ) {
-        object(type, for: try request.urlRequest(), decoder: decoder, completion: completion)
+        object(type, for: request.urlRequest, decoder: decoder, completion: completion)
     }
     
     public func object<T>(
         _ type: T.Type = T.self,
-        for request: @autoclosure () throws -> URLRequest,
+        for request: () throws -> URLRequest,
         decoder: ObjectDecoder<T>,
         completion: @escaping (Result<HTTPResult<T>, Error>) -> Void
     ) {
-        data(for: try request()) {
+        data(for: request) {
             completion($0.flatMap { dataResult in
                 Self.decodeResponse(dataResult.value, decoder: decoder)
                     .map { .init(value: $0, response: dataResult.response) }
@@ -92,7 +119,69 @@ extension HTTPClient {
         }
     }
     
-    private static func decodeResponse<T>(_ data: Data, decoder: ObjectDecoder<T>) -> Result<T, Error> {
+    public func object<T>(
+        _ type: T.Type = T.self,
+        for request: URLRequest,
+        decoder: ObjectDecoder<T>,
+        completion: @escaping (Result<HTTPResult<T>, Error>) -> Void
+    ) {
+        data(for: request) {
+            completion($0.flatMap { dataResult in
+                Self.decodeResponse(dataResult.value, decoder: decoder)
+                    .map { .init(value: $0, response: dataResult.response) }
+            })
+        }
+    }
+}
+
+@available(macOS 12.0, iOS 15, tvOS 15.0, watchOS 8.0, *)
+extension HTTPClientProtocol {
+    public func data(
+        for request: HTTPRequest,
+        delegate: URLSessionTaskDelegate? = nil
+    ) async throws -> HTTPResult<Data> {
+        try await data(for: request.urlRequest, delegate: delegate)
+    }
+    
+    public func data(
+        for request: URLRequest,
+        delegate: URLSessionTaskDelegate? = nil
+    ) async throws -> HTTPResult<Data> {
+        try await data(for: { request }, delegate: delegate)
+    }
+    
+    public func object<T>(
+        for request: HTTPRequest,
+        delegate: URLSessionTaskDelegate? = nil,
+        decoder: ObjectDecoder<T>
+    ) async throws -> HTTPResult<T> {
+        try await object(for: request.urlRequest, delegate: delegate, decoder: decoder)
+    }
+    
+    public func object<T>(
+        for request: URLRequest,
+        delegate: URLSessionTaskDelegate? = nil,
+        decoder: ObjectDecoder<T>
+    ) async throws -> HTTPResult<T> {
+        try await object(for: { request }, delegate: delegate, decoder: decoder)
+    }
+    
+    public func object<T>(
+        for request: () throws -> URLRequest,
+        delegate: URLSessionTaskDelegate? = nil,
+        decoder: ObjectDecoder<T>
+    ) async throws -> HTTPResult<T> {
+        let dataResult = try await data(for: request, delegate: delegate)
+        let object = try Self.decodeResponse(dataResult.value, decoder: decoder).get()
+        return .init(value: object, response: dataResult.response)
+    }
+}
+
+extension HTTPClientProtocol {
+    private static func decodeResponse<T>(
+        _ data: Data,
+        decoder: ObjectDecoder<T>
+    ) -> Result<T, Error> {
         do {
             let object = try decoder.decode(T.self, data)
             return .success(object)
@@ -101,48 +190,11 @@ extension HTTPClient {
         }
     }
     
-    private static func decodeResponse(_ data: Data, decoder: ObjectDecoder<EmptyCodable>) -> Result<EmptyCodable, Error> {
+    private static func decodeResponse(
+        _ data: Data,
+        decoder: ObjectDecoder<EmptyCodable>
+    ) -> Result<EmptyCodable, Error> {
         .success(.init())
-    }
-}
-
-@available(macOS 12.0, iOS 15, tvOS 15.0, watchOS 8.0, *)
-extension HTTPClient {
-    public func data(
-        for request: HTTPRequest,
-        delegate: URLSessionTaskDelegate? = nil
-    ) async throws -> HTTPResult<Data> {
-        try await data(for: try request.urlRequest(), delegate: delegate)
-    }
-    
-    public func data(
-        for request: URLRequest,
-        delegate: URLSessionTaskDelegate? = nil
-    ) async throws -> HTTPResult<Data> {
-        let (data, response) = try await session.data(for: request, delegate: delegate)
-        guard let response = response as? HTTPURLResponse else {
-            throw URLError.badResponseType(response)
-        }
-        
-        return .init(value: data, response: response)
-    }
-    
-    public func object<T>(
-        for request: HTTPRequest,
-        delegate: URLSessionTaskDelegate? = nil,
-        decoder: ObjectDecoder<T>
-    ) async throws -> HTTPResult<T> {
-        try await object(for: try request.urlRequest(), delegate: delegate, decoder: decoder)
-    }
-    
-    public func object<T>(
-        for request: URLRequest,
-        delegate: URLSessionTaskDelegate? = nil,
-        decoder: ObjectDecoder<T>
-    ) async throws -> HTTPResult<T> {
-        let dataResult = try await data(for: request, delegate: delegate)
-        let object = try Self.decodeResponse(dataResult.value, decoder: decoder).get()
-        return .init(value: object, response: dataResult.response)
     }
 }
 
