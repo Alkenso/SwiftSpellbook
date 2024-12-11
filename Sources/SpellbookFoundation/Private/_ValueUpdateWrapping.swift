@@ -32,6 +32,12 @@ extension _ValueUpdateWrapping {
         _updateValue { $0.append(element) }
     }
     
+    public func append<S>(
+        contentsOf newElements: S
+    ) where Value: RangeReplaceableCollection, S: Sequence, Value.Element == S.Element {
+        _updateValue { $0.append(contentsOf: newElements) }
+    }
+    
     public func removeAll(where shouldBeRemoved: (Value.Element) -> Bool) where Value: RangeReplaceableCollection {
         _updateValue { $0.removeAll(where: shouldBeRemoved) }
     }
