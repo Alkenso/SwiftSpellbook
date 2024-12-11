@@ -29,13 +29,14 @@ let package = Package(
     targets: [
         .target(
             name: "SpellbookFoundation",
-            dependencies: ["SpellbookFoundationObjC"],
+            dependencies: ["_SpellbookFoundationObjC"],
             linkerSettings: [
                 .linkedLibrary("bsm", .when(platforms: [.macOS])),
             ]
         ),
         .target(
-            name: "SpellbookFoundationObjC",
+            name: "_SpellbookFoundationObjC",
+            path: "Sources/SpellbookFoundationObjC",
             publicHeadersPath: "."
         ),
         .target(
