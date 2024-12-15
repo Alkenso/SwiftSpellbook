@@ -53,6 +53,22 @@ class ArrayTests: XCTestCase {
 }
 
 class SequenceTests: XCTestCase {
+    func test_keyedMap() {
+        XCTAssertEqual(
+            ["q", "www", "ee"].keyedMap(\.count),
+            [KeyValue(1, "q"), KeyValue(3, "www"), KeyValue(2, "ee")]
+        )
+        
+        struct Foo: Equatable {
+            var val: String
+            var opt: Int?
+        }
+        XCTAssertEqual(
+            [Foo(val: "q", opt: 1), Foo(val: "w", opt: nil), Foo(val: "e", opt: 2)].keyedCompactMap(\.opt),
+            [KeyValue(1, Foo(val: "q", opt: 1)), KeyValue(2, Foo(val: "e", opt: 2))]
+        )
+    }
+    
     func test_mutatingMap() {
         XCTAssertEqual((1...3).mutatingMap { $0 += 5 }, [6, 7, 8])
     }

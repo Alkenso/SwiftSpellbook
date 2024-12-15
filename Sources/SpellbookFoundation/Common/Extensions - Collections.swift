@@ -147,6 +147,37 @@ extension Array {
 // MARK: - Sequence
 
 extension Sequence {
+    /// Returns an array containing the pairs of the sequence's elements as `value` and
+    /// results of mapping the given closure over the sequence's elements as `key`.
+    ///
+    /// - Parameter transform: A mapping closure. `transform` accepts an
+    ///   element of this sequence as its parameter and returns a transformed
+    ///   value that acts as `key` of resulting array.
+    /// - Returns: An array containing key-value pairs of the elements of this sequence.
+    ///
+    /// - Complexity: O(*n*), where *n* is the length of the sequence.
+    public func keyedMap<Key>(_ transform: (Element) -> Key) -> [KeyValue<Key, Element>] {
+        map { KeyValue(transform($0), $0) }
+    }
+    
+    /// Returns an array containing the non-`nil` pairs of the sequence's elements as `value` and
+    /// results of mapping the given closure over the sequence's elements as `key`.
+    ///
+    /// Use this method to receive an array of non-optional values when your
+    /// transformation produces an optional value.
+    ///
+    /// - Parameter transform: A mapping closure. `transform` accepts an
+    ///   element of this sequence as its parameter and returns a transformed
+    ///   value that acts as `key` of resulting array or `nil` to exclude from results.
+    /// - Returns: An array containing non-optional key-value pairs of the elements of this sequence.
+    ///
+    /// - Complexity: O(*n*), where *n* is the length of the sequence.
+    public func keyedCompactMap<Key>(_ transform: (Element) -> Key?) -> [KeyValue<Key, Element>] {
+        compactMap { element in transform(element).flatMap { KeyValue($0, element) } }
+    }
+}
+
+extension Sequence {
     public func mutatingMap(mutate: (inout Element) throws -> Void) rethrows -> [Element] {
         try map {
             var mutated = $0
