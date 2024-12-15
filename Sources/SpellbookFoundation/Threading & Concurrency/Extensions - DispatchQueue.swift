@@ -80,6 +80,23 @@ extension DispatchQueue {
         }
         schedule(firstRun: true)
     }
+    
+    public func asyncPeriodically(
+        interval: TimeInterval,
+        immediately: Bool,
+        qos: DispatchQoS = .unspecified,
+        flags: DispatchWorkItemFlags = [],
+        execute: @escaping (@escaping () -> Void) -> Void
+    ) {
+        func schedule(firstRun: Bool) {
+            asyncAfter(delay: (firstRun && immediately) ? 0 : interval, qos: qos, flags: flags) {
+                execute {
+                    schedule(firstRun: false)
+                }
+            }
+        }
+        schedule(firstRun: true)
+    }
 }
 
 extension DispatchQueue {

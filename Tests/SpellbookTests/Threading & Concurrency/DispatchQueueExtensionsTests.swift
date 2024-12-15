@@ -19,4 +19,21 @@ class DispatchQueueExtensionsTests: XCTestCase {
         XCTAssertEqual(count, limit)
         waitForExpectations()
     }
+    
+    func test_asyncPeriodically_async() {
+        var count: Int = 0
+        let limit = 5
+        let exp = expectation(description: "Repeated action")
+        exp.expectedFulfillmentCount = limit
+        DispatchQueue.global().asyncPeriodically(interval: 0.01, immediately: true) {
+            count += 1
+            exp.fulfill()
+            if count < limit {
+                $0()
+            }
+        }
+        Thread.sleep(forTimeInterval: 0.1 * Self.waitRate)
+        XCTAssertEqual(count, limit)
+        waitForExpectations()
+    }
 }
