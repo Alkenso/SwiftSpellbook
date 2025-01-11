@@ -79,8 +79,8 @@ extension ValueObserving {
 }
 
 extension ValueObserving {
-    public var publisher: any Publisher<(Value, Any?), Never> {
-        ValueObservingPublisher(observer: self)
+    public var publisher: AnyPublisher<(Value, Any?), Never> {
+        ValueObservingPublisher(observer: self).eraseToAnyPublisher()
     }
 }
 
