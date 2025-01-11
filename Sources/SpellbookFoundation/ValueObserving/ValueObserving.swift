@@ -69,7 +69,7 @@ extension ValueObserving {
 }
 
 extension ValueObserving {
-    public func receive(on queue: DispatchQueue) -> any ValueObserving<Value> {
+    public func receive(on queue: DispatchQueue) -> AnyValueObserving<Value> {
         AnyValueObserving { suppressInitialNotify, receiveValue in
             self.subscribe(suppressInitialNotify: suppressInitialNotify) { value, context in
                 queue.async { receiveValue(value, context) }
@@ -84,10 +84,14 @@ extension ValueObserving {
     }
 }
 
-private struct AnyValueObserving<T>: ValueObserving {
-    let subscribe: (Bool, @escaping (T, Any?) -> Void) -> SubscriptionToken
+public struct AnyValueObserving<T>: ValueObserving {
+    public let subscribe: (Bool, @escaping (T, Any?) -> Void) -> SubscriptionToken
     
-    func subscribe(suppressInitialNotify: Bool, receiveValue: @escaping (T, Any?) -> Void) -> SubscriptionToken {
+    public init(subscribe: @escaping (Bool, @escaping (T, Any?) -> Void) -> SubscriptionToken) {
+        self.subscribe = subscribe
+    }
+    
+    public func subscribe(suppressInitialNotify: Bool, receiveValue: @escaping (T, Any?) -> Void) -> SubscriptionToken {
         subscribe(suppressInitialNotify, receiveValue)
     }
 }
