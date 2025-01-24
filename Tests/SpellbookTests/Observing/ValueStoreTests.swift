@@ -266,4 +266,18 @@ class StoreTests: XCTestCase {
         XCTAssertEqual(firstStore.value, 10)
         s2.signal()
     }
+    
+    func test_observableObject() {
+        let store = ValueStore(initialValue: 0)
+        let observableObject = store.observableObject
+        XCTAssertEqual(observableObject.value, 0)
+        
+        store.update(10)
+        XCTAssertEqual(store.value, 10)
+        XCTAssertEqual(observableObject.value, 10)
+        
+        observableObject.value = 20
+        XCTAssertEqual(store.value, 20)
+        XCTAssertEqual(observableObject.value, 20)
+    }
 }

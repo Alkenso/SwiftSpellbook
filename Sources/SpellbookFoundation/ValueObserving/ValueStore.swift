@@ -20,6 +20,7 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+import Combine
 import Foundation
 
 @propertyWrapper
@@ -221,6 +222,27 @@ extension ValueStore {
     
     public var view: ValueView<Value> {
         .init { self.value }
+    }
+}
+
+extension ValueStore {
+    public class ObservableObject: Foundation.ObservableObject {
+        private var cancellables: Set<AnyCancellable> = []
+        
+        public init(store: ValueStore<Value>) {
+            self.store = store
+            self.value = store.value
+            let token = UUID()
+            store.subscribe { [weak self] in if ($1 as? UUID) != token { self?.value = $0 } }.store(in: &cancellables)
+            $value.dropFirst().sink { store.update($0, context: token) }.store(in: &cancellables)
+        }
+        
+        @Published public var value: Value
+        public let store: ValueStore<Value>
+    }
+    
+    public var observableObject: ValueStore.ObservableObject {
+        .init(store: self)
     }
 }
 
