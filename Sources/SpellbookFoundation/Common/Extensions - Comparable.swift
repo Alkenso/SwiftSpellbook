@@ -23,7 +23,7 @@
 import Foundation
 
 @propertyWrapper
-public struct Clamping<Value: Comparable> {
+public struct Clamped<Value: Comparable> {
     var value: Value
     let range: ClosedRange<Value>
     
