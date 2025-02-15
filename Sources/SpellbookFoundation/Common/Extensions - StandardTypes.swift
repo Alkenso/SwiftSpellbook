@@ -137,7 +137,14 @@ extension URL {
         guard let url = Self(string: "\(staticString)") else {
             preconditionFailure("Invalid static URL string: \(staticString)")
         }
-        
+        self = url
+    }
+    
+    /// Initialized URL with string, throwing error if string is not valid URL string.
+    public init(validating string: String) throws {
+        guard let url = Self(string: string) else {
+            throw URLError(.badURL, userInfo: [NSURLErrorFailingURLStringErrorKey: string])
+        }
         self = url
     }
 }
