@@ -20,6 +20,7 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+import SpellbookFoundation
 import XCTest
 
 extension XCTestCase {
@@ -45,6 +46,14 @@ extension XCTestCase {
     
     public var testBundle: Bundle {
         Self.testBundle
+    }
+    
+    public static var testTemporaryDirectory: TemporaryDirectory {
+        .init(name: testBundle.bundleIdentifier ?? testBundle.bundlePath.lastPathComponent)
+    }
+    
+    public var testTemporaryDirectory: TemporaryDirectory {
+        Self.testTemporaryDirectory
     }
     
     @discardableResult
