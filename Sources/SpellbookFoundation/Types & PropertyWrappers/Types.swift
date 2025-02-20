@@ -34,8 +34,7 @@ public struct Change<T> {
 
 extension Change where T: Equatable {
     public init?(old: T, new: T) {
-        guard old != new else { return nil }
-        self.init(old, new)
+        self.init(old: old, new: new, isEqual: ==)
     }
     
     public func map<U: Equatable>(_ transform: (T) throws -> U) rethrows -> Change<U>? {
@@ -44,6 +43,11 @@ extension Change where T: Equatable {
 }
 
 extension Change {
+    public init?(old: T, new: T, isEqual: (T, T) -> Bool) {
+        guard !isEqual(old, new) else { return nil }
+        self.init(old, new)
+    }
+    
     public static func unchecked(old: T, new: T) -> Self {
         .init(old, new)
     }
