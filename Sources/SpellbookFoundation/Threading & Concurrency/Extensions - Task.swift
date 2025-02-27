@@ -20,44 +20,45 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+import Combine
 import Foundation
 
 extension Task {
     public static func runWithCompletion<R>(
         _: R.Type = R.self,
+        receiveOn queue: DispatchQueue? = nil,
         _ body: @escaping () async throws -> R,
         completion: @escaping (Result<R, Error>) -> Void
     ) where Success == Void, Failure == Never {
         Task<Void, Never> {
+            let result: Result<R, Error>
             do {
-                let result = try await body()
-                completion(.success(result))
+                result = .success(try await body())
             } catch {
-                completion(.failure(error))
+                result = .failure(error)
             }
+            queue.async { completion(result) }
         }
     }
     
     public static func runWithCompletion<R>(
+        receiveOn queue: DispatchQueue? = nil,
         _ body: @escaping () async -> R,
         completion: @escaping (R) -> Void
     ) where Success == Void, Failure == Never {
         Task<Void, Never> {
-            completion(await body())
+            let result = await body()
+            queue.async { completion(result) }
         }
     }
     
     public static func runWithCompletion(
+        receiveOn queue: DispatchQueue? = nil,
         _ body: @escaping () async throws -> Void,
         completion: @escaping (Error?) -> Void
     ) where Success == Void, Failure == Never {
-        Task<Void, Never> {
-            do {
-                try await body()
-                completion(nil)
-            } catch {
-                completion(error)
-            }
+        runWithCompletion(receiveOn: queue, body) {
+            completion($0.failure)
         }
     }
 }
@@ -83,3 +84,5 @@ extension Task where Success == Never, Failure == Never {
         try await sleep(nanoseconds: UInt64(duration) * NSEC_PER_MSEC)
     }
 }
+
+extension Task: Combine.Cancellable {}
