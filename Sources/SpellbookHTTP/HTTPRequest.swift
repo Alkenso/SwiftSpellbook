@@ -60,7 +60,7 @@ extension HTTPRequest.Body {
     private static let contentTypePlist = "application/x-apple-plist"
     private static let contentTypeJSON = "application/json"
     
-    private init<T>(value: T, encoder: ObjectEncoder<T>, contentType: String) {
+    public init<T>(value: T, encoder: ObjectEncoder<T>, contentType: String?) {
         self.init(contentType: contentType) { try encoder.encode(value) }
     }
     
@@ -76,8 +76,16 @@ extension HTTPRequest.Body {
         .init(value: obj, encoder: .json(formatting), contentType: contentTypeJSON)
     }
     
+    public static func codable<T: Encodable>(json obj: T, encoder: JSONEncoder) -> Self {
+        .init(value: obj, encoder: .json(encoder: encoder), contentType: contentTypeJSON)
+    }
+    
     public static func codable<T: Encodable>(plist obj: T, format: PropertyListSerialization.PropertyListFormat = .xml) -> Self {
         .init(value: obj, encoder: .plist(format), contentType: contentTypePlist)
+    }
+    
+    public static func codable<T: Encodable>(plist obj: T, encoder: PropertyListEncoder) -> Self {
+        .init(value: obj, encoder: .plist(encoder: encoder), contentType: contentTypePlist)
     }
     
     public static func data(_ data: Data, contentType: String?) -> Self {
