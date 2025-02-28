@@ -26,6 +26,10 @@ private class ValueWrapper<T>: ValueObserving {
 class ValueObservingTests: XCTestCase {
     private var cancellables: [AnyCancellable] = []
     
+    override func tearDown() {
+        cancellables.removeAll()
+    }
+    
     func test_receiveValue() {
         let wrapper = ValueStore(initialValue: 10)
         XCTAssertEqual(wrapper.value, 10)
@@ -60,5 +64,58 @@ class ValueObservingTests: XCTestCase {
         
         wrapper.value = 30
         XCTAssertEqual(receivedChange, .unchecked(old: 20, new: 30))
+    }
+    
+    func test_publisher() {
+        let wrapper = ValueWrapper(value: 10)
+        let exp = expectation(description: "Value published")
+        wrapper.publisher().sink {
+            XCTAssertEqual($0.0, 10)
+            exp.fulfill()
+        }.store(in: &cancellables)
+        
+        waitForExpectations()
+    }
+    
+    func test_stream() {
+        let wrapper = ValueWrapper(value: 10)
+        let exp = expectation(description: "Value async delivered")
+        Task {
+            for await value in wrapper.stream() {
+                XCTAssertEqual(value.0, 10)
+                exp.fulfill()
+            }
+        }.store(in: &cancellables)
+        
+        waitForExpectations()
+    }
+    
+    func test_stream_suppressInitial() {
+        let wrapper = ValueWrapper(value: 10)
+        let exp = expectation(description: "Value async delivered")
+        let stream = wrapper.stream(suppressInitialNotify: true)
+        Task {
+            for await value in stream {
+                XCTAssertEqual(value.0, 20)
+                exp.fulfill()
+            }
+        }.store(in: &cancellables)
+        wrapper.value = 20
+        
+        waitForExpectations()
+    }
+    
+    func test_stream_suppressInitial_noValue() {
+        let wrapper = ValueWrapper(value: 10)
+        let exp = expectation(description: "No value async delivered")
+        exp.isInverted = true
+        let stream = wrapper.stream(suppressInitialNotify: true)
+        Task {
+            for await _ in stream {
+                exp.fulfill()
+            }
+        }.store(in: &cancellables)
+        
+        waitForExpectations(timeout: 0.05)
     }
 }

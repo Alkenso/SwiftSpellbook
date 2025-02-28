@@ -78,12 +78,6 @@ extension ValueObserving {
     }
 }
 
-extension ValueObserving {
-    public var publisher: AnyPublisher<(Value, Any?), Never> {
-        ValueObservingPublisher(observer: self).eraseToAnyPublisher()
-    }
-}
-
 public struct AnyValueObserving<T>: ValueObserving {
     public let subscribe: (Bool, @escaping (T, Any?) -> Void) -> SubscriptionToken
     
@@ -96,18 +90,47 @@ public struct AnyValueObserving<T>: ValueObserving {
     }
 }
 
+extension ValueObserving {
+    public func stream(suppressInitialNotify: Bool = false) -> AsyncStream<(Value, Any?)> {
+        .init { continuation in
+            let subscription = subscribe(suppressInitialNotify: suppressInitialNotify) { continuation.yield(($0, $1)) }
+            continuation.onTermination = { _ in subscription.cancel() }
+        }
+    }
+    
+    public func valueStream(suppressInitialNotify: Bool = false) -> AsyncStream<Value> {
+        .init { continuation in
+            let subscription = subscribe(suppressInitialNotify: suppressInitialNotify) { continuation.yield($0) }
+            continuation.onTermination = { _ in subscription.cancel() }
+        }
+    }
+}
+
+extension ValueObserving {
+    public func publisher(suppressInitialNotify: Bool = false) -> AnyPublisher<(Value, Any?), Never> {
+        ValueObservingPublisher(observer: self, suppressInitialNotify: suppressInitialNotify)
+            .buffer(size: 1, prefetch: .byRequest, whenFull: .dropOldest)
+            .eraseToAnyPublisher()
+    }
+    
+    public func valuePublisher(suppressInitialNotify: Bool = false) -> AnyPublisher<Value, Never> {
+        publisher(suppressInitialNotify: suppressInitialNotify).map(\.0).eraseToAnyPublisher()
+    }
+}
+
 private struct ValueObservingPublisher<Value>: Publisher {
     typealias Output = (Value, Any?)
     typealias Failure = Never
     
     let observer: any ValueObserving<Value>
+    let suppressInitialNotify: Bool
     
     func receive<S>(subscriber: S) where S: Subscriber, Failure == S.Failure, Output == S.Input {
         let subscription = ProxySubscription()
         subscriber.receive(subscription: subscription)
         
         subscription.onCancel = { [weak subscription] in subscription?.context = nil }
-        subscription.context = observer.subscribe { value, context in
+        subscription.context = observer.subscribe(suppressInitialNotify: suppressInitialNotify) { value, context in
             _ = subscriber.receive((value, context))
         }
     }
