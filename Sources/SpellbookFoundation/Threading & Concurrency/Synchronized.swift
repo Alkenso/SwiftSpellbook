@@ -130,6 +130,10 @@ extension Synchronized {
 }
 
 extension Synchronized: _ValueUpdateWrapping {
+    public func _readValue<R>(body: (Value) -> R) -> R {
+        read(body)
+    }
+    
     public func _updateValue<R>(body: (inout Value) -> R) -> R {
         write(body)
     }

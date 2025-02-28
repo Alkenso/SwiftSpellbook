@@ -22,8 +22,9 @@
 
 import Foundation
 
-public protocol _ValueUpdateWrapping {
+public protocol _ValueUpdateWrapping: AnyObject {
     associatedtype Value
+    @_spi(Private) func _readValue<R>(body: (Value) -> R) -> R
     @_spi(Private) func _updateValue<R>(body: (inout Value) -> R) -> R
 }
 
@@ -88,6 +89,11 @@ extension _ValueUpdateWrapping {
 }
  
 extension _ValueUpdateWrapping {
+    public subscript<Key: Hashable, Element>(key: Key) -> Element? where Value == [Key: Element] {
+        get { _readValue { $0[key] } }
+        set { _updateValue { $0[key] = newValue } }
+    }
+    
     public func popFirst<Key: Hashable, Element>() -> Value.Element? where Value == [Key: Element] {
         _updateValue { $0.popFirst() }
     }
