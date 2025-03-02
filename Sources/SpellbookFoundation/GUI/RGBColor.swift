@@ -9,7 +9,7 @@ import CoreGraphics
 
 #if canImport(CoreGraphics)
 
-public struct RGBColor: Hashable, Codable {
+public struct RGBColor: Hashable, Codable, ValueBuilder {
     public var red: CGFloat
     public var green: CGFloat
     public var blue: CGFloat
@@ -83,6 +83,27 @@ extension RGBColor {
     }
 }
 
+extension RGBColor {
+    public static func random(
+        red: ClosedRange<CGFloat> = 0...1,
+        green: ClosedRange<CGFloat> = 0...1,
+        blue: ClosedRange<CGFloat> = 0...1
+    ) -> RGBColor {
+        .init(red: .random(in: red), green: .random(in: green), blue: .random(in: blue))
+    }
+    
+    public static let white = RGBColor(red: 1, green: 1, blue: 1)
+    public static let black = RGBColor(red: 0, green: 0, blue: 0)
+    public static func gray(_ value: CGFloat) -> RGBColor { .init(red: value, green: value, blue: value) }
+    
+    public func emulatingOpacity(_ opacity: CGFloat) -> RGBColor {
+        let newR = red * opacity + (1 - opacity)
+        let newG = green * opacity + (1 - opacity)
+        let newB = blue * opacity + (1 - opacity)
+        return .init(red: newR, green: newG, blue: newB)
+    }
+}
+
 #if canImport(AppKit)
 
 import AppKit
@@ -111,15 +132,5 @@ extension RGBColor {
 }
 
 #endif
-
-extension RGBColor {
-    public static func random(
-        red: ClosedRange<CGFloat> = 0...1,
-        green: ClosedRange<CGFloat> = 0...1,
-        blue: ClosedRange<CGFloat> = 0...1
-    ) -> RGBColor {
-        .init(red: .random(in: red), green: .random(in: green), blue: .random(in: blue))
-    }
-}
 
 #endif
