@@ -22,6 +22,37 @@
 
 import Foundation
 
+// MARK: - SBPredicate
+
+public struct SBPredicate<Value, Failure: Error> {
+    public var evaluate: (Value) throws(Failure) -> Bool
+    
+    public init(_ evaluate: @escaping (Value) throws(Failure) -> Bool) {
+        self.evaluate = evaluate
+    }
+    
+    public static func `where`(_ predicate: @escaping (Value) throws(Failure) -> Bool) -> Self {
+        .init(predicate)
+    }
+    
+    public var negated: Self {
+        .init { (value) throws(Failure) -> Bool in try evaluate(value) }
+    }
+}
+
+extension SBPredicate where Failure == Never {
+    public static func equals(to value: Value) -> Self where Value: Equatable {
+        .init { $0 == value }
+    }
+    
+    public static func equals<Property: Equatable>(
+        at keyPath: KeyPath<Value, Property>,
+        to value: Property
+    ) -> Self {
+        .init { $0[keyPath: keyPath] == value }
+    }
+}
+
 // MARK: - Dictionary
 
 extension Dictionary {
@@ -81,20 +112,50 @@ extension Dictionary {
     }
     
     /// Removes the all elements from the array and returns them.
-    public mutating func popAll(where: (Element) -> Bool) -> Self {
+    public mutating func popAll(_ predicate: SBPredicate<Element, Never>) -> Self {
         guard !isEmpty else { return [:] }
         var removed: [Key: Value] = [:]
         for element in self {
-            if `where`(element) {
+            if predicate.evaluate(element) {
                 removeValue(forKey: element.key)
                 removed[element.key] = element.value
             }
         }
         return removed
     }
+    
+    /// Removes the all elements from the array and returns them.
+    public mutating func popAll(where predicate: (Element) -> Bool) -> Self {
+        _withoutActuallyEscaping(predicate) { popAll($0) }
+    }
 }
 
 extension Dictionary {
+    /// Returns a new dictionary containing the key-value pairs of the dictionary
+    /// that satisfy the given predicate.
+    /// Collects unsatisfied elements into `remaining` dictionary.
+    ///
+    /// - Parameter isIncluded: A predicate that takes a key-value pair as its
+    ///   argument and returns a Boolean value indicating whether the pair
+    ///   should be included in the returned dictionary.
+    /// - Parameter remaining: A dictionary to collect elements that are
+    ///   not included into returned dictionary.
+    /// - Returns: A dictionary of the key-value pairs that `isIncluded` allows.
+    public func filter<Failure>(
+        remaining: inout [Key: Value],
+        _ isIncluded: SBPredicate<Element, Failure>
+    ) throws(Failure) -> [Key: Value] {
+        var filtered: [Key: Value] = [:]
+        for (key, value) in self {
+            if try isIncluded.evaluate((key, value)) {
+                filtered[key] = value
+            } else {
+                remaining[key] = value
+            }
+        }
+        return filtered
+    }
+    
     /// Returns a new dictionary containing the key-value pairs of the dictionary
     /// that satisfy the given predicate.
     /// Collects unsatisfied elements into `remaining` dictionary.
@@ -106,15 +167,7 @@ extension Dictionary {
     ///   not included into returned dictionary.
     /// - Returns: A dictionary of the key-value pairs that `isIncluded` allows.
     public func filter(remaining: inout [Key: Value], _ isIncluded: (Element) throws -> Bool) rethrows -> [Key: Value] {
-        var filtered: [Key: Value] = [:]
-        for (key, value) in self {
-            if try isIncluded((key, value)) {
-                filtered[key] = value
-            } else {
-                remaining[key] = value
-            }
-        }
-        return filtered
+        try withoutActuallyEscaping(isIncluded) { try filter(remaining: &remaining, .where($0)) }
     }
 }
 
@@ -156,7 +209,7 @@ extension Sequence {
     /// - Returns: An array containing key-value pairs of the elements of this sequence.
     ///
     /// - Complexity: O(*n*), where *n* is the length of the sequence.
-    public func keyedMap<Key>(_ transform: (Element) -> Key) -> [KeyValue<Key, Element>] {
+    @inlinable public func keyedMap<Key>(_ transform: (Element) -> Key) -> [KeyValue<Key, Element>] {
         map { KeyValue(transform($0), $0) }
     }
     
@@ -172,13 +225,13 @@ extension Sequence {
     /// - Returns: An array containing non-optional key-value pairs of the elements of this sequence.
     ///
     /// - Complexity: O(*n*), where *n* is the length of the sequence.
-    public func keyedCompactMap<Key>(_ transform: (Element) -> Key?) -> [KeyValue<Key, Element>] {
+    @inlinable public func keyedCompactMap<Key>(_ transform: (Element) -> Key?) -> [KeyValue<Key, Element>] {
         compactMap { element in transform(element).flatMap { KeyValue($0, element) } }
     }
 }
 
 extension Sequence {
-    public func mutatingMap(mutate: (inout Element) throws -> Void) rethrows -> [Element] {
+    @inlinable public func mutatingMap(mutate: (inout Element) throws -> Void) rethrows -> [Element] {
         try map {
             var mutated = $0
             try mutate(&mutated)
@@ -188,7 +241,7 @@ extension Sequence {
     
     /// Searches for first element that can be transformed with given predicate
     /// and returns transformed one.
-    public func firstMapped<T>(where transform: (Element) throws -> T?) rethrows -> T? {
+    @inlinable public func firstMapped<T>(where transform: (Element) throws -> T?) rethrows -> T? {
         for element in self {
             if let mapped = try transform(element) {
                 return mapped
@@ -214,6 +267,44 @@ extension Sequence {
     ///     print(longNames)
     ///     // Prints "["Vivien", "Marlon"]"
     ///
+    /// - Parameter isIncluded: A predicate that takes an element of the
+    ///   sequence as its argument and returns a Boolean value indicating
+    ///   whether the element should be included in the returned array.
+    /// - Parameter remaining: An array to collect elements that are
+    ///   not included into returned array.
+    /// - Returns: An array of the elements that `isIncluded` allowed.
+    ///
+    /// - Complexity: O(*n*), where *n* is the length of the sequence.
+    public func filter<Failure>(
+        remaining: inout [Element],
+        _ isIncluded: SBPredicate<Element, Failure>
+    ) throws(Failure) -> [Element] {
+        var filtered: [Element] = []
+        for element in self {
+            if try isIncluded.evaluate(element) {
+                filtered.append(element)
+            } else {
+                remaining.append(element)
+            }
+        }
+        return filtered
+    }
+    
+    /// Returns an array containing, in order, the elements of the sequence
+    /// that satisfy the given predicate.
+    /// Collects unsatisfied elements into `remaining` array.
+    ///
+    /// In this example, `filter(_:)` is used to include only names shorter than
+    /// five characters.
+    ///
+    ///     let cast = ["Vivien", "Marlon", "Kim", "Karl"]
+    ///     var longNames: [String] = []
+    ///     let shortNames = cast.filter(remaining: &longNames) { $0.count < 5 }
+    ///     print(shortNames)
+    ///     // Prints "["Kim", "Karl"]"
+    ///     print(longNames)
+    ///     // Prints "["Vivien", "Marlon"]"
+    ///
     /// - Parameter isIncluded: A closure that takes an element of the
     ///   sequence as its argument and returns a Boolean value indicating
     ///   whether the element should be included in the returned array.
@@ -222,21 +313,16 @@ extension Sequence {
     /// - Returns: An array of the elements that `isIncluded` allowed.
     ///
     /// - Complexity: O(*n*), where *n* is the length of the sequence.
-    public func filter(remaining: inout [Element], _ isIncluded: (Element) throws -> Bool) rethrows -> [Element] {
-        var filtered: [Element] = []
-        for element in self {
-            if try isIncluded(element) {
-                filtered.append(element)
-            } else {
-                remaining.append(element)
-            }
-        }
-        return filtered
+    @inlinable public func filter(
+        remaining: inout [Element],
+        _ isIncluded: (Element) throws -> Bool
+    ) rethrows -> [Element] {
+        try _withoutActuallyEscaping(isIncluded) { try filter(remaining: &remaining, $0) }
     }
 }
 
 extension Sequence {
-    public func sorted<T: Comparable>(by keyPath: KeyPath<Element, T>) -> [Element] {
+    @inlinable public func sorted<T: Comparable>(by keyPath: KeyPath<Element, T>) -> [Element] {
         sorted {
             let lhs = $0[keyPath: keyPath]
             let rhs = $1[keyPath: keyPath]
@@ -246,12 +332,15 @@ extension Sequence {
 }
 
 extension Sequence {
-    public func sorted(options: String.CompareOptions) -> [Element] where Element: StringProtocol {
+    @inlinable public func sorted(options: String.CompareOptions) -> [Element] where Element: StringProtocol {
         sorted { $0.compare($1, options: options) == .orderedAscending }
     }
     
-    public func sorted<T: StringProtocol>(by keyPath: KeyPath<Element, T>, options: String.CompareOptions) -> [Element] {
-        sorted { 
+    @inlinable public func sorted<T: StringProtocol>(
+        by keyPath: KeyPath<Element, T>,
+        options: String.CompareOptions
+    ) -> [Element] {
+        sorted {
             let lhs = $0[keyPath: keyPath]
             let rhs = $1[keyPath: keyPath]
             return lhs.compare(rhs, options: options) == .orderedAscending
@@ -275,7 +364,7 @@ extension Sequence {
     ///   - keyPath: Keypath used to extract the `Key` from an element of the sequence.
     /// - Returns: The final accumulated dictionary. If the sequence has no elements,
     ///   the result is `initialDictionary`.
-    public func reduce<Key: Hashable>(
+    @inlinable public func reduce<Key: Hashable>(
         into initialDictionary: [Key: Element] = [:],
         keyedBy keyPath: KeyPath<Element, Key?>
     ) -> [Key: Element] {
@@ -296,7 +385,7 @@ extension Sequence {
     ///   - keyPath: Keypath used to extract the `Key` from an element of the sequence.
     /// - Returns: The final accumulated dictionary. If the sequence has no elements,
     ///   the result is `initialDictionary`.
-    public func reduce<Key: Hashable>(
+    @inlinable public func reduce<Key: Hashable>(
         into initialDictionary: [Key: Element] = [:],
         keyedBy keyPath: KeyPath<Element, Key>
     ) -> [Key: Element] {
@@ -318,7 +407,7 @@ extension Sequence {
     ///   - extractKey: A closure that extracts the `Key` from an element of the sequence.
     /// - Returns: The final accumulated dictionary. If the sequence has no elements,
     ///   the result is `initialDictionary`.
-    public func reduce<Key: Hashable>(
+    @inlinable public func reduce<Key: Hashable>(
         into initialDictionary: [Key: Element] = [:],
         keyedBy extractKey: (Element) throws -> Key?
     ) rethrows -> [Key: Element] {
@@ -343,7 +432,7 @@ extension RangeReplaceableCollection {
     }
     
     /// Creates new collection by appending `newElement` to the end of current one.
-    public func appending(_ newElement: Element) -> Self {
+    @inlinable public func appending(_ newElement: Element) -> Self {
         var appended = Self(self)
         appended.append(newElement)
         return appended
@@ -352,22 +441,37 @@ extension RangeReplaceableCollection {
     /// Removes the first element from the array and returns it.`.
     /// If collection is empty, returns `nil`.
     /// Simply combination of `isEmpty` + `removeFirst`.
-    public mutating func popFirst() -> Element? {
+    @inlinable public mutating func popFirst() -> Element? {
         guard !isEmpty else { return nil }
         return removeFirst()
     }
     
     /// Removes all elements from the array and returns them.
-    public mutating func popAll(keepingCapacity: Bool = false) -> Self {
+    @inlinable public mutating func popAll(keepingCapacity: Bool = false) -> Self {
         defer { removeAll(keepingCapacity: keepingCapacity) }
         return Self(self)
     }
     
     /// Removes all elements from the array satisfying predicate and returns them.
-    public mutating func popAll(where: (Element) -> Bool) -> Self {
+    @inlinable public mutating func popAll(_ predicate: SBPredicate<Element, Never>) -> Self {
         var remaining: [Element] = []
-        self = Self(filter(remaining: &remaining) { !`where`($0) })
-        return Self(remaining)
+        let removed = Self(filter(remaining: &remaining, predicate))
+        self = Self(remaining)
+        return removed
+    }
+    
+    /// Removes all elements from the array satisfying predicate and returns them.
+    @inlinable public mutating func popAll(where predicate: (Element) -> Bool) -> Self {
+        _withoutActuallyEscaping(predicate) { popAll($0) }
+    }
+    
+    /// Removes and returns the first element of the collection.
+    ///
+    /// - Returns: The first element of the collection or `nil` if collection is empty.
+    @discardableResult
+    @inlinable public mutating func removeFirst<Failure>(_ predicate: SBPredicate<Element, Failure>) throws(Failure) -> Element? {
+        guard let idx = try predicate._call(firstIndex(where:)) else { return nil }
+        return remove(at: idx)
     }
     
     /// Removes and returns the first element of the collection.
@@ -375,8 +479,7 @@ extension RangeReplaceableCollection {
     /// - Returns: The first element of the collection or `nil` if collection is empty.
     @discardableResult
     public mutating func removeFirst(where predicate: (Element) throws -> Bool) rethrows -> Element? {
-        guard let idx = try firstIndex(where: predicate) else { return nil }
-        return remove(at: idx)
+        try _withoutActuallyEscaping(predicate) { try removeFirst($0) }
     }
     
     /// Returns the first index where the specified value with specific property
@@ -394,8 +497,8 @@ extension RangeReplaceableCollection {
     ///   If element with given `property` is not found in the collection, returns `nil`.
     ///
     /// - Complexity: O(*n*), where *n* is the length of the collection.
-    public func firstIndex<Property: Equatable>(at keyPath: KeyPath<Element, Property>, with property: Property) -> Index? {
-        firstIndex { $0[keyPath: keyPath] == property }
+    @inlinable public func firstIndex<Failure>(_ predicate: SBPredicate<Element, Failure>) throws(Failure) -> Index? {
+        try predicate._call(firstIndex(where:))
     }
     
     /// Returns the indices of all the elements with specific property that are equal to the given
@@ -407,11 +510,10 @@ extension RangeReplaceableCollection {
     ///
     /// - Complexity: O(*n*), where *n* is the length of the collection.
     @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
-    @inlinable public func indices<Property: Equatable>(
-        at keyPath: KeyPath<Element, Property>,
-        with property: Property
-    ) -> RangeSet<Index> {
-        indices { $0[keyPath: keyPath] == property }
+    @inlinable public func indices<Failure>(
+        _ predicate: SBPredicate<Element, Failure>
+    ) throws(Failure) -> RangeSet<Index> {
+        try predicate._call(indices(where:))
     }
     
     /// Adds a new element at the end of the array or updates the element if it exists.
@@ -424,8 +526,11 @@ extension RangeReplaceableCollection {
     ///
     /// - Complexity: O(*n*), where *n* is the length of the collection.
     @discardableResult
-    public mutating func updateFirst(_ element: Element, where predicate: (Element) throws -> Bool) rethrows -> Element? {
-        if let idx = try firstIndex(where: predicate) {
+    @inlinable public mutating func updateFirst<Failure>(
+        _ element: Element,
+        _ predicate: SBPredicate<Element, Failure>
+    ) throws(Failure) -> Element? {
+        if let idx = try predicate._call(firstIndex(where:)) {
             let oldValue = self[idx]
             replaceSubrange(idx..<index(after: idx), with: [element])
             return oldValue
@@ -438,43 +543,37 @@ extension RangeReplaceableCollection {
     /// Adds a new element at the end of the array or updates the element if it exists.
     ///
     /// - Parameter element: The element to append to or update in the array.
-    /// - Returns: Previous element existed in array or `nil` if the element was appended.
-    ///
-    /// - Complexity: O(*n*), where *n* is the length of the collection.
-    @discardableResult
-    public mutating func updateFirst(_ element: Element) -> Element? where Element: Equatable {
-        updateFirst(element) { $0 == element }
-    }
-    
-    /// Adds a new element at the end of the array or updates the element if it exists.
-    ///
-    /// - Parameter element: The element to append to or update in the array.
-    /// - Parameter keyPath: A KeyPath to property of the element to search for in the collection.
-    /// - Parameter property: A property of the element to search for in the collection.
-    /// - Returns: Previous element existed in array or `nil` if new element was appended.
-    ///
-    /// - Complexity: O(*n*), where *n* is the length of the collection.
-    @discardableResult
-    public mutating func updateFirst<Property: Equatable>(
-        _ element: Element,
-        by keyPath: KeyPath<Element, Property>,
-        with property: Property
-    ) -> Element? {
-        updateFirst(element) { $0[keyPath: keyPath] == property }
-    }
-    
-    /// Adds a new element at the end of the array or updates the element if it exists.
-    ///
-    /// - Parameter element: The element to append to or update in the array.
     /// - Parameter keyPath: A KeyPath to property of the element to search for in the collection.
     /// - Returns: Previous element existed in array or `nil` if new element was appended.
     ///
     /// - Complexity: O(*n*), where *n* is the length of the collection.
     @discardableResult
-    public mutating func updateFirst<Property: Equatable>(
+    @inlinable public mutating func updateFirst<Property: Equatable>(
         _ element: Element,
         by keyPath: KeyPath<Element, Property>
     ) -> Element? {
-        updateFirst(element) { $0[keyPath: keyPath] == element[keyPath: keyPath] }
+        updateFirst(element, .equals(at: keyPath, to: element[keyPath: keyPath]))
+    }
+}
+
+@usableFromInline
+internal func _withoutActuallyEscaping<Value, Failure: Error, R>(
+    _ predicate: (Value) throws(Failure) -> Bool,
+    do body: (SBPredicate<Value, Failure>) throws(Failure) -> R
+) throws(Failure) -> R {
+    try withoutActuallyEscaping(consume predicate) { (predicate) throws(Failure) -> R in
+        try body(.where(predicate))
+    }
+}
+
+extension SBPredicate {
+    /// Use with care only in functions that don't `rethrow` but `throws(Failure)`.
+    @usableFromInline
+    internal func _call<R>(_ body: ((Value) throws(Failure) -> Bool) throws -> R) throws(Failure) -> R {
+        do {
+            return try body(evaluate)
+        } catch {
+            throw error as! Failure
+        }
     }
 }
