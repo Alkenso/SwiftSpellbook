@@ -378,4 +378,39 @@ extension RangeReplaceableCollection {
         guard let idx = try firstIndex(where: predicate) else { return nil }
         return remove(at: idx)
     }
+    
+    /// Returns the first index where the specified value with specific property
+    /// appears in the collection.
+    ///
+    /// - Parameter property: A property indicates whether the element
+    ///   represents a match.
+    /// - Returns: The index of the first element for which `property` matches
+    ///   `true`. If no elements in the collection satisfy the given predicate,
+    ///   returns `nil`.
+    ///
+    /// - Parameter property: A property of the element to search for in the collection.
+    /// - Parameter keyPath: A KeyPath to property of the element to search for in the collection.
+    /// - Returns: The first index where element with given `property` is found.
+    ///   If element with given `property` is not found in the collection, returns `nil`.
+    ///
+    /// - Complexity: O(*n*), where *n* is the length of the collection.
+    public func firstIndex<Property: Equatable>(with property: Property, at keyPath: KeyPath<Element, Property>) -> Index? {
+        firstIndex { $0[keyPath: keyPath] == property }
+    }
+    
+    /// Returns the indices of all the elements with specific property that are equal to the given
+    /// `property`.
+    ///
+    /// - Parameter element: A property of the element to look for in the collection.
+    /// - Parameter keyPath: A KeyPath to property of the element to look for in the collection.
+    /// - Returns: A set of the indices of the elements whose properties are equal to `property`.
+    ///
+    /// - Complexity: O(*n*), where *n* is the length of the collection.
+    @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+    @inlinable public func indices<Property: Equatable>(
+        with property: Property,
+        at keyPath: KeyPath<Element, Property>
+    ) -> RangeSet<Index> {
+        indices { $0[keyPath: keyPath] == property }
+    }
 }
