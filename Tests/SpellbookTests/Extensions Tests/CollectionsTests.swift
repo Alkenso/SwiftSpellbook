@@ -182,4 +182,27 @@ class CollectionTests: XCTestCase {
         XCTAssertEqual(arr.popAll { $0 > 10 }, [20, 30])
         XCTAssertEqual(arr, [1, 2])
     }
+    
+    func test_firstIndex_property() {
+        let arr = ["q", "ww", "eee", "rr"]
+        XCTAssertEqual(arr.firstIndex(at: \.count, with: 2), 1)
+        if #available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *) {
+            XCTAssertEqual(arr.indices(at: \.count, with: 2), RangeSet([1, 3], within: arr))
+        }
+    }
+    
+    func test_updateFirst() {
+        var arr = ["q", "ww", "eee", "rr"]
+        arr.updateFirst("ttt") { $0.count == 3 }
+        XCTAssertEqual(arr, ["q", "ww", "ttt", "rr"])
+        
+        arr.updateFirst("yy", by: \.count, with: 1)
+        XCTAssertEqual(arr, ["yy", "ww", "ttt", "rr"])
+        
+        arr.updateFirst("uuu", by: \.count)
+        XCTAssertEqual(arr, ["yy", "ww", "uuu", "rr"])
+        
+        arr.updateFirst("ii") { $0.count == 4 }
+        XCTAssertEqual(arr, ["yy", "ww", "uuu", "rr", "ii"])
+    }
 }

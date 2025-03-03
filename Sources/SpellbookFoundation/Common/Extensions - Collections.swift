@@ -388,29 +388,93 @@ extension RangeReplaceableCollection {
     ///   `true`. If no elements in the collection satisfy the given predicate,
     ///   returns `nil`.
     ///
-    /// - Parameter property: A property of the element to search for in the collection.
     /// - Parameter keyPath: A KeyPath to property of the element to search for in the collection.
+    /// - Parameter property: A property of the element to search for in the collection.
     /// - Returns: The first index where element with given `property` is found.
     ///   If element with given `property` is not found in the collection, returns `nil`.
     ///
     /// - Complexity: O(*n*), where *n* is the length of the collection.
-    public func firstIndex<Property: Equatable>(with property: Property, at keyPath: KeyPath<Element, Property>) -> Index? {
+    public func firstIndex<Property: Equatable>(at keyPath: KeyPath<Element, Property>, with property: Property) -> Index? {
         firstIndex { $0[keyPath: keyPath] == property }
     }
     
     /// Returns the indices of all the elements with specific property that are equal to the given
     /// `property`.
     ///
-    /// - Parameter element: A property of the element to look for in the collection.
     /// - Parameter keyPath: A KeyPath to property of the element to look for in the collection.
+    /// - Parameter element: A property of the element to look for in the collection.
     /// - Returns: A set of the indices of the elements whose properties are equal to `property`.
     ///
     /// - Complexity: O(*n*), where *n* is the length of the collection.
     @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
     @inlinable public func indices<Property: Equatable>(
-        with property: Property,
-        at keyPath: KeyPath<Element, Property>
+        at keyPath: KeyPath<Element, Property>,
+        with property: Property
     ) -> RangeSet<Index> {
         indices { $0[keyPath: keyPath] == property }
+    }
+    
+    /// Adds a new element at the end of the array or updates the element if it exists.
+    ///
+    /// - Parameter element: The element to append to or update in the array.
+    /// - Parameter predicate: A closure that takes an element as its argument
+    ///   and returns a Boolean value that indicates whether the passed element
+    ///   represents a match.
+    /// - Returns: Previous element existed in array or `nil` if new element was appended.
+    ///
+    /// - Complexity: O(*n*), where *n* is the length of the collection.
+    @discardableResult
+    public mutating func updateFirst(_ element: Element, where predicate: (Element) throws -> Bool) rethrows -> Element? {
+        if let idx = try firstIndex(where: predicate) {
+            let oldValue = self[idx]
+            replaceSubrange(idx..<index(after: idx), with: [element])
+            return oldValue
+        } else {
+            append(element)
+            return nil
+        }
+    }
+    
+    /// Adds a new element at the end of the array or updates the element if it exists.
+    ///
+    /// - Parameter element: The element to append to or update in the array.
+    /// - Returns: Previous element existed in array or `nil` if the element was appended.
+    ///
+    /// - Complexity: O(*n*), where *n* is the length of the collection.
+    @discardableResult
+    public mutating func updateFirst(_ element: Element) -> Element? where Element: Equatable {
+        updateFirst(element) { $0 == element }
+    }
+    
+    /// Adds a new element at the end of the array or updates the element if it exists.
+    ///
+    /// - Parameter element: The element to append to or update in the array.
+    /// - Parameter keyPath: A KeyPath to property of the element to search for in the collection.
+    /// - Parameter property: A property of the element to search for in the collection.
+    /// - Returns: Previous element existed in array or `nil` if new element was appended.
+    ///
+    /// - Complexity: O(*n*), where *n* is the length of the collection.
+    @discardableResult
+    public mutating func updateFirst<Property: Equatable>(
+        _ element: Element,
+        by keyPath: KeyPath<Element, Property>,
+        with property: Property
+    ) -> Element? {
+        updateFirst(element) { $0[keyPath: keyPath] == property }
+    }
+    
+    /// Adds a new element at the end of the array or updates the element if it exists.
+    ///
+    /// - Parameter element: The element to append to or update in the array.
+    /// - Parameter keyPath: A KeyPath to property of the element to search for in the collection.
+    /// - Returns: Previous element existed in array or `nil` if new element was appended.
+    ///
+    /// - Complexity: O(*n*), where *n* is the length of the collection.
+    @discardableResult
+    public mutating func updateFirst<Property: Equatable>(
+        _ element: Element,
+        by keyPath: KeyPath<Element, Property>
+    ) -> Element? {
+        updateFirst(element) { $0[keyPath: keyPath] == element[keyPath: keyPath] }
     }
 }
