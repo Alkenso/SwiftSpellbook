@@ -24,7 +24,7 @@ import Foundation
 
 @propertyWrapper
 public final class ValueViewed<Value> {
-    private let view: ValueView<Value>
+    private var view: ValueView<Value>
     
     public init(_ view: ValueView<Value>) {
         self.view = view
@@ -36,12 +36,14 @@ public final class ValueViewed<Value> {
     
     public var wrappedValue: Value { view.value }
     public var projectedValue: ValueView<Value> { view }
+    
+    public func unsafeSetView(_ view: ValueView<Value>) { self.view = view }
 }
 
 /// Wrapper that provides access to value. Useful when value is a struct that may be changed over time.
 @dynamicMemberLookup
 public final class ValueView<Value> {
-    private let accessor: () -> Value
+    private var accessor: () -> Value
     
     public init(_ accessor: @escaping () -> Value) {
         self.accessor = accessor
@@ -52,6 +54,8 @@ public final class ValueView<Value> {
     public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
         value[keyPath: keyPath]
     }
+    
+    public func unsafeSetAccessor(_ accessor: @escaping () -> Value) { self.accessor = accessor }
 }
 
 extension ValueView {
