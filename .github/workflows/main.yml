@@ -14,9 +14,6 @@ jobs:
           - xcode: "16.2" # Swift 6
             macOS: "15"
             iOS: "17.0"
-          - xcode: "15.4" # Swift 5.9
-            macOS: "14"
-            iOS: "17.0"
       fail-fast: false
 
     runs-on: macos-${{ matrix.macOS }}
