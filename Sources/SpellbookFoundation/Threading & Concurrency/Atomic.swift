@@ -21,6 +21,7 @@
 //  SOFTWARE.
 
 import Foundation
+import os
 
 /// Atomic property wrapper is designed to simple & safe operations of
 /// getting / setting particular value.
