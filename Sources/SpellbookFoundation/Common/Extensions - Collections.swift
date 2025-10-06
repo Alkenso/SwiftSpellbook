@@ -171,6 +171,22 @@ extension Dictionary {
     }
 }
 
+extension Dictionary {
+    public mutating func removeRandom() -> Element? {
+        guard let random = randomElement() else { return nil }
+        removeValue(forKey: random.key)
+        return random
+    }
+}
+
+// MARK: - Set
+
+extension Set {
+    public mutating func removeRandom() -> Element? {
+        randomElement().flatMap { remove($0) }
+    }
+}
+
 // MARK: - Array
 
 extension Array {
@@ -553,6 +569,18 @@ extension RangeReplaceableCollection {
         by keyPath: KeyPath<Element, Property>
     ) -> Element? {
         updateFirst(element, .equals(at: keyPath, to: element[keyPath: keyPath]))
+    }
+}
+
+extension RangeReplaceableCollection where Index: FixedWidthInteger {
+    public mutating func removeRandom() -> Element {
+        let randomIndex = Index.random(in: startIndex..<endIndex)
+        return remove(at: randomIndex)
+    }
+    
+    public mutating func popRandom() -> Element? {
+        guard !isEmpty else { return nil }
+        return removeRandom()
     }
 }
 

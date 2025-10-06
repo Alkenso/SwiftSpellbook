@@ -206,4 +206,17 @@ class CollectionTests: XCTestCase {
         arr.updateFirst("ii", .where { $0.count == 4 })
         XCTAssertEqual(arr, ["q", "yy", "uuu", "rr", "ii"])
     }
+    
+    func test_removePopRandom() throws {
+        var arr = [1, 2]
+        let removed = arr.removeRandom()
+        XCTAssertFalse(arr.contains(removed))
+        XCTAssertEqual(arr.count, 1)
+        
+        let popped = try XCTUnwrap(arr.popRandom())
+        XCTAssertFalse(arr.contains(popped))
+        XCTAssertEqual(arr.count, 0)
+        
+        XCTAssertNil(arr.popRandom())
+    }
 }
