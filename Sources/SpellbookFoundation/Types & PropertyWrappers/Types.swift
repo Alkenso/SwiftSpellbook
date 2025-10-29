@@ -123,6 +123,11 @@ public struct KeyValue<Key, Value> {
         self.key = key
         self.value = value
     }
+    
+    public init(_ tuple: (Key, Value)) {
+        self.key = tuple.0
+        self.value = tuple.1
+    }
 }
 
 extension KeyValue {
