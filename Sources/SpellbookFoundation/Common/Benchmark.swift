@@ -24,24 +24,44 @@ import Foundation
 
 public enum Benchmark {
     /// Executes the given block and returns the number of seconds
-    /// with nanosecond precision it takes to execute the block.
-    /// This function is for debugging and performance analysis work.
+    /// with nanosecond precision it takes to execute.
+    /// This function is for debugging and performance analysis.
     public static func measure<R>(execute: () throws -> R) rethrows -> (result: R, time: TimeInterval) {
         let start = DispatchTime.now()
         let result = try execute()
+        return (result, duration(startingAt: start))
+    }
+    
+    /// Executes the given block and returns the number of seconds
+    /// with nanosecond precision it takes to execute.
+    /// This function is for debugging and performance analysis.
+    public static func measure(execute: () throws -> Void) rethrows -> TimeInterval {
+        try measure(execute: execute).time
+    }
+    
+    /// Executes the given block and returns the number of seconds
+    /// with nanosecond precision it takes to execute.
+    /// This function is for debugging and performance analysis.
+    public static func measure<R>(execute: () async throws -> R) async rethrows -> (result: R, time: TimeInterval) {
+        let start = DispatchTime.now()
+        let result = try await execute()
+        return (result, duration(startingAt: start))
+    }
+    
+    /// Executes the given block and returns the number of seconds
+    /// with nanosecond precision it takes to execute.
+    /// This function is for debugging and performance analysis.
+    public static func measure(execute: () async throws -> Void) async rethrows -> TimeInterval {
+        try await measure(execute: execute).time
+    }
+    
+    private static func duration(startingAt start: DispatchTime) -> TimeInterval {
         let end = DispatchTime.now()
         
         let durationNs = end.uptimeNanoseconds - start.uptimeNanoseconds
         let durationSec = TimeInterval(durationNs) / TimeInterval(NSEC_PER_SEC)
         
-        return (result, durationSec)
-    }
-    
-    /// Executes the given block and returns the number of seconds
-    /// with nanosecond precision it takes to execute the block.
-    /// This function is for debugging and performance analysis work.
-    public static func measure(execute: () throws -> Void) rethrows -> TimeInterval {
-        try measure(execute: execute).time
+        return durationSec
     }
     
     /// Executes the given block and prints the `name` and the number of seconds
