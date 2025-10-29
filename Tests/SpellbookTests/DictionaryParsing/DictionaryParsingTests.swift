@@ -122,12 +122,12 @@ class DictionaryWriterTests: XCTestCase {
         // replace nested value
         let agePath: [DictionaryCodingKey] = ["children", .index(1), "age"]
         XCTAssertNoThrow(try writer.insert(value: 12, codingPath: agePath))
-        XCTAssertEqual(person[codingPath: agePath] as? Int, 12)
+        XCTAssertEqual(person[codingPath: agePath, as: Int.self], 12)
         
         // insert value
         let parentPath = "parents.[0].name"
         XCTAssertNoThrow(try writer.insert(value: "John", dotPath: parentPath))
-        XCTAssertEqual(person[dotPath: parentPath] as? String, "John")
+        XCTAssertEqual(person[dotPath: parentPath, as: String.self], "John")
     }
     
     func test_errorTypes() throws {

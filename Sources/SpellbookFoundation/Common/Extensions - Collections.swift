@@ -63,8 +63,8 @@ extension Dictionary {
     ///     - Nested Array:
     ///         - pass [1] to follow the 1-st item in the nested array
     ///         - pass [Int.max] to follow the last item in the nested array
-    public subscript(codingPath codingPath: [DictionaryCodingKey]) -> Any? {
-        try? reader.read(codingPath: codingPath, as: Any.self)
+    public subscript<R>(codingPath codingPath: [DictionaryCodingKey], as as: R.Type = R.self) -> R? {
+        try? reader.read(codingPath: codingPath, as: R.self)
     }
     
     /// Get value in nested dictionary using dot-separated key path.
@@ -73,8 +73,8 @@ extension Dictionary {
     ///     - Nested Array:
     ///         - pass [1] to follow the 1-st item in the nested array
     ///         - pass [*] to follow the last item in the nested array
-    public subscript(dotPath dotPath: String) -> Any? {
-        try? reader.read(dotPath: dotPath, as: Any.self)
+    public subscript<R>(dotPath dotPath: String, as as: R.Type = R.self) -> R? {
+        try? reader.read(dotPath: dotPath, as: R.self)
     }
 }
 
