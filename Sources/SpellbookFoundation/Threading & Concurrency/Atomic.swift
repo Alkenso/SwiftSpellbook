@@ -27,36 +27,41 @@ import os
 /// getting / setting particular value.
 /// For reacher thread-safe functionality consider using 'Synchronized' class.
 @propertyWrapper
-public final class Atomic<Value> {
-    private let storage: Synchronized<Value>
+public final class Atomic<Value>: @unchecked Sendable {
+    private let storage: Synchronized<UncheckedSendable<Value>>
     
-    public convenience init(wrappedValue: Value, _ primitive: Synchronized<Value>.Primitive = .unfair) {
-        self.init(storage: .init(primitive, wrappedValue))
-    }
-    
-    public init(storage: Synchronized<Value>) {
-        self.storage = storage
+    public init(wrappedValue: Value) {
+        self.storage = .init(.unfair, .init(wrappedValue))
     }
     
     public var wrappedValue: Value {
-        get { storage.read() }
-        set { storage.write { $0 = newValue } }
+        get { storage.read().wrappedValue }
+        set { storage.write(.init(newValue)) }
     }
     
-    public var projectedValue: Synchronized<Value> { storage }
+    public var projectedValue: Atomic<Value> { self }
     
     public func exchange(_ value: Value) -> Value {
-        storage.write { updateSwap(&$0, value) }
+        storage.exchange(.init(value)).wrappedValue
+    }
+    
+    @discardableResult
+    public func initialize<T>(@UncheckedSendable _ nilReplacement: T) -> T where Value == T? {
+        storage.write {
+            if let value = $0.wrappedValue { return value }
+            $0.wrappedValue = nilReplacement
+            return nilReplacement
+        }
     }
 }
 
-extension Atomic where Value: AdditiveArithmetic {
-    public func increment(by diff: Value) {
-        storage.write { $0 += diff }
+extension Atomic where Value: AdditiveArithmetic & SendableMetatype {
+    public func increment(@UncheckedSendable by diff: Value) {
+        storage.write { $0.wrappedValue += diff }
     }
 }
 
-public final class AtomicFlag {
+public final class AtomicFlag: @unchecked Sendable {
     private let pointer: UnsafeMutablePointer<atomic_flag>
     
     public init() {

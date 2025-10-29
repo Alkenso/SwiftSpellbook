@@ -64,7 +64,7 @@ public final class ValueStore<Value>: ValueObserving {
     
     @discardableResult
     public func update(_ value: Value, context: Any? = nil) -> Value {
-        update(context: context) { updateSwap(&$0, value) }
+        update(context: context) { exchange(&$0, with: value) }
     }
     
     public func update<Property>(

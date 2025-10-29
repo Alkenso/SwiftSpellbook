@@ -6,7 +6,7 @@ import XCTest
 
 class DispatchQueueExtensionsTests: XCTestCase {
     func test_asyncPeriodically() {
-        var count: Int = 0
+        nonisolated(unsafe) var count: Int = 0
         let limit = 5
         let exp = expectation(description: "Repeated action")
         exp.expectedFulfillmentCount = limit
@@ -21,7 +21,7 @@ class DispatchQueueExtensionsTests: XCTestCase {
     }
     
     func test_asyncPeriodically_async() {
-        var count: Int = 0
+        nonisolated(unsafe) var count: Int = 0
         let limit = 5
         let exp = expectation(description: "Repeated action")
         exp.expectedFulfillmentCount = limit

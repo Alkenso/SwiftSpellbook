@@ -1,4 +1,5 @@
 import SpellbookFoundation
+import SpellbookTestUtils
 
 import XCTest
 

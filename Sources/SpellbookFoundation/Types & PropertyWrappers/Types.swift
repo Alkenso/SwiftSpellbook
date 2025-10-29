@@ -61,6 +61,7 @@ extension Change: Hashable where T: Hashable {}
 extension Change: Equatable where T: Equatable {}
 extension Change: Encodable where T: Encodable {}
 extension Change: Decodable where T: Decodable {}
+extension Change: Sendable where T: Sendable {}
 
 public struct ProgressValue {
     public var current: Int
@@ -86,6 +87,7 @@ extension ProgressValue {
 
 extension ProgressValue: Hashable {}
 extension ProgressValue: Codable {}
+extension ProgressValue: Sendable {}
 
 public struct Pair<First, Second> {
     public var first: First
@@ -111,6 +113,7 @@ extension Pair: Hashable where First: Hashable, Second: Hashable {}
 extension Pair: Equatable where First: Equatable, Second: Equatable {}
 extension Pair: Encodable where First: Encodable, Second: Encodable {}
 extension Pair: Decodable where First: Decodable, Second: Decodable {}
+extension Pair: Sendable where First: Sendable, Second: Sendable {}
 
 public struct KeyValue<Key, Value> {
     public var key: Key
@@ -136,6 +139,7 @@ extension KeyValue: Hashable where Key: Hashable, Value: Hashable {}
 extension KeyValue: Equatable where Key: Equatable, Value: Equatable {}
 extension KeyValue: Encodable where Key: Encodable, Value: Encodable {}
 extension KeyValue: Decodable where Key: Decodable, Value: Decodable {}
+extension KeyValue: Sendable where Key: Sendable, Value: Sendable {}
 
 /// An alternative between two elements
 public enum Either<First, Second> {
@@ -177,6 +181,7 @@ extension Either: Hashable where First: Hashable, Second: Hashable {}
 extension Either: Equatable where First: Equatable, Second: Equatable {}
 extension Either: Encodable where First: Encodable, Second: Encodable {}
 extension Either: Decodable where First: Decodable, Second: Decodable {}
+extension Either: Sendable where First: Sendable, Second: Sendable {}
 
 public struct EmptyCodable: Hashable, Codable {
     public init() {}

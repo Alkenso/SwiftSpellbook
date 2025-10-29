@@ -1,5 +1,7 @@
 import SpellbookFoundation
+import SpellbookTestUtils
 
+import Combine
 import XCTest
 
 class EventNotifyTests: XCTestCase {

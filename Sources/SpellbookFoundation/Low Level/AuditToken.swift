@@ -22,8 +22,9 @@
 
 #if os(macOS)
 
+private import _SpellbookFoundationObjC
+
 import Foundation
-@_implementationOnly import _SpellbookFoundationObjC
 
 extension audit_token_t {
     /// Returns current task audit token.

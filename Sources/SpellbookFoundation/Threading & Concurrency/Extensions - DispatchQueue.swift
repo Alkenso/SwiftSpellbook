@@ -55,7 +55,7 @@ extension DispatchQueue {
         delay: TimeInterval,
         qos: DispatchQoS = .unspecified,
         flags: DispatchWorkItemFlags = [],
-        execute work: @escaping () -> Void
+        execute work: @escaping @Sendable () -> Void
     ) {
         asyncAfter(deadline: .now() + delay, qos: qos, flags: flags, execute: work)
     }
@@ -69,9 +69,9 @@ extension DispatchQueue {
         immediately: Bool,
         qos: DispatchQoS = .unspecified,
         flags: DispatchWorkItemFlags = [],
-        execute: @escaping () -> Bool
+        execute: @escaping @Sendable () -> Bool
     ) {
-        func schedule(firstRun: Bool) {
+        @Sendable func schedule(firstRun: Bool) {
             asyncAfter(delay: (firstRun && immediately) ? 0 : interval, qos: qos, flags: flags) {
                 if execute() {
                     schedule(firstRun: false)
@@ -86,9 +86,9 @@ extension DispatchQueue {
         immediately: Bool,
         qos: DispatchQoS = .unspecified,
         flags: DispatchWorkItemFlags = [],
-        execute: @escaping (@escaping () -> Void) -> Void
+        execute: @escaping @Sendable (@escaping @Sendable () -> Void) -> Void
     ) {
-        func schedule(firstRun: Bool) {
+        @Sendable func schedule(firstRun: Bool) {
             asyncAfter(delay: (firstRun && immediately) ? 0 : interval, qos: qos, flags: flags) {
                 execute {
                     schedule(firstRun: false)

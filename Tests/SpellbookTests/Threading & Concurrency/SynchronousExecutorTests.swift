@@ -17,10 +17,8 @@ class SynchronousExecutorTests: XCTestCase {
         XCTAssertThrowsError(try infiniteExecutor.sync(dummyError.resultValue))
         XCTAssertEqual(try infiniteExecutor.sync(dummyError.optionalValue), nil)
         
-        if #available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *) {
-            XCTAssertEqual(try infiniteExecutor.sync(dummyValue.asyncValue), 10)
-            XCTAssertThrowsError(try infiniteExecutor.sync(dummyError.asyncError))
-        }
+        XCTAssertEqual(try infiniteExecutor.sync { await dummyValue.asyncValue() }, 10)
+        XCTAssertThrowsError(try infiniteExecutor.sync { try await dummyError.asyncError() })
     }
     
     func test_timeout() throws {
@@ -35,14 +33,12 @@ class SynchronousExecutorTests: XCTestCase {
         XCTAssertThrowsError(try timedExecutor.sync(dummyError.resultValue))
         XCTAssertThrowsError(try timedExecutor.sync(dummyError.optionalValue))
         
-        if #available(macOS 10.15, iOS 13, tvOS 13.0, watchOS 6.0, *) {
-            XCTAssertThrowsError(try timedExecutor.sync(dummyValue.asyncValue))
-            XCTAssertThrowsError(try timedExecutor.sync(dummyError.asyncError))
-        }
+        XCTAssertThrowsError(try timedExecutor.sync { await dummyValue.asyncValue() })
+        XCTAssertThrowsError(try timedExecutor.sync { try await dummyError.asyncError() })
     }
 }
 
-private struct Dummy<T> {
+private struct Dummy<T: Sendable>: Sendable {
     var value: T!
     var timeout: TimeInterval?
     

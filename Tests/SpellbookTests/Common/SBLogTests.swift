@@ -144,7 +144,7 @@ final class SBLogTests: XCTestCase {
         let log = SpellbookLogger(name: "test")
         let exp = expectation(description: "logged")
         exp.expectedFulfillmentCount = 2
-        var records: [SpellbookLogRecord] = []
+        nonisolated(unsafe) var records: [SpellbookLogRecord] = []
         log.destinations.append(.init {
             records.append($0)
             exp.fulfill()

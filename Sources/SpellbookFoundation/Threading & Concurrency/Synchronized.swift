@@ -190,19 +190,20 @@ public extension Synchronized where Value: FloatingPoint {
 // MARK: - Locking
 
 private protocol SynchronizedLocking {
-    func withWriteLock<R>(_ body: () throws -> R) rethrows -> R
+    func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) rethrows -> sending R
     
-    func withReadLock<R>(_ body: () throws -> R) rethrows -> R
-    func withAsyncWriteLock(_ body: @escaping () -> Void)
+    func withReadLock<R, E: Error>(_ body: () throws(E) -> sending R) rethrows -> sending R
+    func withAsyncWriteLock(_ body: sending @escaping () -> Void)
 }
 
+import Synchronization
 extension SynchronizedLocking {
-    func withReadLock<R>(_ body: () throws -> R) rethrows -> R {
+    func withReadLock<R, E: Error>(_ body: () throws(E) -> sending R) rethrows -> sending R {
         try withWriteLock(body)
     }
     
-    func withAsyncWriteLock(_ body: @escaping () -> Void) {
-        withWriteLock(body)
+    func withAsyncWriteLock(_ body: sending @escaping () -> Void) {
+        withWriteLock { body() }
     }
 }
 
@@ -211,14 +212,14 @@ extension SynchronizedLocking {
 @available(watchOS, deprecated: 9.0, message: "Use `UnfairLockStorage`")
 @available(tvOS, deprecated: 16.0, message: "Use `UnfairLockStorage`")
 extension UnfairLock: SynchronizedLocking {
-    func withWriteLock<R>(_ body: () throws -> R) rethrows -> R {
+    func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) rethrows -> sending R {
         try withLock(body)
     }
 }
 
 @available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 extension OSAllocatedUnfairLock: SynchronizedLocking where State == Void {
-    func withWriteLock<R>(_ body: () throws -> R) rethrows -> R {
+    func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) rethrows -> sending R {
         try withLock { try body() }
     }
 }
@@ -226,15 +227,15 @@ extension OSAllocatedUnfairLock: SynchronizedLocking where State == Void {
 extension RWLock: SynchronizedLocking {}
 
 extension DispatchQueue: SynchronizedLocking {
-    func withWriteLock<R>(_ body: () throws -> R) rethrows -> R {
-        try sync(flags: .barrier, execute: body)
+    func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) rethrows -> sending R {
+        try sync(flags: .barrier) { () throws(E) -> R in try body() }
     }
     
-    func withReadLock<R>(_ body: () throws -> R) rethrows -> R {
+    func withReadLock<R, E: Error>(_ body: () throws(E) -> sending R) rethrows -> sending R {
         try sync(execute: body)
     }
     
-    func withAsyncWriteLock(_ body: @escaping () -> Void) {
+    func withAsyncWriteLock(_ body: sending @escaping () -> Void) {
         async(flags: .barrier, execute: body)
     }
 }

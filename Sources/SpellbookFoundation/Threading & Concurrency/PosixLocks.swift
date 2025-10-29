@@ -55,7 +55,7 @@ public final class UnfairLock: @unchecked Sendable {
         os_unfair_lock_unlock(raw)
     }
     
-    public func withLock<R>(_ body: () throws -> R) rethrows -> R {
+    public func withLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
         lock()
         defer { unlock() }
         return try body()
@@ -101,13 +101,13 @@ public final class RWLock: @unchecked Sendable {
         pthread_rwlock_unlock(raw)
     }
     
-    public func withReadLock<R>(_ body: () throws -> R) rethrows -> R {
+    public func withReadLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
         readLock()
         defer { unlock() }
         return try body()
     }
     
-    public func withWriteLock<R>(_ body: () throws -> R) rethrows -> R {
+    public func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
         writeLock()
         defer { unlock() }
         return try body()

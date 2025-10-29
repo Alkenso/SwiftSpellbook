@@ -1,4 +1,4 @@
-// swift-tools-version:5.9
+// swift-tools-version:6.0
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -32,7 +32,7 @@ let package = Package(
             dependencies: ["_SpellbookFoundationObjC"],
             linkerSettings: [
                 .linkedLibrary("bsm", .when(platforms: [.macOS])),
-            ]
+            ],
         ),
         .target(
             name: "_SpellbookFoundationObjC",
@@ -59,5 +59,16 @@ let package = Package(
             name: "SpellbookTestUtilsTests",
             dependencies: ["SpellbookFoundation", "SpellbookTestUtils"]
         ),
-    ]
+    ],
+    swiftLanguageModes: [.v5]
 )
+
+for target in package.targets {
+    var settings = target.swiftSettings ?? []
+    settings.append(contentsOf: [
+        .enableUpcomingFeature("NonisolatedNonsendingByDefault"),
+        .enableUpcomingFeature("InferIsolatedConformances"),
+        .enableUpcomingFeature("MemberImportVisibility"),
+    ])
+    target.swiftSettings = settings
+}

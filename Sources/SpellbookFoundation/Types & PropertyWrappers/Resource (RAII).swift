@@ -96,7 +96,7 @@ public class Resource<T> {
     /// Replace `cleanup` function with new one.
     @discardableResult
     public func replaceCleanup(_ newCleanup: @escaping (T) -> Void) -> (T) -> Void {
-        lock.withLock { updateSwap(&freeFn, newCleanup) }
+        lock.withLock { exchange(&freeFn, with: newCleanup) }
     }
 }
 

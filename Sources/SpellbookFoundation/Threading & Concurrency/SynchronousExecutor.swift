@@ -36,7 +36,7 @@ public struct SynchronousExecutor {
 }
 
 extension SynchronousExecutor {
-    public func sync<R>(_ action: (@escaping (Result<R, Error>) -> Void) throws -> Void) throws -> R {
+    public func sync<R>(_ action: (@escaping @Sendable (Result<R, Error>) -> Void) throws -> Void) throws -> R {
         guard let timeout else {
             return try Self.sync(action).get()
         }
@@ -68,7 +68,7 @@ extension SynchronousExecutor {
         }
     }
     
-    public func sync<R>(_ action: @escaping () async throws -> R) throws -> R {
+    public func sync<R>(_ action: @escaping @Sendable () async throws -> R) throws -> R {
         try sync { completion in
             Task {
                 do {
@@ -81,7 +81,10 @@ extension SynchronousExecutor {
         }
     }
     
-    private static func sync<R>(_ action: (@escaping (R) -> Void) throws -> Void, _ result: Synchronized<R?>) rethrows -> DispatchGroup {
+    private static func sync<R>(
+        _ action: (@escaping @Sendable (R) -> Void) throws -> Void,
+        _ result: Atomic<R?>
+    ) rethrows -> DispatchGroup {
         let group = DispatchGroup()
         group.enter()
         
@@ -93,7 +96,7 @@ extension SynchronousExecutor {
                 }
                 return
             }
-            result.write($0)
+            result.wrappedValue = $0
             group.leave()
         }
         
@@ -102,13 +105,13 @@ extension SynchronousExecutor {
 }
 
 extension SynchronousExecutor {
-    public static func sync<R>(_ action: (@escaping (R) -> Void) throws -> Void) rethrows -> R {
+    public static func sync<R>(_ action: (@escaping @Sendable (R) -> Void) throws -> Void) rethrows -> R {
         @Atomic var result: R!
         try sync(action, $result).wait()
         return result
     }
     
-    public static func sync<R>(_ action: @escaping () async -> R) -> R {
+    public static func sync<R>(_ action: @escaping @Sendable () async -> R) -> R {
         sync { completion in
             Task {
                 let result = await action()

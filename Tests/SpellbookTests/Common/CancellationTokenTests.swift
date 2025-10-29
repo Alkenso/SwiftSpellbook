@@ -1,4 +1,6 @@
 import SpellbookFoundation
+import SpellbookTestUtils
+
 import XCTest
 
 class CancellationTokenTests: XCTestCase {

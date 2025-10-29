@@ -1,6 +1,7 @@
 import SpellbookFoundation
 import SpellbookTestUtils
 
+import Combine
 import XCTest
 
 private struct TestStru: Equatable {
