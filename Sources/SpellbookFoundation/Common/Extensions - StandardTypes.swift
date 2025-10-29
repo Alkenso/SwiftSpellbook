@@ -465,3 +465,9 @@ extension Calendar {
         startOfDay(for: date).addingTimeInterval(24 * 60 * 60 - 0.001)
     }
 }
+
+// MARK: - Simple types
+
+extension Bool {
+    public var toggled: Bool { !self }
+}
