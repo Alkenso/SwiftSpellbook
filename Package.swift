@@ -32,7 +32,7 @@ let package = Package(
             dependencies: ["_SpellbookFoundationObjC"],
             linkerSettings: [
                 .linkedLibrary("bsm", .when(platforms: [.macOS])),
-            ],
+            ]
         ),
         .target(
             name: "_SpellbookFoundationObjC",

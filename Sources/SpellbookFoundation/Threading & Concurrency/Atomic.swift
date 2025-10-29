@@ -55,7 +55,7 @@ public final class Atomic<Value>: @unchecked Sendable {
     }
 }
 
-extension Atomic where Value: AdditiveArithmetic & SendableMetatype {
+extension Atomic where Value: AdditiveArithmetic {
     public func increment(@UncheckedSendable by diff: Value) {
         storage.write { $0.wrappedValue += diff }
     }
