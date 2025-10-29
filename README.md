@@ -8,9 +8,10 @@ SwiftSpellbook is collection of additions to Swift standard library that makes d
   <img src="https://github.com/Alkenso/SwiftSpellbook/actions/workflows/main.yml/badge.svg" />
 </p>
 
-If you've found this or other my libraries helpful, please buy me some pizza
+If you've found this or other my libraries helpful, share some beer with me :D
+<br>
+[![Buy Me a Beer 🍺](https://img.shields.io/badge/Buy%20Me%20a%20Beer-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/alkenso)
 
-<a href="https://www.buymeacoffee.com/alkenso"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a pizza&emoji=🍕&slug=alkenso&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" /></a>
 
 ## Motivation
 While participating in many projects (macOS and iOS) I use the same tools and standard types extensions.
