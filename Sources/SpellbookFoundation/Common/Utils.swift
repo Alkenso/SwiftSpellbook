@@ -22,6 +22,7 @@
 
 import Foundation
 
+@available(*, deprecated, renamed: "exchange()", message: "Use native Swift `exchange` function instead")
 public func updateSwap<T>(_ a: inout T, _ b: T) -> T {
     let copy = a
     a = b

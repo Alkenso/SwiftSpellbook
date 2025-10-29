@@ -23,7 +23,7 @@
 import Foundation
 import os
 
-public protocol SpellbookLog {
+public protocol SpellbookLog: Sendable {
     func _custom(
         level: SpellbookLogLevel,
         message: @autoclosure () -> Any,
@@ -172,7 +172,7 @@ extension SpellbookLog {
     }
 }
 
-public enum SpellbookLogLevel: Int, Hashable {
+public enum SpellbookLogLevel: Int, Hashable, Sendable {
     /// Something generally unimportant.
     case verbose = 0
     
@@ -257,7 +257,7 @@ extension SpellbookLogRecord {
     }()
 }
 
-public struct SpellbookLogSource {
+public struct SpellbookLogSource: Sendable {
     /// Subsystem is usually a big component or a feature of the product.
     /// For example, `SpellbookFoundation`.
     public var subsystem: String
@@ -267,7 +267,7 @@ public struct SpellbookLogSource {
     public var category: String
     
     /// Any arbitrary data related to the source.
-    public var context: Any?
+    public nonisolated(unsafe) var context: Any?
     
     public init(subsystem: String, category: String, context: Any? = nil) {
         self.subsystem = subsystem
@@ -286,11 +286,11 @@ extension SpellbookLogSource: CustomStringConvertible {
     public var description: String { "\(subsystem)/\(category)" }
 }
 
-public struct SpellbookLogDestination {
+public struct SpellbookLogDestination: Sendable {
     public var minLevel: SpellbookLogLevel
-    public var log: (SpellbookLogRecord) -> Void
+    public var log: @Sendable (SpellbookLogRecord) -> Void
     
-    public init(minLevel: SpellbookLogLevel = .info, log: @escaping (SpellbookLogRecord) -> Void) {
+    public init(minLevel: SpellbookLogLevel = .info, log: @escaping @Sendable (SpellbookLogRecord) -> Void) {
         self.log = log
         self.minLevel = minLevel
     }
@@ -306,12 +306,14 @@ extension SpellbookLogDestination {
     }
 }
 
-public final class SpellbookLogger {
+public final class SpellbookLogger: @unchecked Sendable {
     public init(name: String, useQueue: Bool = true) {
         queue = useQueue ? DispatchQueue(label: "SpellbookLog.\(name).queue") : nil
     }
     
-    public static var `default` = SpellbookLogger(name: "default")
+    /// Default logger used across `SwiftSpellbook` packages.
+    /// Can be used by in the App on your own.
+    public nonisolated(unsafe) static var `default` = SpellbookLogger(name: "default")
     
     public var source = SpellbookLogSource.default()
     
@@ -352,7 +354,7 @@ public final class SpellbookLogger {
 
 extension SpellbookLogger {
     /// Subsystem name used by default.
-    public static var internalSubsystem = "Spellbook"
+    public nonisolated(unsafe) static var internalSubsystem = "Spellbook"
     
     internal static func `internal`(category: String) -> SpellbookLog {
         `default`.with(subsystem: internalSubsystem, category: category)
@@ -409,7 +411,7 @@ extension SpellbookLogger: SpellbookLog {
 }
 
 private struct SubsystemLogger: SpellbookLog {
-    let logImpl: (
+    let logImpl: @Sendable (
         _ level: SpellbookLogLevel,
         _ message: @autoclosure () -> Any,
         _ assert: Bool,

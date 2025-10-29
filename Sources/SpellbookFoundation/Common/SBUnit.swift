@@ -22,7 +22,7 @@
 
 import Foundation
 
-public protocol SBUnit: RawRepresentable {}
+public protocol SBUnit: RawRepresentable, Sendable {}
 
 extension SBUnit {
     /// Perform conversion between measurement units.

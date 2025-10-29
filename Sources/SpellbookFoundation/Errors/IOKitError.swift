@@ -30,8 +30,8 @@ public struct IOKitError {
         self.userInfo = userInfo
     }
     
-    public let code: Code
-    public let userInfo: [String: Any]
+    public var code: Code
+    public nonisolated(unsafe) var userInfo: [String: Any]
 }
 
 extension IOKitError: CustomNSError {
@@ -42,7 +42,7 @@ extension IOKitError: CustomNSError {
 
 extension IOKitError {
     /// IOReturn.h error codes
-    public struct Code: RawRepresentable, Hashable {
+    public struct Code: RawRepresentable, Hashable, Sendable {
         public var rawValue: IOReturn
         public init(rawValue: IOReturn) { self.rawValue = rawValue }
         

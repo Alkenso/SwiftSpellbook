@@ -47,7 +47,7 @@ public final class FileEnumerator {
 }
 
 extension FileEnumerator {
-    public struct FilterVerdict {
+    public struct FilterVerdict: Sendable {
         public var current: Bool
         public var children: Bool
         

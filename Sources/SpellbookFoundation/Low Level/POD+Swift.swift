@@ -72,6 +72,12 @@ extension PODUnsafeHashable {
     public func hash(into hasher: inout Hasher) {
         withUnsafeBytes(of: self) { hasher.combine(bytes: $0) }
     }
+    
+    public var hashValue: Int {
+        var hasher = Hasher()
+        hash(into: &hasher)
+        return hasher.finalize()
+    }
 }
 
 public protocol SafePOD: PODCodable {}
@@ -79,19 +85,54 @@ public protocol UnsafePOD: PODUnsafeHashable {}
 
 // MARK: - Oftenly used POD types
 
-extension timespec: SpellbookFoundation.SafePOD, SpellbookFoundation.UnsafePOD {}
-extension fsid_t: SpellbookFoundation.SafePOD, SpellbookFoundation.UnsafePOD {}
-extension attrlist: SpellbookFoundation.SafePOD, SpellbookFoundation.UnsafePOD {}
-extension attribute_set: SpellbookFoundation.SafePOD, SpellbookFoundation.UnsafePOD {}
-extension attrreference: SpellbookFoundation.SafePOD, SpellbookFoundation.UnsafePOD {}
-extension diskextent: SpellbookFoundation.SafePOD, SpellbookFoundation.UnsafePOD {}
+extension timespec: @retroactive Decodable {}
+extension timespec: @retroactive Encodable {}
+extension timespec: SafePOD {}
 
-extension stat: SpellbookFoundation.SafePOD {}
-extension statfs: SpellbookFoundation.SafePOD {}
+extension timespec: @retroactive Hashable {}
+extension timespec: @retroactive Equatable {}
+extension timespec: UnsafePOD {}
 
-extension timeval: SpellbookFoundation.SafePOD {}
+extension fsid: @retroactive Decodable {}
+extension fsid: @retroactive Encodable {}
+extension fsid_t: SafePOD {}
+extension fsid: @retroactive Hashable {}
+extension fsid: @retroactive Equatable {}
+extension fsid_t: UnsafePOD {}
 
-extension stat: Swift.Hashable {
+extension attrlist: @retroactive Decodable {}
+extension attrlist: @retroactive Encodable {}
+extension attrlist: SafePOD {}
+extension attrlist: @retroactive Hashable {}
+extension attrlist: @retroactive Equatable {}
+extension attrlist: UnsafePOD {}
+
+extension attribute_set: @retroactive Decodable {}
+extension attribute_set: @retroactive Encodable {}
+extension attribute_set: SafePOD {}
+extension attribute_set: @retroactive Hashable {}
+extension attribute_set: @retroactive Equatable {}
+extension attribute_set: UnsafePOD {}
+
+extension attrreference: @retroactive Decodable {}
+extension attrreference: @retroactive Encodable {}
+extension attrreference: SafePOD {}
+extension attrreference: @retroactive Hashable {}
+extension attrreference: @retroactive Equatable {}
+extension attrreference: UnsafePOD {}
+
+extension diskextent: @retroactive Decodable {}
+extension diskextent: @retroactive Encodable {}
+extension diskextent: SafePOD{}
+extension diskextent: @retroactive Hashable {}
+extension diskextent: @retroactive Equatable {}
+extension diskextent: UnsafePOD {}
+
+extension stat: @retroactive Decodable {}
+extension stat: @retroactive Encodable {}
+extension stat: SafePOD {}
+
+extension stat: @retroactive Hashable {
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.st_dev == rhs.st_dev &&
             lhs.st_mode == rhs.st_mode &&
@@ -135,7 +176,11 @@ extension stat: Swift.Hashable {
     }
 }
 
-extension statfs: Swift.Hashable {
+extension statfs: @retroactive Decodable {}
+extension statfs: @retroactive Encodable {}
+extension statfs: SafePOD {}
+
+extension statfs: @retroactive Hashable {
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.f_bsize == rhs.f_bsize &&
             lhs.f_iosize == rhs.f_iosize &&
@@ -175,7 +220,11 @@ extension statfs: Swift.Hashable {
     }
 }
 
-extension timeval: Swift.Hashable {
+extension timeval: @retroactive Decodable {}
+extension timeval: @retroactive Encodable {}
+extension timeval: SafePOD {}
+
+extension timeval: @retroactive Hashable {
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.tv_sec == rhs.tv_sec &&
             lhs.tv_usec == rhs.tv_usec

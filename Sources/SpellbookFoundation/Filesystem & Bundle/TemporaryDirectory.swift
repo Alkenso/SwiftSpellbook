@@ -23,7 +23,7 @@
 import Foundation
 
 /// A convenient interface to deal with temporary directories.
-public struct TemporaryDirectory {
+public struct TemporaryDirectory: Sendable {
     public let location: URL
     
     /// Initializes temporary directory with given location.

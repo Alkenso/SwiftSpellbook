@@ -9,7 +9,7 @@ import CoreGraphics
 
 #if canImport(CoreGraphics)
 
-public struct RGBColor: Hashable, Codable, ValueBuilder {
+public struct RGBColor: Hashable, Codable, Sendable, ValueBuilder {
     public var red: CGFloat
     public var green: CGFloat
     public var blue: CGFloat

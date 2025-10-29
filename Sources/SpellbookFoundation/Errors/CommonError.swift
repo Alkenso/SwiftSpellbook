@@ -23,9 +23,9 @@
 import Foundation
 
 /// Type representing error for common situations.
-public struct CommonError: Error {
+public struct CommonError: Error, Sendable {
     public var code: Code
-    public var userInfo: [String: Any]
+    public nonisolated(unsafe) var userInfo: [String: Any]
     
     public init(_ code: Code, userInfo: [String: Any] = [:]) {
         self.code = code
@@ -34,7 +34,7 @@ public struct CommonError: Error {
 }
 
 extension CommonError {
-    public enum Code: Int {
+    public enum Code: Int, Sendable {
         case general
         case fatal
         case unexpected
@@ -49,7 +49,7 @@ extension CommonError {
 
 extension CommonError: CustomNSError {
     /// CommonError's domain can be customized
-    public static var errorDomain = "CommonErrorDomain"
+    public nonisolated(unsafe) static var errorDomain = "CommonErrorDomain"
     
     public var errorCode: Int { Int(code.rawValue) }
     public var errorUserInfo: [String: Any] { userInfo }
