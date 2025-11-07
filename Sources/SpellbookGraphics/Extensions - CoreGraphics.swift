@@ -20,14 +20,72 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-#if canImport(CoreGraphics)
+import SpellbookFoundation
 
 import CoreGraphics
 import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
+extension CGPoint {
+    public mutating func scale(_ scale: CGFloat) {
+        self = scaled(scale)
+    }
+    
+    public func scaled(_ scale: CGFloat) -> CGPoint {
+        CGPoint(x: x * scale, y: y * scale)
+    }
+}
+
+extension CGPoint: @retroactive AdditiveArithmetic {
+    public static func + (lhs: CGPoint, rhs: CGPoint) -> CGPoint {
+        CGPoint(x: lhs.x + rhs.x, y: lhs.y + rhs.y)
+    }
+    
+    public static func - (lhs: CGPoint, rhs: CGPoint) -> CGPoint {
+        CGPoint(x: lhs.x - rhs.x, y: lhs.y - rhs.y)
+    }
+}
+
+extension CGSize {
+    public static let unit = CGSize(width: 1, height: 1)
+    
+    public var area: CGFloat { width * height }
+    
+    public mutating func scale(_ scale: CGFloat) {
+        self = scaled(scale)
+    }
+    
+    public func scaled(_ scale: CGFloat) -> CGSize {
+        CGSize(width: width * scale, height: height * scale)
+    }
+}
+
+extension CGSize: @retroactive AdditiveArithmetic {
+    public static func + (lhs: CGSize, rhs: CGSize) -> CGSize {
+        CGSize(width: lhs.width + rhs.width, height: lhs.height + rhs.height)
+    }
+    
+    public static func - (lhs: CGSize, rhs: CGSize) -> CGSize {
+        CGSize(width: lhs.width - rhs.width, height: lhs.height - rhs.height)
+    }
+}
+
 extension CGRect {
+    public static let unit = CGRect(x: 0, y: 0, width: 1, height: 1)
+    
+    public var center: CGPoint { CGPoint(x: midX, y: midY) }
+    public var area: CGFloat { width * height }
+    
+    public init(origin: CGPoint, extent: CGPoint) {
+        self.init(origin: origin, size: CGSize(width: extent.x - origin.x, height: extent.y - origin.y))
+    }
+    
+    public var extent: CGPoint {
+        get { .init(x: maxX, y: maxY) }
+        set { size.width += newValue.x - maxX; size.height += newValue.y - maxY }
+    }
+    
     /// Center given rect relative to another one.
     /// - returns: New CGRect which center is the same with given one.
     public func centered(against rect: CGRect) -> CGRect {
@@ -43,13 +101,21 @@ extension CGRect {
         self = centered(against: rect)
     }
     
-    public func flippedY(fullHeight: CGFloat) -> CGRect {
+    public func verticallyFlipped(fullHeight: CGFloat) -> CGRect {
         let newY = fullHeight - (origin.y + height)
         return CGRect(x: origin.x, y: newY, width: width, height: height)
     }
     
-    public mutating func flipY(fullHeight: CGFloat) {
-        self = flippedY(fullHeight: fullHeight)
+    public mutating func verticallyFlip(fullHeight: CGFloat) {
+        self = verticallyFlipped(fullHeight: fullHeight)
+    }
+    
+    public mutating func scale(_ scale: CGFloat) {
+        self = scaled(scale)
+    }
+    
+    public func scaled(_ scale: CGFloat) -> CGRect {
+        CGRect(origin: origin.scaled(scale), size: size.scaled(scale))
     }
 }
 
@@ -117,5 +183,3 @@ extension CGImage {
         return CGImageSourceCreateImageAtIndex(source, 0, nil)
     }
 }
-
-#endif

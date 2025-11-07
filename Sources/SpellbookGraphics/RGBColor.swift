@@ -5,9 +5,9 @@
 //  Created by Alkenso (Vladimir Vashurkin) on 2025-01-30.
 //
 
-import CoreGraphics
+import SpellbookFoundation
 
-#if canImport(CoreGraphics)
+import CoreGraphics
 
 public struct RGBColor: Hashable, Codable, Sendable, ValueBuilder {
     public var red: CGFloat
@@ -117,6 +117,8 @@ extension RGBColor {
             alpha: nsColor.alphaComponent
         )
     }
+    
+    public var nsColor: NSColor { NSColor(red: red, green: green, blue: blue, alpha: alpha) }
 }
 
 #endif
@@ -129,8 +131,19 @@ extension RGBColor {
     public init?(_ uiColor: UIColor) {
         self.init(cgColor: uiColor.cgColor)
     }
+    
+    public var uiColor: UIColor { UIColor(red: red, green: green, blue: blue, alpha: alpha) }
 }
 
 #endif
+
+#if canImport(SwiftUI)
+
+import SwiftUI
+
+extension RGBColor {
+    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+    public var suiColor: Color { Color(cgColor: cgColor) }
+}
 
 #endif

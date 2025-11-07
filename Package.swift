@@ -20,6 +20,10 @@ let package = Package(
             targets: ["SpellbookBinaryParsing"]
         ),
         .library(
+            name: "SpellbookGraphics",
+            targets: ["SpellbookGraphics"]
+        ),
+        .library(
             name: "SpellbookTestUtils",
             targets: ["SpellbookTestUtils"]
         ),
@@ -48,12 +52,19 @@ let package = Package(
             dependencies: ["SpellbookFoundation"]
         ),
         .target(
+            name: "SpellbookGraphics",
+            dependencies: ["SpellbookFoundation"],
+            linkerSettings: [
+                .linkedFramework("CoreGraphics"),
+            ]
+        ),
+        .target(
             name: "SpellbookTestUtils",
             dependencies: ["SpellbookFoundation"]
         ),
         .testTarget(
             name: "SpellbookTests",
-            dependencies: ["SpellbookFoundation", "SpellbookBinaryParsing", "SpellbookTestUtils"]
+            dependencies: ["SpellbookFoundation", "SpellbookBinaryParsing", "SpellbookGraphics", "SpellbookTestUtils"]
         ),
         .testTarget(
             name: "SpellbookTestUtilsTests",
