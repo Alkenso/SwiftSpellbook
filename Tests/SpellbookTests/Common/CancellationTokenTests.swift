@@ -5,7 +5,7 @@ import XCTest
 
 class CancellationTokenTests: XCTestCase {
     func test_basic() {
-        var isCancelled = false
+        nonisolated(unsafe) var isCancelled = false
         let expCancel = expectation(description: "")
         let token = CancellationToken {
             isCancelled = true
@@ -34,7 +34,7 @@ class CancellationTokenTests: XCTestCase {
     func test_children() {
         let token = CancellationToken()
         
-        var isCancelled = false
+        nonisolated(unsafe) var isCancelled = false
         let expCancel = expectation(description: "")
         expCancel.expectedFulfillmentCount = 2
         

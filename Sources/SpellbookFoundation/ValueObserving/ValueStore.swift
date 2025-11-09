@@ -236,7 +236,7 @@ extension ValueStore {
             let token = UUID()
             store.subscribe { [weak self] newValue, context in
                 if (context as? UUID) != token {
-                    Task { @MainActor in self?.value = newValue }
+                    DispatchQueue.syncOnMain { self?.value = newValue }
                 }
             }
             .store(in: &cancellables)

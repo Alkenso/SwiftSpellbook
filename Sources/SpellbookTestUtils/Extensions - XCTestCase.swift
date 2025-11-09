@@ -56,21 +56,21 @@ extension XCTestCase {
         Self.testTemporaryDirectory
     }
     
-    @MainActor
     @discardableResult
     public func waitForExpectations(timeout: TimeInterval = XCTestCase.waitTimeout) -> Error? {
         waitForExpectations(timeout: timeout, ignoreWaitRate: false)
     }
     
-    @MainActor
     @discardableResult
     public func waitForExpectations(timeout: TimeInterval = XCTestCase.waitTimeout, ignoreWaitRate: Bool) -> Error? {
-        nonisolated(unsafe) var error: Error?
-        waitForExpectations(timeout: timeout * Self.waitRate) {
-            error = $0
+        nonisolated(unsafe) let test = self
+        return DispatchQueue.syncOnMain {
+            nonisolated(unsafe) var error: Error?
+            test.waitForExpectations(timeout: timeout * Self.waitRate) {
+                error = $0
+            }
+            return error
         }
-        
-        return error
     }
     
     public static func sleep(interval: TimeInterval) {

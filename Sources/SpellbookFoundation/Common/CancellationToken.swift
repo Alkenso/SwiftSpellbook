@@ -26,14 +26,14 @@ import Foundation
 public class CancellationToken: @unchecked Sendable {
     private let queue: DispatchQueue
     private let onDeinit: Bool
-    private let onCancel: () -> Void
+    private let onCancel: @Sendable () -> Void
     
     @Atomic private var cancelled = false
     private var children = Synchronized<[CancellationToken]>(.serial)
     
     public var isCancelled: Bool { cancelled }
     
-    public init(on queue: DispatchQueue = .global(), onDeinit: Bool = false, cancel: sending @escaping () -> Void) {
+    public init(on queue: DispatchQueue = .global(), onDeinit: Bool = false, cancel: @escaping @Sendable () -> Void) {
         self.queue = queue
         self.onDeinit = onDeinit
         self.onCancel = cancel
@@ -67,7 +67,7 @@ extension CancellationToken {
         self.init {}
     }
     
-    public func addChild(on queue: DispatchQueue = .global(), cancel: sending @escaping () -> Void) {
+    public func addChild(on queue: DispatchQueue = .global(), cancel: @escaping @Sendable () -> Void) {
         addChild(.init(on: queue, cancel: cancel))
     }
     
