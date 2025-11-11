@@ -268,11 +268,11 @@ extension ValueStore {
 }
 
 extension ValueStore: _ValueUpdateWrapping {
-    public func _readValue<R>(body: (Value) -> R) -> R {
+    public func _readValue<R>(body: (Value) -> sending R) -> sending R {
         update { body($0) }
     }
     
-    public func _updateValue<R>(body: (inout Value) -> R) -> R {
+    public func _updateValue<R>(body: (inout Value) -> sending R) -> sending R {
         update(body: body)
     }
 }

@@ -121,7 +121,7 @@ extension FileStore {
 extension FileStore where T == Data {
     private static let nonexistentValue = UUID().uuidString.utf8Data
     
-    public func codable<U: Codable & SendableMetatype>(
+    public func codable<U: Codable>(
         _ type: U.Type = U.self,
         using coder: FileStoreCoder<U>
     ) -> FileStore<U> {

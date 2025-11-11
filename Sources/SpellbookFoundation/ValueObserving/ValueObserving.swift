@@ -79,7 +79,7 @@ extension ValueObserving {
     }
 }
 
-public struct AnyValueObserving<T>: ValueObserving {
+public struct AnyValueObserving<T: Sendable>: ValueObserving {
     public let subscribe: (Bool, @escaping @Sendable (T, Any?) -> Void) -> SubscriptionToken
     
     public init(subscribe: @escaping (Bool, @escaping @Sendable (T, Any?) -> Void) -> SubscriptionToken) {
