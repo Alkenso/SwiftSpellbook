@@ -4,7 +4,7 @@ import SpellbookTestUtils
 import Combine
 import XCTest
 
-private class ValueWrapper<T>: ValueObserving {
+private class ValueWrapper<T>: ValueObserving, @unchecked Sendable {
     private var subscriptions: [(suppressInitialNotify: Bool, receiveValue: (T, Any?) -> Void)] = []
     
     init(value: T) {
@@ -35,7 +35,7 @@ class ValueObservingTests: XCTestCase {
         let wrapper = ValueStore(initialValue: 10)
         XCTAssertEqual(wrapper.value, 10)
         
-        var receivedValue: Int?
+        nonisolated(unsafe) var receivedValue: Int?
         wrapper.subscribe {
             receivedValue = $0
         }.store(in: &cancellables)
@@ -53,7 +53,7 @@ class ValueObservingTests: XCTestCase {
         let wrapper = ValueWrapper(value: 10)
         XCTAssertEqual(wrapper.value, 10)
         
-        var receivedChange: Change<Int>?
+        nonisolated(unsafe) var receivedChange: Change<Int>?
         wrapper.subscribeChange {
             receivedChange = $0
         }.store(in: &cancellables)

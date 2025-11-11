@@ -20,27 +20,27 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-import Combine
+@preconcurrency import Combine
 import Foundation
 
 public typealias SubscriptionToken = AnyCancellable
 
 public protocol ValueObserving<Value> {
-    associatedtype Value
+    associatedtype Value: Sendable
     func subscribe(
         suppressInitialNotify: Bool,
-        receiveValue: @escaping (Value, _ context: Any?) -> Void
+        receiveValue: @escaping @Sendable (Value, _ context: Any?) -> Void
     ) -> AnyCancellable
 }
 
 extension ValueObserving {
-    public func subscribe(receiveValue: @escaping (Value, _ context: Any?) -> Void) -> SubscriptionToken {
+    public func subscribe(receiveValue: @escaping @Sendable (Value, _ context: Any?) -> Void) -> SubscriptionToken {
         subscribe(suppressInitialNotify: false, receiveValue: receiveValue)
     }
     
     public func subscribe(
         suppressInitialNotify: Bool = false,
-        receiveValue: @escaping (Value) -> Void
+        receiveValue: @escaping @Sendable (Value) -> Void
     ) -> AnyCancellable {
         subscribe(suppressInitialNotify: suppressInitialNotify) { value, _ in receiveValue(value) }
     }
@@ -51,7 +51,7 @@ extension ValueObserving {
     /// - Warning: When using `subscribeReceiveChange`, be sure it receives the input in right order.
     /// Avoid use `receive(on:)` with concurrent queues in upstream `ValueObserving`.
     public func subscribeChange(
-        receiveChange: @escaping (Change<Value>, _ context: Any?) -> Void
+        receiveChange: @escaping @Sendable (Change<Value>, _ context: Any?) -> Void
     ) -> SubscriptionToken where Value: Equatable {
         let oldValue = Atomic<Value?>(wrappedValue: nil)
         return subscribe {
@@ -62,7 +62,7 @@ extension ValueObserving {
     }
     
     public func subscribeChange(
-        receiveChange: @escaping (Change<Value>) -> Void
+        receiveChange: @escaping @Sendable (Change<Value>) -> Void
     ) -> SubscriptionToken where Value: Equatable {
         subscribeChange { change, _ in receiveChange(change) }
     }
@@ -72,20 +72,21 @@ extension ValueObserving {
     public func receive(on queue: DispatchQueue) -> AnyValueObserving<Value> {
         AnyValueObserving { suppressInitialNotify, receiveValue in
             self.subscribe(suppressInitialNotify: suppressInitialNotify) { value, context in
+                nonisolated(unsafe) let context = context
                 queue.async { receiveValue(value, context) }
             }
         }
     }
 }
 
-public struct AnyValueObserving<T>: ValueObserving {
-    public let subscribe: (Bool, @escaping (T, Any?) -> Void) -> SubscriptionToken
+public struct AnyValueObserving<T: Sendable>: ValueObserving {
+    public let subscribe: (Bool, @escaping @Sendable (T, Any?) -> Void) -> SubscriptionToken
     
-    public init(subscribe: @escaping (Bool, @escaping (T, Any?) -> Void) -> SubscriptionToken) {
+    public init(subscribe: @escaping (Bool, @escaping @Sendable (T, Any?) -> Void) -> SubscriptionToken) {
         self.subscribe = subscribe
     }
     
-    public func subscribe(suppressInitialNotify: Bool, receiveValue: @escaping (T, Any?) -> Void) -> SubscriptionToken {
+    public func subscribe(suppressInitialNotify: Bool, receiveValue: @escaping @Sendable (T, Any?) -> Void) -> SubscriptionToken {
         subscribe(suppressInitialNotify, receiveValue)
     }
 }
@@ -93,7 +94,10 @@ public struct AnyValueObserving<T>: ValueObserving {
 extension ValueObserving {
     public func stream(suppressInitialNotify: Bool = false) -> AsyncStream<(Value, Any?)> {
         .init { continuation in
-            let subscription = subscribe(suppressInitialNotify: suppressInitialNotify) { continuation.yield(($0, $1)) }
+            let subscription = subscribe(suppressInitialNotify: suppressInitialNotify) {
+                @UncheckedSendable var value = ($0, $1)
+                continuation.yield(value)
+            }
             continuation.onTermination = { _ in subscription.cancel() }
         }
     }
@@ -130,8 +134,9 @@ private struct ValueObservingPublisher<Value>: Publisher {
         subscriber.receive(subscription: subscription)
         
         subscription.onCancel = { [weak subscription] in subscription?.context = nil }
+        nonisolated(unsafe) let receive: (Output) -> Void = { _ = subscriber.receive($0) }
         subscription.context = observer.subscribe(suppressInitialNotify: suppressInitialNotify) { value, context in
-            _ = subscriber.receive((value, context))
+            receive((value, context))
         }
     }
 }

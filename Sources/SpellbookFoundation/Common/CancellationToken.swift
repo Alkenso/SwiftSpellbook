@@ -23,17 +23,17 @@
 import Combine
 import Foundation
 
-public class CancellationToken {
+public class CancellationToken: @unchecked Sendable {
     private let queue: DispatchQueue
     private let onDeinit: Bool
-    private let onCancel: () -> Void
+    private let onCancel: @Sendable () -> Void
     
     @Atomic private var cancelled = false
     private var children = Synchronized<[CancellationToken]>(.serial)
     
     public var isCancelled: Bool { cancelled }
     
-    public init(on queue: DispatchQueue = .global(), onDeinit: Bool = false, cancel: @escaping () -> Void) {
+    public init(on queue: DispatchQueue = .global(), onDeinit: Bool = false, cancel: @escaping @Sendable () -> Void) {
         self.queue = queue
         self.onDeinit = onDeinit
         self.onCancel = cancel
@@ -47,8 +47,8 @@ public class CancellationToken {
     
     public func cancel() {
         guard !$cancelled.exchange(true) else { return }
-        queue.async(execute: onCancel)
-        children.exchange([]).forEach { $0.queue.async(execute: $0.cancel) }
+        queue.async { self.onCancel() }
+        children.write([]).forEach { $0.queue.async(execute: $0.cancel) }
     }
     
     public func addChild(_ token: CancellationToken) {
@@ -67,7 +67,7 @@ extension CancellationToken {
         self.init {}
     }
     
-    public func addChild(on queue: DispatchQueue = .global(), cancel: @escaping () -> Void) {
+    public func addChild(on queue: DispatchQueue = .global(), cancel: @escaping @Sendable () -> Void) {
         addChild(.init(on: queue, cancel: cancel))
     }
     

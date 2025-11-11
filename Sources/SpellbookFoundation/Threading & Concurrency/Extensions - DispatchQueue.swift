@@ -102,11 +102,11 @@ extension DispatchQueue {
 extension DispatchQueue {
     /// Performs `work` on the main thread.
     /// Usual `sync` method with check that the caller context is already main queue.
-    public static func syncOnMain<T>(execute work: () throws -> T) rethrows -> T {
+    public static func syncOnMain<T: Sendable>(execute work: @MainActor () throws -> T) rethrows -> T {
         if Thread.isMainThread {
-            return try work()
+            return try MainActor.assumeIsolated { try work() }
         } else {
-            return try main.sync(execute: work)
+            return try DispatchQueue.main.sync(execute: work)
         }
     }
 }

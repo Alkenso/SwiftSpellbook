@@ -24,8 +24,8 @@ import SpellbookFoundation
 
 import Foundation
 
-public protocol HTTPClientProtocol {
-    func data(for request: () throws -> URLRequest, completion: @escaping (Result<HTTPResult<Data>, Error>) -> Void)
+public protocol HTTPClientProtocol: Sendable {
+    func data(for request: () throws -> URLRequest, completion: @escaping @Sendable (Result<HTTPResult<Data>, Error>) -> Void)
     
     @available(macOS 12.0, iOS 15, tvOS 15.0, watchOS 8.0, *)
     func data(for request: () throws -> URLRequest, delegate: URLSessionTaskDelegate?) async throws -> HTTPResult<Data>
@@ -33,7 +33,7 @@ public protocol HTTPClientProtocol {
 
 @available(macOS 12.0, iOS 15, tvOS 15.0, watchOS 8.0, *)
 extension HTTPClientProtocol {
-    public func data(for request: () throws -> URLRequest, completion: @escaping (Result<HTTPResult<Data>, any Error>) -> Void) {
+    public func data(for request: () throws -> URLRequest, completion: @escaping @Sendable (Result<HTTPResult<Data>, any Error>) -> Void) {
         let request = Result(catching: request)
         Task {
             do {
@@ -46,8 +46,8 @@ extension HTTPClientProtocol {
     }
 }
 
-open class HTTPClient: HTTPClientProtocol {
-    private var additionalHeaders = Synchronized<HTTPParameters<HTTPHeader>>(.unfair, .init())
+open class HTTPClient: HTTPClientProtocol, @unchecked Sendable {
+    private let additionalHeaders = Synchronized<HTTPParameters<HTTPHeader>>(.unfair, .init())
     private let session: URLSession
     
     public init(session: URLSession = .shared) {
@@ -55,12 +55,12 @@ open class HTTPClient: HTTPClientProtocol {
     }
     
     public func updateHeaders(_ update: (inout HTTPParameters<HTTPHeader>) -> Void) {
-        additionalHeaders.write(update)
+        additionalHeaders.write { update(&$0) }
     }
     
     public func data(
         for request: () throws -> URLRequest,
-        completion: @escaping (Result<HTTPResult<Data>, Error>) -> Void
+        completion: @escaping @Sendable (Result<HTTPResult<Data>, Error>) -> Void
     ) {
         var urlRequest: URLRequest
         do {
@@ -103,11 +103,11 @@ open class HTTPClient: HTTPClientProtocol {
 }
  
 extension HTTPClientProtocol {
-    public func data(for request: HTTPRequest, completion: @escaping (Result<HTTPResult<Data>, Error>) -> Void) {
+    public func data(for request: HTTPRequest, completion: @escaping @Sendable (Result<HTTPResult<Data>, Error>) -> Void) {
         data(for: request.urlRequest, completion: completion)
     }
     
-    func data(for request: URLRequest, completion: @escaping (Result<HTTPResult<Data>, Error>) -> Void) {
+    func data(for request: URLRequest, completion: @escaping @Sendable (Result<HTTPResult<Data>, Error>) -> Void) {
         data(for: { request }, completion: completion)
     }
     
@@ -115,7 +115,7 @@ extension HTTPClientProtocol {
         _ type: T.Type = T.self,
         for request: HTTPRequest,
         decoder: ObjectDecoder<T>,
-        completion: @escaping (Result<HTTPResult<T>, Error>) -> Void
+        completion: @escaping @Sendable (Result<HTTPResult<T>, Error>) -> Void
     ) {
         object(type, for: request.urlRequest, decoder: decoder, completion: completion)
     }
@@ -124,7 +124,7 @@ extension HTTPClientProtocol {
         _ type: T.Type = T.self,
         for request: () throws -> URLRequest,
         decoder: ObjectDecoder<T>,
-        completion: @escaping (Result<HTTPResult<T>, Error>) -> Void
+        completion: @escaping @Sendable (Result<HTTPResult<T>, Error>) -> Void
     ) {
         data(for: request) {
             completion($0.flatMap { dataResult in
@@ -138,7 +138,7 @@ extension HTTPClientProtocol {
         _ type: T.Type = T.self,
         for request: URLRequest,
         decoder: ObjectDecoder<T>,
-        completion: @escaping (Result<HTTPResult<T>, Error>) -> Void
+        completion: @escaping @Sendable (Result<HTTPResult<T>, Error>) -> Void
     ) {
         data(for: request) {
             completion($0.flatMap { dataResult in

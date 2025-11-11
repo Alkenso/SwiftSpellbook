@@ -71,7 +71,7 @@ let package = Package(
             dependencies: ["SpellbookFoundation", "SpellbookTestUtils"]
         ),
     ],
-    swiftLanguageModes: [.v5]
+    swiftLanguageModes: [.v5, .v6]
 )
 
 for target in package.targets {

@@ -59,7 +59,7 @@ extension DictionaryCodingKey {
     }
 }
 
-public struct DictionaryCodingError: Error {
+public struct DictionaryCodingError: Error, @unchecked Sendable {
     public var code: Code
     public var codingPath: [DictionaryCodingKey]
     public var description: String

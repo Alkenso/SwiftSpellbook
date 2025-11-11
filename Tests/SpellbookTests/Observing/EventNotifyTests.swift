@@ -10,7 +10,7 @@ class EventNotifyTests: XCTestCase {
         var subscriptions: [SubscriptionToken] = []
         defer { withExtendedLifetime(subscriptions) {} }
         
-        var expectedValues = [10, 20, 30]
+        nonisolated(unsafe) var expectedValues = [10, 20, 30]
         
         let exp = expectation(description: "notify called")
         exp.expectedFulfillmentCount = expectedValues.count
@@ -41,7 +41,7 @@ class EventNotifyTests: XCTestCase {
         defer { withExtendedLifetime(subscriptions) {} }
         
         let testValues = [10, 20, 30]
-        var expectedValues = [0] + testValues // include `initialValue`.
+        nonisolated(unsafe) var expectedValues = [0] + testValues // include `initialValue`.
         
         let exp = expectation(description: "notify called")
         exp.expectedFulfillmentCount = expectedValues.count

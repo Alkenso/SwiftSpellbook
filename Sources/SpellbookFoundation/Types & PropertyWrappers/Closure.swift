@@ -51,7 +51,11 @@ extension Closure {
     }
     
     public func async(on queue: DispatchQueue) -> Self where R == Void {
-        Self { result in queue.async { self(result) } }
+        Self { result in
+            nonisolated(unsafe) let body = body
+            nonisolated(unsafe) let result = result
+            queue.async { body(result) }
+        }
     }
 }
 

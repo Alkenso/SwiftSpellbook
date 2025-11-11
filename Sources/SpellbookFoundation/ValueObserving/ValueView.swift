@@ -23,8 +23,8 @@
 import Foundation
 
 @propertyWrapper
-public final class ValueViewed<Value> {
-    private var view: ValueView<Value>
+public final class ValueViewed<Value: Sendable>: Sendable {
+    private nonisolated(unsafe) var view: ValueView<Value>
     
     public init(_ view: ValueView<Value>) {
         self.view = view
@@ -42,7 +42,7 @@ public final class ValueViewed<Value> {
 
 /// Wrapper that provides access to value. Useful when value is a struct that may be changed over time.
 @dynamicMemberLookup
-public final class ValueView<Value> {
+public final class ValueView<Value: Sendable>: @unchecked Sendable {
     private var accessor: () -> Value
     
     public init(_ accessor: @escaping () -> Value) {

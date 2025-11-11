@@ -28,14 +28,14 @@ private let log = SpellbookLogger.internal(category: "EventAsk")
 public typealias EventAskCombined<Input, Output> = EventAskEx<Input, Output, Output>
 public typealias EventAsk<Input, Output> = EventAskEx<Input, Output, [Output]>
 
-public class EventAskEx<Input, Transformed, Output> {
+public class EventAskEx<Input, Transformed, Output>: @unchecked Sendable {
     private typealias Entry<T> = (transform: AsyncTransform, queue: DispatchQueue?)
     private let transforms = Synchronized<[UUID: Entry<AsyncTransform>]>(.concurrent)
     private let combine: ([Transformed]) -> Output
     
     public typealias AsyncTransform = (Input, @escaping (Transformed) -> Void) -> Void
     public typealias SyncTransform = (Input) -> Transformed
-    public typealias ConcurrentTransform = (Input) async -> Transformed
+    public typealias ConcurrentTransform = @Sendable (Input) async -> Transformed
     
     public init(combine: @escaping ([Transformed]) -> Output) {
         self.combine = combine
@@ -57,14 +57,14 @@ public class EventAskEx<Input, Transformed, Output> {
         return output
     }
     
-    public func ask(_ value: Input, timeout: Timeout? = nil) async -> Output {
+    public func ask(_ value: Input, timeout: Timeout? = nil) async -> Output where Output: Sendable {
         await withCheckedContinuation { continuation in
             askAsync(value, timeout: timeout) { continuation.resume(returning: $0) }
         }
     }
     
     private func transform(_ value: Input, queue: DispatchQueue?, timeout: Timeout?, completion: @escaping (Output) -> Void) {
-        let transforms = transforms.read { $0.values }
+        let transforms = transforms.readUnchecked { $0.values }
         
         let values = Values(count: transforms.count)
         let group = DispatchGroup()
@@ -98,6 +98,7 @@ public class EventAskEx<Input, Transformed, Output> {
         timeout: Timeout?,
         completion: @escaping (Output) -> Void
     ) {
+        nonisolated(unsafe) let completion = completion
         let once = AtomicFlag()
         
         group.notify(queue: queue) {
@@ -127,7 +128,7 @@ public class EventAskEx<Input, Transformed, Output> {
     ) -> SubscriptionToken {
         let id = UUID()
         transforms.write { $0[id] = (transform, queue) }
-        return .init { [weak self] in 
+        return .init { [weak self] in
             self?.transforms.write { _ = $0.removeValue(forKey: id) }
         }
     }
@@ -139,9 +140,10 @@ public class EventAskEx<Input, Transformed, Output> {
         subscribe(on: queue) { $1(transform($0)) }
     }
     
-    public func subscribe(transform: @escaping ConcurrentTransform) -> SubscriptionToken {
+    public func subscribe(transform: @escaping ConcurrentTransform) -> SubscriptionToken where Input: Sendable {
         subscribe(on: nil) { input, reply in
-            Task {
+            @UncheckedSendable var reply = reply
+            Task.detached {
                 reply(await transform(input))
             }
         }
@@ -149,7 +151,8 @@ public class EventAskEx<Input, Transformed, Output> {
 }
 
 extension EventAskEx {
-    public struct Timeout {
+    @preconcurrency
+    public struct Timeout: @unchecked Sendable {
         public var interval: TimeInterval
         public var onTimeout: () -> Fallback? = { nil }
         
@@ -170,9 +173,9 @@ extension EventAskEx {
 }
 
 extension EventAskEx {
-    private class Values {
+    private class Values: @unchecked Sendable {
         private var values: [Transformed?]
-        private var lock = UnfairLock()
+        private let lock = UnfairLock()
         
         init(count: Int) {
             values = .init(repeating: nil, count: count)
@@ -191,7 +194,7 @@ extension EventAskEx {
                 let combined = combine(results)
                 return combined
             case .replaceMissed(let singleValue):
-                let results = lock.withLock { values.map { $0 ?? singleValue } }
+                let results = lock.withLockUnchecked { values.map { $0 ?? singleValue } }
                 let combined = combine(results)
                 return combined
             case .replaceOutput(let wholeResult):

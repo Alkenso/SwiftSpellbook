@@ -42,7 +42,7 @@ public final class Atomic<Value>: @unchecked Sendable {
     public var projectedValue: Atomic<Value> { self }
     
     public func exchange(_ value: Value) -> Value {
-        storage.exchange(.init(value)).wrappedValue
+        storage.write(.init(value)).wrappedValue
     }
     
     @discardableResult

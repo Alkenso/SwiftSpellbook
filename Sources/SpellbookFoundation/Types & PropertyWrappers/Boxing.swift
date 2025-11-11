@@ -30,6 +30,10 @@ public struct Weak<Value: AnyObject> {
     }
 }
 
+extension Weak: Equatable where Value: Equatable {}
+extension Weak: Hashable where Value: Hashable {}
+extension Weak: Sendable where Value: Sendable {}
+
 public struct Unowned<Value: AnyObject> {
     public unowned var value: Value?
     
@@ -37,6 +41,10 @@ public struct Unowned<Value: AnyObject> {
         self.value = value
     }
 }
+
+extension Unowned: Equatable where Value: Equatable {}
+extension Unowned: Hashable where Value: Hashable {}
+extension Unowned: Sendable where Value: Sendable {}
 
 @dynamicMemberLookup
 public final class Box<Value> {
@@ -96,6 +104,7 @@ public enum Indirect<Value> {
 
 extension Indirect: Equatable where Value: Equatable {}
 extension Indirect: Hashable where Value: Hashable {}
+extension Indirect: Sendable where Value: Sendable {}
 extension Indirect: Encodable, PropertyWrapperEncodable where Value: Encodable {}
 extension Indirect: Decodable, PropertyWrapperDecodable where Value: Decodable {}
 

@@ -25,7 +25,7 @@ class StoreTests: XCTestCase {
         let store = ValueStore(initialValue: TestStru())
         XCTAssertEqual(store.value, TestStru())
         
-        var initial = true
+        nonisolated(unsafe) var initial = true
         store.subscribe { val in
             if initial {
                 XCTAssertEqual(val, store.value)
@@ -103,7 +103,7 @@ class StoreTests: XCTestCase {
     func test_scope_subscribe() {
         let store = ValueStore(initialValue: TestStru())
         
-        var expectedValues = ["", "qwert"]
+        nonisolated(unsafe) var expectedValues = ["", "qwert"]
         
         let exp = expectation(description: "Expected to be notified on parent update")
         exp.expectedFulfillmentCount = expectedValues.count
@@ -268,6 +268,7 @@ class StoreTests: XCTestCase {
         s2.signal()
     }
     
+    @MainActor
     func test_observableObject() {
         let store = ValueStore(initialValue: 0)
         let observableObject = store.observableObject

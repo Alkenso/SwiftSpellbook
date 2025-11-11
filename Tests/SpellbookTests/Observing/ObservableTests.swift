@@ -12,7 +12,7 @@ class ObservableTests: XCTestCase {
     }
     
     func test() {
-        var value = 10
+        nonisolated(unsafe) var value = 10
         let event = EventNotify<Int>()
         let observable = ValueObservable<Int>(
             view: .init { value },
@@ -42,7 +42,7 @@ class ObservableTests: XCTestCase {
     
     func test_constant() {
         let observable = ValueObservable<Int>.constant(10)
-        var value: Int?
+        nonisolated(unsafe) var value: Int?
         
         observable
             .subscribe(suppressInitialNotify: true) { value = $0 }
@@ -56,7 +56,7 @@ class ObservableTests: XCTestCase {
     }
     
     func test_scope() {
-        var value = 10
+        nonisolated(unsafe) var value = 10
         let event = EventNotify<Int>()
         let observable = ValueObservable<Int>(
             view: .init { value },

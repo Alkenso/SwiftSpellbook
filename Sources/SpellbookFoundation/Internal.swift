@@ -26,7 +26,8 @@ extension Optional where Wrapped == DispatchQueue {
     @inline(__always)
     package func async(flags: DispatchWorkItemFlags = [], execute work: @escaping () -> Void) {
         if let self {
-            self.async(flags: flags, execute: work)
+            nonisolated(unsafe) let work = work
+            self.async(flags: flags) { work() }
         } else {
             work()
         }

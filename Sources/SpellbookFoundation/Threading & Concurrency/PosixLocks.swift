@@ -24,10 +24,6 @@ import Foundation
 
 /// Swift-safe wrapper around `os_unfair_lock`.
 /// More explanation at [OSAllocatedUnfairLock](https://developer.apple.com/documentation/os/osallocatedunfairlock)
-@available(macOS, deprecated: 13.0, message: "Use `OSAllocatedUnfairLock` lock")
-@available(iOS, deprecated: 16.0, message: "Use `OSAllocatedUnfairLock` lock")
-@available(watchOS, deprecated: 9.0, message: "Use `OSAllocatedUnfairLock` lock")
-@available(tvOS, deprecated: 16.0, message: "Use `OSAllocatedUnfairLock` lock")
 public final class UnfairLock: @unchecked Sendable {
     private let raw: UnsafeMutablePointer<os_unfair_lock>
     
@@ -56,6 +52,12 @@ public final class UnfairLock: @unchecked Sendable {
     }
     
     public func withLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
+        lock()
+        defer { unlock() }
+        return try body()
+    }
+    
+    public func withLockUnchecked<R, E: Error>(_ body: () throws(E) -> R) throws(E) -> R {
         lock()
         defer { unlock() }
         return try body()
@@ -107,7 +109,19 @@ public final class RWLock: @unchecked Sendable {
         return try body()
     }
     
+    public func withReadLockUnchecked<R, E: Error>(_ body: () throws(E) -> R) throws(E) -> R {
+        readLock()
+        defer { unlock() }
+        return try body()
+    }
+    
     public func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
+        writeLock()
+        defer { unlock() }
+        return try body()
+    }
+    
+    public func withWriteLockUnchecked<R, E: Error>(_ body: () throws(E) -> R) throws(E) -> R {
         writeLock()
         defer { unlock() }
         return try body()

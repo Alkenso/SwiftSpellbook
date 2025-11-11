@@ -24,7 +24,7 @@ import SpellbookFoundation
 
 import Foundation
 
-public struct HTTPMethod: RawRepresentable, Hashable {
+public struct HTTPMethod: RawRepresentable, Hashable, Sendable {
     public var rawValue: String
     public init(rawValue: String) { self.rawValue = rawValue }
 }
@@ -41,13 +41,13 @@ extension HTTPMethod {
     public static let connect = Self(rawValue: "CONNECT")
 }
 
-public struct HTTPQueryItem: RawRepresentable, Hashable, ExpressibleByStringLiteral {
+public struct HTTPQueryItem: RawRepresentable, Hashable, Sendable, ExpressibleByStringLiteral {
     public var rawValue: String
     public init(rawValue: String) { self.rawValue = rawValue }
     public init(stringLiteral value: StringLiteralType) { self.rawValue = value }
 }
 
-public struct HTTPHeader: RawRepresentable, Hashable {
+public struct HTTPHeader: RawRepresentable, Hashable, Sendable {
     public var rawValue: String
     public init(rawValue: String) { self.rawValue = rawValue }
 }
@@ -62,7 +62,7 @@ extension HTTPHeader: ExpressibleByStringLiteral {
     public init(stringLiteral value: StringLiteralType) { self.rawValue = value }
 }
 
-public struct HTTPAuthorizationType: RawRepresentable, Hashable {
+public struct HTTPAuthorizationType: RawRepresentable, Hashable, Sendable {
     public var rawValue: String
     public init(rawValue: String) { self.rawValue = rawValue }
 }
@@ -126,3 +126,5 @@ extension HTTPParameters where Key == HTTPHeader {
         set(type.header(token), forKey: .authorization)
     }
 }
+
+extension HTTPParameters: Sendable where Key: Sendable {}

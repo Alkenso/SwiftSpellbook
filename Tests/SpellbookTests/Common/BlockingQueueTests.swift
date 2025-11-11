@@ -26,12 +26,12 @@ class BlockingQueueTests: XCTestCase {
         let queue = BlockingQueue<Int>()
         
         let beforeDequeueExp = expectation(description: "before dequeue")
-        @Indirect var dequeueExp = expectation(description: "should not be dequeued")
+        @UncheckedSendable var dequeueExp = expectation(description: "should not be dequeued")
         dequeueExp.isInverted = true
         DispatchQueue.global().async {
             beforeDequeueExp.fulfill()
             XCTAssertEqual(queue.dequeue(), 10)
-            dequeueExp.fulfill()
+            $dequeueExp.wrappedValue.fulfill()
         }
         waitForExpectations(timeout: 0.1, ignoreWaitRate: true)
         
