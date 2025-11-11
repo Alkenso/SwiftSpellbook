@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - xcode: "16.2" # Swift 6
+          - xcode: "16.4" # Swift 6
             macOS: "15"
             iOS: "17.0"
           - xcode: "26.0" # Swift 6.2
