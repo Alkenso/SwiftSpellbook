@@ -4,7 +4,7 @@ SwiftSpellbook is collection of additions to Swift standard library that makes d
 <p>
   <img src="https://img.shields.io/badge/swift-6.2-orange" />
   <img src="https://img.shields.io/badge/platforms-macOS 10.15 | iOS 13 | watchOS 6 | tvOS 13-freshgreen" />
-  <img src="https://img.shields.io/badge/Xcode-16-blue | Xcode-26-green" />
+  <img src="https://img.shields.io/badge/Xcode-16.4 | 26-blue" />
   <img src="https://github.com/Alkenso/SwiftSpellbook/actions/workflows/main.yml/badge.svg" />
 </p>
 
