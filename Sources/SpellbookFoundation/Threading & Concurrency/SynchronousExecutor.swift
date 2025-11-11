@@ -25,98 +25,74 @@ import Foundation
 /// Executes synchronously the asynchronous method.
 /// - Note: While this is not the best practice ever,
 ///         real-world tasks time to time require exactly this.
-public struct SynchronousExecutor {
-    public var name: String?
-    public var timeout: TimeInterval?
-    
-    public init(_ name: String? = nil, timeout: TimeInterval?) {
-        self.name = name
-        self.timeout = timeout
-    }
+public func synchronouslyWithTask<R, E: Error>(_ action: sending @escaping () async throws(E) -> R) throws(E) -> R {
+    let (group, result) = synchronouslyWithTask(action)
+    group.wait()
+    return try result.wrappedValue.get()!
 }
 
-extension SynchronousExecutor {
-    public func sync<R>(_ action: (@escaping @Sendable (Result<R, Error>) -> Void) throws -> Void) throws -> R {
-        guard let timeout else {
-            return try Self.sync(action).get()
-        }
-        
-        @Atomic var result: Result<R, Error>!
-        guard try Self.sync(action, $result).wait(timeout: .now() + timeout) == .success else {
-            throw CommonError.timedOut(what: name ?? "Async-to-sync operation")
-        }
-        return try result.get()
-    }
-    
-    public func sync(_ action: (@escaping (Error?) -> Void) throws -> Void) throws {
-        try sync { (reply: @escaping (Result<(), Error>) -> Void) in
-            try action {
-                if let error = $0 {
-                    reply(.failure(error))
-                } else {
-                    reply(.success(()))
-                }
-            }
-        }
-    }
-    
-    public func sync<T>(_ action: (@escaping (T) -> Void) throws -> Void) throws -> T {
-        try sync { (reply: @escaping (Result<T, Error>) -> Void) in
-            try action {
-                reply(.success($0))
-            }
-        }
-    }
-    
-    public func sync<R>(_ action: @escaping @Sendable () async throws -> R) throws -> R {
-        try sync { completion in
-            Task {
-                do {
-                    let success = try await action()
-                    completion(.success(success))
-                } catch {
-                    completion(.failure(error))
-                }
-            }
-        }
-    }
-    
-    private static func sync<R>(
-        _ action: (@escaping @Sendable (R) -> Void) throws -> Void,
-        _ result: Atomic<R?>
-    ) rethrows -> DispatchGroup {
-        let group = DispatchGroup()
-        group.enter()
-        
-        let once = AtomicFlag()
-        try action {
-            guard !once.testAndSet() else {
-                if !RunEnvironment.isXCTesting {
-                    assertionFailure("\(Self.self) async action called multiple times")
-                }
-                return
-            }
-            result.wrappedValue = $0
-            group.leave()
-        }
-        
-        return group
-    }
+/// Executes synchronously the asynchronous method.
+/// - Note: While this is not the best practice ever,
+///         real-world tasks time to time require exactly this.
+public func synchronouslyWithTask<R, E: Error>(timeout: TimeInterval, _ action: sending @escaping () async throws(E) -> R) throws(E) -> R? {
+    let (group, result) = synchronouslyWithTask(action)
+    _ = group.wait(timeout: .now() + timeout)
+    return try result.wrappedValue.get()
 }
 
-extension SynchronousExecutor {
-    public static func sync<R>(_ action: (@escaping @Sendable (R) -> Void) throws -> Void) rethrows -> R {
-        @Atomic var result: R!
-        try sync(action, $result).wait()
-        return result
-    }
-    
-    public static func sync<R>(_ action: @escaping @Sendable () async -> R) -> R {
-        sync { completion in
-            Task {
-                let result = await action()
-                completion(result)
-            }
+private func synchronouslyWithTask<R, E: Error>(_ action: sending @escaping () async throws(E) -> R) -> (DispatchGroup, Atomic<Result<R?, E>>) {
+    let group = DispatchGroup()
+    group.enter()
+    let result = Atomic<Result<R?, E>>(wrappedValue: .success(nil))
+    Task {
+        do {
+            let r = try await action()
+            _ = result.exchange(.success(r))
+        } catch {
+            _ = result.exchange(.failure(error as! E))
         }
+        group.leave()
     }
+    return (group, result)
+}
+
+/// Executes synchronously the asynchronous method.
+/// - Note: While this is not the best practice ever,
+///         real-world tasks time to time require exactly this.
+public func synchronouslyWithContinuation<R>(_ action: (_ continuation: @escaping @Sendable (R) -> Void) -> Void) -> R {
+    let (group, result) = synchronouslyWithContinuation(action)
+    group.wait()
+    return result.wrappedValue!
+}
+
+/// Executes synchronously the asynchronous method.
+/// - Note: While this is not the best practice ever,
+///         real-world tasks time to time require exactly this.
+public func synchronouslyWithContinuation<R>(
+    timeout: TimeInterval,
+    _ action: (_ continuation: @escaping @Sendable (R) -> Void) -> Void
+) -> R? {
+    let (group, result) = synchronouslyWithContinuation(action)
+    _ = group.wait(timeout: .now() + timeout)
+    return result.wrappedValue
+}
+
+private func synchronouslyWithContinuation<R>(
+    _ action: (_ continuation: @escaping @Sendable (R) -> Void) -> Void
+) -> (DispatchGroup, Atomic<R?>) {
+    let group = DispatchGroup()
+    group.enter()
+    let result = Atomic<R?>(wrappedValue: nil)
+    let once = AtomicFlag()
+    action {
+        guard !once.testAndSet() else {
+            if !RunEnvironment.isXCTesting {
+                assertionFailure("Completion called multiple times")
+            }
+            return
+        }
+        _ = result.exchange($0)
+        group.leave()
+    }
+    return (group, result)
 }

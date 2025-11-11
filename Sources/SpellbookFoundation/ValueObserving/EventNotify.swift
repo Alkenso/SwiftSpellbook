@@ -23,8 +23,8 @@
 import Combine
 import Foundation
 
-public final class EventNotify<T>: ValueObserving {
-    private typealias Handler = (T, Any?) -> Void
+public final class EventNotify<T: Sendable>: ValueObserving, @unchecked Sendable {
+    private typealias Handler = @Sendable (T, Any?) -> Void
     
     private let lock = NSRecursiveLock()
     private var subscriptions: [UUID: Handler] = [:]
@@ -49,7 +49,7 @@ public final class EventNotify<T>: ValueObserving {
     
     public func subscribe(
         suppressInitialNotify: Bool,
-        receiveValue: @escaping (T, _ context: Any?) -> Void
+        receiveValue: @escaping @Sendable (T, _ context: Any?) -> Void
     ) -> SubscriptionToken {
         let id = UUID()
         lock.withLock {
@@ -72,11 +72,7 @@ public final class EventNotify<T>: ValueObserving {
         subscriptions.forEach { notifyOne(value, context, action: $0) }
     }
     
-    private func notifyOne(_ value: T, _ context: Any?, action: @escaping (T, Any?) -> Void) {
-        if let notifyQueue = notifyQueue {
-            notifyQueue.async { action(value, context) }
-        } else {
-            action(value, context)
-        }
+    private func notifyOne(_ value: T, _ context: Any?, action: @escaping @Sendable (T, Any?) -> Void) {
+        notifyQueue.async { action(value, context) }
     }
 }

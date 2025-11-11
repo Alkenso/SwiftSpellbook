@@ -23,9 +23,9 @@
 import Foundation
 
 public protocol _ValueUpdateWrapping: AnyObject {
-    associatedtype Value
-    @_spi(Private) func _readValue<R>(body: (Value) -> R) -> R
-    @_spi(Private) func _updateValue<R>(body: (inout Value) -> R) -> R
+    associatedtype Value: Sendable
+    @_spi(Private) func _readValue<R: Sendable>(body: (Value) -> R) -> R
+    @_spi(Private) func _updateValue<R: Sendable>(body: (inout Value) -> R) -> R
 }
 
 extension _ValueUpdateWrapping {

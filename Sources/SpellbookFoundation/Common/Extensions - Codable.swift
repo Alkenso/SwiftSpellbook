@@ -40,11 +40,11 @@ extension Encodable {
     }
 }
 
-public struct ObjectEncoder<T> {
+public struct ObjectEncoder<T>: Sendable {
     public var formatName: String
-    public var encode: (T) throws -> Data
+    public var encode: @Sendable (T) throws -> Data
     
-    public init(name formatName: String, encode: @escaping (T) throws -> Data) {
+    public init(name formatName: String, encode: @escaping @Sendable (T) throws -> Data) {
         self.formatName = formatName
         self.encode = encode
     }
@@ -98,11 +98,11 @@ extension Decodable {
     }
 }
 
-public struct ObjectDecoder<T> {
+public struct ObjectDecoder<T>: Sendable {
     public var formatName: String
-    public var decode: (T.Type, Data) throws -> T
+    public var decode: @Sendable (T.Type, Data) throws -> T
     
-    public init(formatName: String = "custom", decode: @escaping (T.Type, Data) throws -> T) {
+    public init(formatName: String = "custom", decode: @escaping @Sendable (T.Type, Data) throws -> T) {
         self.formatName = formatName
         self.decode = decode
     }

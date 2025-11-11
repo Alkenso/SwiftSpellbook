@@ -24,13 +24,13 @@ import Foundation
 
 public final class ConcurrentBlockOperation: Operation, @unchecked Sendable {
     @Atomic private var state: Bool?
-    private let block: (ValueView<Bool>, @escaping () -> Void) -> Void
+    private let block: @Sendable (ValueView<Bool>, @escaping @Sendable () -> Void) -> Void
     
-    public init(block: @escaping (_ isCancelled: ValueView<Bool>, _ completion: @escaping () -> Void) -> Void) {
+    public init(block: @escaping @Sendable (_ isCancelled: ValueView<Bool>, _ completion: @escaping @Sendable () -> Void) -> Void) {
         self.block = block
     }
     
-    public init(block: @escaping (_ isCancelled: ValueView<Bool>) async -> Void) {
+    public init(block: @escaping @Sendable (_ isCancelled: ValueView<Bool>) async -> Void) {
         self.block = { isCancelled, completion in
             Task.detached {
                 await block(isCancelled)

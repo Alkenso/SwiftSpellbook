@@ -24,7 +24,7 @@ import Combine
 import Foundation
 
 @propertyWrapper
-public final class ValueStored<Value> {
+public final class ValueStored<Value: Sendable>: Sendable {
     private let store: ValueStore<Value>
     
     public init(wrappedValue: Value) {
@@ -40,7 +40,7 @@ public final class ValueStored<Value> {
 }
 
 @dynamicMemberLookup
-public final class ValueStore<Value>: ValueObserving {
+public final class ValueStore<Value: Sendable>: ValueObserving, @unchecked Sendable {
     private let lock = NSRecursiveLock()
     private let valueLock = UnfairLock()
     private let subscriptions: EventNotify<Value>
@@ -106,7 +106,7 @@ public final class ValueStore<Value>: ValueObserving {
     
     public func subscribe(
         suppressInitialNotify: Bool,
-        receiveValue: @escaping (Value, _ context: Any?) -> Void
+        receiveValue: @escaping @Sendable (Value, _ context: Any?) -> Void
     ) -> SubscriptionToken {
         lock.withLock {
             subscriptions
@@ -146,13 +146,13 @@ public final class ValueStore<Value>: ValueObserving {
 }
 
 extension ValueStore {
-    public func scope<U>(_ keyPath: WritableKeyPath<Value, U>) -> ValueStore<U> {
+    public func scope<U: Sendable>(_ keyPath: WritableKeyPath<Value, U> & Sendable) -> ValueStore<U> {
         scope(transform: { $0[keyPath: keyPath] }, merge: { $0[keyPath: keyPath] = $1 })
     }
     
-    public func scope<U>(
-        transform: @escaping (Value) -> U,
-        merge: @escaping (inout Value, U) -> Void
+    public func scope<U: Sendable>(
+        transform: @escaping @Sendable (Value) -> U,
+        merge: @escaping @Sendable (inout Value, U) -> Void
     ) -> ValueStore<U> {
         lock.withLock {
             let scoped = ValueStore<U>(initialValue: transform(value))
@@ -181,7 +181,7 @@ extension ValueStore {
     ///     - default: the value returned used by new ValueStore if parent's value is `nil`.
     ///     - mergeIntoNil: if `false`, any changes made through new `ValueStore`
     ///                     will be **ignored** if parent's value is `nil`.
-    public func unwrapped<Unwrapped>(
+    public func unwrapped<Unwrapped: Sendable>(
         default: Unwrapped, mergeIntoNil: Bool = false
     ) -> ValueStore<Unwrapped> where Value == Unwrapped? {
         scope(
@@ -226,6 +226,7 @@ extension ValueStore {
 }
 
 extension ValueStore {
+    @MainActor
     public class ObservableObject: Foundation.ObservableObject {
         private var cancellables: Set<AnyCancellable> = []
         
@@ -233,7 +234,12 @@ extension ValueStore {
             self.store = store
             self.value = store.value
             let token = UUID()
-            store.subscribe { [weak self] in if ($1 as? UUID) != token { self?.value = $0 } }.store(in: &cancellables)
+            store.subscribe { [weak self] newValue, context in
+                if (context as? UUID) != token {
+                    Task { @MainActor in self?.value = newValue }
+                }
+            }
+            .store(in: &cancellables)
             $value.dropFirst().sink { store.update($0, context: token) }.store(in: &cancellables)
         }
         
@@ -241,6 +247,7 @@ extension ValueStore {
         public let store: ValueStore<Value>
     }
     
+    @MainActor
     public var observableObject: ValueStore.ObservableObject {
         .init(store: self)
     }

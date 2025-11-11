@@ -26,7 +26,7 @@ private let log = SpellbookLogger.internal(category: "BlockingQueue")
 
 /// Queue that blocks thread execution waiting new elements.
 /// All methods are designed to be thread-safe.
-public class BlockingQueue<Element> {
+public class BlockingQueue<Element>: @unchecked Sendable {
     private var condition = pthread_cond_t()
     private var mutex = pthread_mutex_t()
     private var elements: [(Element, Bool)] = []

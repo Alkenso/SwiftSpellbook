@@ -25,20 +25,20 @@ import XCTest
 
 extension XCTestCase {
 #if SPELLBOOK_SLOW_CI_x10
-    public static var waitRate = 10.0
+    public nonisolated(unsafe) static var waitRate = 10.0
 #elseif SPELLBOOK_SLOW_CI_x20
-    public static var waitRate = 20.0
+    public nonisolated(unsafe) static var waitRate = 20.0
 #elseif SPELLBOOK_SLOW_CI_x30
-    public static var waitRate = 30.0
+    public nonisolated(unsafe) static var waitRate = 30.0
 #elseif SPELLBOOK_SLOW_CI_x50
-    public static var waitRate = 50.0
+    public nonisolated(unsafe) static var waitRate = 50.0
 #elseif SPELLBOOK_SLOW_CI_x100
-    public static var waitRate = 100.0
+    public nonisolated(unsafe) static var waitRate = 100.0
 #else
-    public static var waitRate = 1.0
+    public nonisolated(unsafe) static var waitRate = 1.0
 #endif
     
-    public static var waitTimeout: TimeInterval = 0.5
+    public nonisolated(unsafe) static var waitTimeout: TimeInterval = 0.5
     
     public static var testBundle: Bundle {
         return Bundle(for: Self.self)
@@ -56,14 +56,16 @@ extension XCTestCase {
         Self.testTemporaryDirectory
     }
     
+    @MainActor
     @discardableResult
     public func waitForExpectations(timeout: TimeInterval = XCTestCase.waitTimeout) -> Error? {
         waitForExpectations(timeout: timeout, ignoreWaitRate: false)
     }
     
+    @MainActor
     @discardableResult
     public func waitForExpectations(timeout: TimeInterval = XCTestCase.waitTimeout, ignoreWaitRate: Bool) -> Error? {
-        var error: Error?
+        nonisolated(unsafe) var error: Error?
         waitForExpectations(timeout: timeout * Self.waitRate) {
             error = $0
         }

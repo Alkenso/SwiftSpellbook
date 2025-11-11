@@ -25,6 +25,7 @@ import Foundation
 
 /// Resource wrapper that follows the RAII rule: 'Resource acquisition is initialization'.
 /// It is a resource wrapper that performs cleanup when resource is not used anymore.
+@preconcurrency
 @propertyWrapper
 @dynamicMemberLookup
 public class Resource<T> {
@@ -64,7 +65,7 @@ public class Resource<T> {
     /// or on `deinit` or on next call to `reset`.
     @discardableResult
     public func reset(free: Bool = true, to newValue: T? = nil) -> T {
-        let (currentValue, cleanup) = lock.withLock {
+        let (currentValue, cleanup) = lock.withLockUnchecked {
             let currentValue = value
             let currentCleanup = freeFn
             
@@ -96,7 +97,7 @@ public class Resource<T> {
     /// Replace `cleanup` function with new one.
     @discardableResult
     public func replaceCleanup(_ newCleanup: @escaping (T) -> Void) -> (T) -> Void {
-        lock.withLock { exchange(&freeFn, with: newCleanup) }
+        lock.withLockUnchecked { exchange(&freeFn, with: newCleanup) }
     }
 }
 

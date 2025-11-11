@@ -24,7 +24,7 @@ import Foundation
 
 /// Wraps common file operations file reading and writing.
 /// Provides ability to change underlying implementation to mock dealing with real file system.
-public struct FileStore<T> {
+public struct FileStore<T>: @unchecked Sendable {
     private let read: (URL, T?) throws -> T
     private let write: (T, URL, Bool) throws -> Void
     
@@ -65,7 +65,9 @@ extension FileStore where T == Data {
 }
 
 extension FileStore {
-    public static func inMemory(storeRef: UnsafeMutablePointer<Synchronized<[URL: T]>>? = nil) -> Self {
+    public static func inMemory(
+        storeRef: UnsafeMutablePointer<Synchronized<[URL: T]>>? = nil
+    ) -> Self where T: Sendable {
         let store = Synchronized<[URL: T]>(.unfair)
         storeRef?.pointee = store
         return .init(
@@ -119,7 +121,10 @@ extension FileStore {
 extension FileStore where T == Data {
     private static let nonexistentValue = UUID().uuidString.utf8Data
     
-    public func codable<U: Codable>(_ type: U.Type = U.self, using coder: FileStoreCoder<U>) -> FileStore<U> {
+    public func codable<U: Codable & SendableMetatype>(
+        _ type: U.Type = U.self,
+        using coder: FileStoreCoder<U>
+    ) -> FileStore<U> {
         .init(
             read: { try decode(U.self, from: $0, using: coder.decoder, default: $1) },
             write: { try encode($0, to: $1, using: coder.encoder, createDirectories: $2) }
@@ -153,7 +158,7 @@ extension FileStore where T == Data {
     }
 }
 
-public struct FileStoreCoder<T: Codable> {
+public struct FileStoreCoder<T: Codable>: Sendable {
     public var encoder: ObjectEncoder<T>
     public var decoder: ObjectDecoder<T>
     

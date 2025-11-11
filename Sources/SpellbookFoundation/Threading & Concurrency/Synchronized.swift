@@ -21,10 +21,10 @@
 //  SOFTWARE.
 
 import Foundation
-import os
+import Synchronization
 
 /// Wrapper around DispatchQueue for convenient and safe multithreaded access to the value.
-public final class Synchronized<Value> {
+public final class Synchronized<Value>: @unchecked Sendable {
     public enum Primitive {
         case unfair
         case rwlock
@@ -42,11 +42,7 @@ public final class Synchronized<Value> {
         
         self.lock = switch primitive {
         case .unfair:
-            if #available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *) {
-                OSAllocatedUnfairLock()
-            } else {
-                UnfairLock()
-            }
+            UnfairLock()
         case .rwlock:
             RWLock()
         case .serial:
@@ -58,42 +54,39 @@ public final class Synchronized<Value> {
         }
     }
     
-    public func read<R>(_ reader: (Value) throws -> R) rethrows -> R {
+    public func read<R>(_ reader: (Value) throws -> sending R) rethrows -> sending R {
         try lock.withReadLock { try reader(value) }
     }
     
-    public func write<R>(_ writer: (inout Value) throws -> R) rethrows -> R {
+    public func readUnchecked<R>(_ reader: (Value) throws -> R) rethrows -> R {
+        try lock.withReadLock { try reader(value) }
+    }
+    
+    public func write<R>(_ writer: (inout Value) throws -> sending R) rethrows -> sending R {
         try lock.withWriteLock { try writer(&value) }
     }
     
-    public func write(_ writer: @escaping (inout Value) -> Void) {
-        lock.withAsyncWriteLock { writer(&self.value) }
+    public func writeUnchecked<R>(_ writer: (inout Value) throws -> R) rethrows -> R {
+        try lock.withWriteLock { try writer(&value) }
     }
 }
 
 extension Synchronized {
-    public func read() -> Value {
+    public func read() -> Value where Value: Sendable {
         read { $0 }
     }
     
-    public func read<R>(at keyPath: KeyPath<Value, R>) -> R {
+    public func read<R: Sendable>(at keyPath: KeyPath<Value, R> & Sendable) -> R {
         read { $0[keyPath: keyPath] }
     }
     
-    public func write(_ value: Value) {
-        write { $0 = value }
+    @discardableResult
+    public func write(_ value: sending Value) -> sending Value {
+        write { UncheckedSendable(exchange(&$0, with: value)) }.wrappedValue
     }
     
-    public func write<S>(at keyPath: WritableKeyPath<Value, S>, _ subValue: S) {
+    public func write<S>(at keyPath: WritableKeyPath<Value, S> & Sendable, _ subValue: sending S) {
         write { $0[keyPath: keyPath] = subValue }
-    }
-    
-    public func exchange(_ value: Value) -> Value {
-        write {
-            let existing = $0
-            $0 = value
-            return existing
-        }
     }
 }
 
@@ -112,7 +105,7 @@ extension Synchronized {
         self.init(primitive, nil)
     }
     
-    public func initialize<T>(produceValue: () throws -> T) rethrows -> T where Value == T? {
+    public func initialize<T: Sendable>(produceValue: () throws -> T) rethrows -> T where Value == T? {
         try write {
             if let value = $0 {
                 return value
@@ -124,22 +117,22 @@ extension Synchronized {
         }
     }
     
-    public func initialize<T>(_ value: T) -> T where Value == T? {
+    public func initialize<T: Sendable>(_ value: T) -> T where Value == T? {
         initialize { value }
     }
 }
 
 extension Synchronized: _ValueUpdateWrapping {
-    public func _readValue<R>(body: (Value) -> R) -> R {
-        read(body)
+    public func _readValue<R: Sendable>(body: (Value) -> R) -> R {
+        read { body($0) }
     }
     
-    public func _updateValue<R>(body: (inout Value) -> R) -> R {
-        write(body)
+    public func _updateValue<R: Sendable>(body: (inout Value) -> R) -> R {
+        write { body(&$0) }
     }
 }
 
-public extension Synchronized where Value: AdditiveArithmetic {
+public extension Synchronized where Value: AdditiveArithmetic & Sendable {
     static func + (lhs: Synchronized, rhs: Value) -> Value {
         lhs.read() + rhs
     }
@@ -157,7 +150,7 @@ public extension Synchronized where Value: AdditiveArithmetic {
     }
 }
 
-public extension Synchronized where Value: Numeric {
+public extension Synchronized where Value: Numeric & Sendable {
     static func * (lhs: Synchronized, rhs: Value) -> Value {
         lhs.read() * rhs
     }
@@ -167,7 +160,7 @@ public extension Synchronized where Value: Numeric {
     }
 }
 
-public extension Synchronized where Value: BinaryInteger {
+public extension Synchronized where Value: BinaryInteger & Sendable {
     static func / (lhs: Synchronized, rhs: Value) -> Value {
         lhs.read() / rhs
     }
@@ -177,7 +170,7 @@ public extension Synchronized where Value: BinaryInteger {
     }
 }
 
-public extension Synchronized where Value: FloatingPoint {
+public extension Synchronized where Value: FloatingPoint & Sendable {
     static func / (lhs: Synchronized, rhs: Value) -> Value {
         lhs.read() / rhs
     }
@@ -190,52 +183,30 @@ public extension Synchronized where Value: FloatingPoint {
 // MARK: - Locking
 
 private protocol SynchronizedLocking {
-    func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) rethrows -> sending R
-    
-    func withReadLock<R, E: Error>(_ body: () throws(E) -> sending R) rethrows -> sending R
-    func withAsyncWriteLock(_ body: sending @escaping () -> Void)
+    func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R
+    func withReadLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R
 }
 
-import Synchronization
 extension SynchronizedLocking {
-    func withReadLock<R, E: Error>(_ body: () throws(E) -> sending R) rethrows -> sending R {
+    func withReadLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
         try withWriteLock(body)
     }
-    
-    func withAsyncWriteLock(_ body: sending @escaping () -> Void) {
-        withWriteLock { body() }
-    }
 }
 
-@available(macOS, deprecated: 13.0, message: "Use `UnfairLockStorage`")
-@available(iOS, deprecated: 16.0, message: "Use `UnfairLockStorage`")
-@available(watchOS, deprecated: 9.0, message: "Use `UnfairLockStorage`")
-@available(tvOS, deprecated: 16.0, message: "Use `UnfairLockStorage`")
 extension UnfairLock: SynchronizedLocking {
-    func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) rethrows -> sending R {
+    func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
         try withLock(body)
-    }
-}
-
-@available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
-extension OSAllocatedUnfairLock: SynchronizedLocking where State == Void {
-    func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) rethrows -> sending R {
-        try withLock { try body() }
     }
 }
 
 extension RWLock: SynchronizedLocking {}
 
 extension DispatchQueue: SynchronizedLocking {
-    func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) rethrows -> sending R {
-        try sync(flags: .barrier) { () throws(E) -> R in try body() }
+    func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
+        try sync(flags: .barrier) { UncheckedSendable(Result(catching: body)) }.wrappedValue.get()
     }
     
-    func withReadLock<R, E: Error>(_ body: () throws(E) -> sending R) rethrows -> sending R {
-        try sync(execute: body)
-    }
-    
-    func withAsyncWriteLock(_ body: sending @escaping () -> Void) {
-        async(flags: .barrier, execute: body)
+    func withReadLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
+        try sync { UncheckedSendable(Result(catching: body)) }.wrappedValue.get()
     }
 }

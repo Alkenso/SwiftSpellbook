@@ -27,8 +27,8 @@ extension Task {
     public static func runWithCompletion<R>(
         _: R.Type = R.self,
         receiveOn queue: DispatchQueue? = nil,
-        _ body: @escaping () async throws -> R,
-        completion: @escaping (Result<R, Error>) -> Void
+        _ body: sending @escaping () async throws -> R,
+        completion: sending @escaping (Result<R, Error>) -> Void
     ) where Success == Void, Failure == Never {
         Task<Void, Never> {
             let result: Result<R, Error>
@@ -43,8 +43,8 @@ extension Task {
     
     public static func runWithCompletion<R>(
         receiveOn queue: DispatchQueue? = nil,
-        _ body: @escaping () async -> R,
-        completion: @escaping (R) -> Void
+        _ body: sending @escaping () async -> R,
+        completion: sending @escaping (R) -> Void
     ) where Success == Void, Failure == Never {
         Task<Void, Never> {
             let result = await body()
@@ -54,8 +54,8 @@ extension Task {
     
     public static func runWithCompletion(
         receiveOn queue: DispatchQueue? = nil,
-        _ body: @escaping () async throws -> Void,
-        completion: @escaping (Error?) -> Void
+        _ body: sending @escaping () async throws -> Void,
+        completion: sending @escaping (Error?) -> Void
     ) where Success == Void, Failure == Never {
         runWithCompletion(receiveOn: queue, body) {
             completion($0.failure)

@@ -24,7 +24,7 @@ import Combine
 import Foundation
 
 @propertyWrapper
-public final class ValueObserved<Value> {
+public final class ValueObserved<Value: Sendable>: Sendable {
     private let observable: ValueObservable<Value>
     
     public init(wrappedValue: Value) {
@@ -41,12 +41,12 @@ public final class ValueObserved<Value> {
 
 
 @dynamicMemberLookup
-public final class ValueObservable<Value>: ValueObserving {
-    private let subscribeReceive: (Bool, @escaping (Value, Any?) -> Void) -> SubscriptionToken
+public final class ValueObservable<Value: Sendable>: ValueObserving, @unchecked Sendable {
+    private let subscribeReceive: @Sendable (Bool, @escaping @Sendable (Value, Any?) -> Void) -> SubscriptionToken
     
     public init(
         view: ValueView<Value>,
-        subscribeReceiveValue: @escaping (Bool, @escaping (Value, _ context: Any?) -> Void) -> SubscriptionToken
+        subscribeReceiveValue: @escaping @Sendable (Bool, @escaping @Sendable (Value, _ context: Any?) -> Void) -> SubscriptionToken
     ) {
         self._value = .init(view)
         self.subscribeReceive = subscribeReceiveValue
@@ -60,18 +60,18 @@ public final class ValueObservable<Value>: ValueObserving {
     
     public func subscribe(
         suppressInitialNotify: Bool,
-        receiveValue: @escaping (Value, _ context: Any?) -> Void
+        receiveValue: @escaping @Sendable (Value, _ context: Any?) -> Void
     ) -> SubscriptionToken {
         subscribeReceive(suppressInitialNotify, receiveValue)
     }
 }
 
 extension ValueObservable {
-    public func scope<U>(_ keyPath: KeyPath<Value, U>) -> ValueObservable<U> {
+    public func scope<U: Sendable>(_ keyPath: KeyPath<Value, U> & Sendable) -> ValueObservable<U> {
         scope { $0[keyPath: keyPath] }
     }
     
-    public func scope<U>(_ transform: @escaping (Value) -> U) -> ValueObservable<U> {
+    public func scope<U: Sendable>(_ transform: @escaping @Sendable (Value) -> U) -> ValueObservable<U> {
         ValueObservable<U>(
             view: .init { transform(self.value) },
             subscribeReceiveValue: { suppressInitialNotify, localNotify in
