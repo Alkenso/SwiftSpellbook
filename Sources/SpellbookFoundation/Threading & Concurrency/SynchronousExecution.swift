@@ -34,7 +34,8 @@ public func synchronouslyWithTask<R, E: Error>(_ action: sending @escaping () as
 /// Executes synchronously the asynchronous method.
 /// - Note: While this is not the best practice ever,
 ///         real-world tasks time to time require exactly this.
-public func synchronouslyWithTask<R, E: Error>(timeout: TimeInterval, _ action: sending @escaping () async throws(E) -> R) throws(E) -> R? {
+public func synchronouslyWithTask<R, E: Error>(timeout: TimeInterval?, _ action: sending @escaping () async throws(E) -> R) throws(E) -> R? {
+    guard let timeout else { return try synchronouslyWithTask(action) }
     let (group, result) = synchronouslyWithTask(action)
     _ = group.wait(timeout: .now() + timeout)
     return try result.wrappedValue.get()
@@ -59,8 +60,8 @@ private func synchronouslyWithTask<R, E: Error>(_ action: sending @escaping () a
 /// Executes synchronously the asynchronous method.
 /// - Note: While this is not the best practice ever,
 ///         real-world tasks time to time require exactly this.
-public func synchronouslyWithContinuation<R>(_ action: (_ continuation: @escaping @Sendable (R) -> Void) -> Void) -> R {
-    let (group, result) = synchronouslyWithContinuation(action)
+public func synchronouslyWithCallback<R>(_ action: (_ callback: @escaping @Sendable (R) -> Void) -> Void) -> R {
+    let (group, result) = synchronouslyWithCallback(action)
     group.wait()
     return result.wrappedValue!
 }
@@ -68,17 +69,18 @@ public func synchronouslyWithContinuation<R>(_ action: (_ continuation: @escapin
 /// Executes synchronously the asynchronous method.
 /// - Note: While this is not the best practice ever,
 ///         real-world tasks time to time require exactly this.
-public func synchronouslyWithContinuation<R>(
-    timeout: TimeInterval,
-    _ action: (_ continuation: @escaping @Sendable (R) -> Void) -> Void
+public func synchronouslyWithCallback<R>(
+    timeout: TimeInterval?,
+    _ action: (_ callback: @escaping @Sendable (R) -> Void) -> Void
 ) -> R? {
-    let (group, result) = synchronouslyWithContinuation(action)
+    guard let timeout else { return synchronouslyWithCallback(action) }
+    let (group, result) = synchronouslyWithCallback(action)
     _ = group.wait(timeout: .now() + timeout)
     return result.wrappedValue
 }
 
-private func synchronouslyWithContinuation<R>(
-    _ action: (_ continuation: @escaping @Sendable (R) -> Void) -> Void
+private func synchronouslyWithCallback<R>(
+    _ action: (_ callback: @escaping @Sendable (R) -> Void) -> Void
 ) -> (DispatchGroup, Atomic<R?>) {
     let group = DispatchGroup()
     group.enter()

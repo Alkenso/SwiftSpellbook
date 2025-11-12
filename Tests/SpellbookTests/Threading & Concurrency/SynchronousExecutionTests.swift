@@ -7,10 +7,10 @@ class SynchronousExecutorTests: XCTestCase {
     func test() throws {
         let dummyValue = Dummy(value: 10, timeout: 0.05)
         
-        XCTAssertEqual(synchronouslyWithContinuation(dummyValue.value), 10)
-        XCTAssertEqual(try synchronouslyWithContinuation(dummyValue.resultValue).get(), 10)
-        XCTAssertEqual(synchronouslyWithContinuation(dummyValue.optionalValue), 10)
-        XCTAssertEqual(synchronouslyWithContinuation { dummyValue.multiReplyValue(count: 10, reply: $0) }, 10)
+        XCTAssertEqual(synchronouslyWithCallback(dummyValue.value), 10)
+        XCTAssertEqual(try synchronouslyWithCallback(dummyValue.resultValue).get(), 10)
+        XCTAssertEqual(synchronouslyWithCallback(dummyValue.optionalValue), 10)
+        XCTAssertEqual(synchronouslyWithCallback { dummyValue.multiReplyValue(count: 10, reply: $0) }, 10)
         XCTAssertEqual(synchronouslyWithTask { await dummyValue.asyncValue() }, 10)
         
         let dummyError = Dummy<Int>(value: nil, timeout: 0.05)
@@ -19,9 +19,9 @@ class SynchronousExecutorTests: XCTestCase {
     
     func test_timeout() throws {
         let dummyValue = Dummy(value: 10, timeout: 0.1)
-        XCTAssertNil(synchronouslyWithContinuation(timeout: 0.05, dummyValue.value))
-        XCTAssertNil(synchronouslyWithContinuation(timeout: 0.05, dummyValue.resultValue))
-        XCTAssertNil(synchronouslyWithContinuation(timeout: 0.05, dummyValue.optionalValue))
+        XCTAssertNil(synchronouslyWithCallback(timeout: 0.05, dummyValue.value))
+        XCTAssertNil(synchronouslyWithCallback(timeout: 0.05, dummyValue.resultValue))
+        XCTAssertNil(synchronouslyWithCallback(timeout: 0.05, dummyValue.optionalValue))
         XCTAssertNil(synchronouslyWithTask(timeout: 0.05) { await dummyValue.asyncValue() })
         
         let dummyError = Dummy<Int>(value: nil, timeout: 0.1)
