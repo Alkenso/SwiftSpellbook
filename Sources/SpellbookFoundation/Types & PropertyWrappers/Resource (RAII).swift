@@ -25,32 +25,34 @@ import Foundation
 
 /// Resource wrapper that follows the RAII rule: 'Resource acquisition is initialization'.
 /// It is a resource wrapper that performs cleanup when resource is not used anymore.
-@preconcurrency
 @propertyWrapper
 @dynamicMemberLookup
-public class Resource<T> {
-    private let lock = UnfairLock()
-    private var value: T
-    private var freeFn: (T) -> Void
-    private var shouldFree = true
+public final class Resource<T>: @unchecked Sendable {
+    private struct State {
+        var value: T
+        var freeFn: (T) -> Void
+        var shouldFree = true
+    }
+    private let state: Synchronized<State>
     
     /// In most cases prefer use of 'withValue' method.
     /// Note:
     /// Be careful copying the value or storing it in the separate variable.
     /// Swift optimizations may free Resource (and perform cleanup)
     /// in the place of last use of Resource, not the Resource.unsafeValue place.
-    public var wrappedValue: T { value }
+    public var wrappedValue: T { state.readUnchecked { $0.value } }
     
     public var projectedValue: Resource { self }
     
-    public init(_ value: T, free: @escaping (T) -> Void) {
-        self.value = value
-        self.freeFn = free
+    public init(_ value: T, free: sending @escaping (T) -> Void) {
+        self.state = .init(.unfair, .init(value: value, freeFn: free))
     }
     
     deinit {
-        if shouldFree {
-            freeFn(value)
+        state.write {
+            if $0.shouldFree {
+                $0.freeFn($0.value)
+            }
         }
     }
     
@@ -65,15 +67,15 @@ public class Resource<T> {
     /// or on `deinit` or on next call to `reset`.
     @discardableResult
     public func reset(free: Bool = true, to newValue: T? = nil) -> T {
-        let (currentValue, cleanup) = lock.withLockUnchecked {
-            let currentValue = value
-            let currentCleanup = freeFn
+        let (currentValue, cleanup) = state.writeUnchecked {
+            let currentValue = $0.value
+            let currentCleanup = $0.freeFn
             
             if let newValue {
-                value = newValue
-                shouldFree = true
+                $0.value = newValue
+                $0.shouldFree = true
             } else {
-                shouldFree = false
+                $0.shouldFree = false
             }
             
             let cleanup = free ? { currentCleanup(currentValue) } : {}
@@ -96,8 +98,8 @@ public class Resource<T> {
     
     /// Replace `cleanup` function with new one.
     @discardableResult
-    public func replaceCleanup(_ newCleanup: @escaping (T) -> Void) -> (T) -> Void {
-        lock.withLockUnchecked { exchange(&freeFn, with: newCleanup) }
+    public func replaceFree(_ newFree: sending @escaping (T) -> Void) -> sending (T) -> Void {
+        state.writeUnchecked { exchange(&$0.freeFn, with: newFree) }
     }
 }
 
@@ -114,7 +116,7 @@ extension Resource {
 
 extension Resource {
     /// Create Resource wrapping value and performing cleanup block when the wrapper if freed.
-    public static func raii(_ value: T, free: @escaping (T) -> Void) -> Resource {
+    public static func raii(_ value: T, free: sending @escaping (T) -> Void) -> Resource {
         Resource(value, free: free)
     }
     
@@ -180,17 +182,17 @@ extension Resource {
 public typealias DeinitAction = Resource<Void>
 extension Resource where T == Void {
     /// Perform the action when the instance is freed.
-    public convenience init(onDeinit: @escaping () -> Void) {
+    public convenience init(onDeinit: sending @escaping () -> Void) {
         self.init((), free: onDeinit)
     }
     
     /// Perform the action when the instance is freed.
-    public static func onDeinit(_ action: @escaping () -> Void) -> DeinitAction {
+    public static func onDeinit(_ action: sending @escaping () -> Void) -> DeinitAction {
         DeinitAction(onDeinit: action)
     }
     
     /// Capture variable up to the end of `Resource` life time.
-    public static func capturing(_ object: Any) -> DeinitAction {
+    public static func capturing(@UncheckedSendable _ object: Any) -> DeinitAction {
         DeinitAction { _ = object }
     }
     
@@ -217,13 +219,13 @@ extension Resource where T == URL {
 
 extension Resource: Equatable where T: Equatable {
     public static func == (lhs: Resource<T>, rhs: Resource<T>) -> Bool {
-        lhs.value == rhs.value
+        lhs.wrappedValue == rhs.wrappedValue
     }
 }
 
 extension Resource: Comparable where T: Comparable {
     public static func < (lhs: Resource<T>, rhs: Resource<T>) -> Bool {
-        lhs.value < rhs.value
+        lhs.wrappedValue < rhs.wrappedValue
     }
 }
 
@@ -234,7 +236,7 @@ extension Resource {
 }
 
 extension Resource: Identifiable where T: Identifiable {
-    public var id: T.ID { value.id }
+    public var id: T.ID { wrappedValue.id }
 }
 
 extension Resource: Cancellable {
