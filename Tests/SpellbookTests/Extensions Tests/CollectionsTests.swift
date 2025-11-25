@@ -219,4 +219,49 @@ class CollectionTests: XCTestCase {
         
         XCTAssertNil(arr.popRandom())
     }
+    
+    func test_rotate() throws {
+        XCTAssertEqual([1, 2, 3].rotated(), [2, 3, 1])
+        XCTAssertEqual([1, 2, 3].rotated(shift: 2), [3, 1, 2])
+        XCTAssertEqual([1, 2, 3].rotated(shift: 3), [1, 2, 3])
+        XCTAssertEqual([1, 2, 3].rotated(shift: 4), [2, 3, 1])
+        XCTAssertEqual([1, 2, 3].rotated(shift: 5), [3, 1, 2])
+        XCTAssertEqual([1, 2, 3].rotated(shift: 6), [1, 2, 3])
+        
+        XCTAssertEqual([1, 2, 3].rotated(shift: 0), [1, 2, 3])
+        
+        XCTAssertEqual([1, 2, 3].rotated(shift: -1), [3, 1, 2])
+        XCTAssertEqual([1, 2, 3].rotated(shift: -2), [2, 3, 1])
+        XCTAssertEqual([1, 2, 3].rotated(shift: -3), [1, 2, 3])
+        XCTAssertEqual([1, 2, 3].rotated(shift: -4), [3, 1, 2])
+        XCTAssertEqual([1, 2, 3].rotated(shift: -5), [2, 3, 1])
+        XCTAssertEqual([1, 2, 3].rotated(shift: -6), [1, 2, 3])
+    }
+    
+    func test_removeDuplicates_equatable() {
+        var input = [1, 2, 2, 3, 1, 4]
+        input.removeDuplicates()
+        XCTAssertEqual(input, [1, 2, 3, 4])
+    }
+    
+    func test_removeDuplicates_hashable() {
+        struct Item: Hashable { let id: Int }
+        
+        var input = [Item(id: 1), Item(id: 2), Item(id: 1)]
+        input.removeDuplicates()
+        XCTAssertEqual(input.map(\.id), [1, 2])
+    }
+    
+    func test_removeDuplicates_customComparator() {
+        var input = ["a", "A", "b", "B", "a"]
+        input.removeDuplicates { $0.lowercased() == $1.lowercased() }
+        XCTAssertEqual(input, ["a", "b"])
+    }
+    
+    func test_removingDuplicates_returnsCopy() {
+        let original = [1, 2, 2, 3]
+        let result = original.removingDuplicates()
+        XCTAssertEqual(result, [1, 2, 3])
+        XCTAssertEqual(original, [1, 2, 2, 3])
+    }
 }

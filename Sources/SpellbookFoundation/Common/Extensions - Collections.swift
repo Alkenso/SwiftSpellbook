@@ -570,17 +570,58 @@ extension RangeReplaceableCollection {
     ) -> Element? {
         updateFirst(element, .equals(at: keyPath, to: element[keyPath: keyPath]))
     }
-}
-
-extension RangeReplaceableCollection where Index: FixedWidthInteger {
+    
+    public mutating func rotate(shift: Int = 1) {
+        self = rotated(shift: shift)
+    }
+    
+    public func rotated(shift: Int = 1) -> Self {
+        let shiftCount = abs(shift % count)
+        guard !isEmpty, shiftCount != 0 else { return self }
+        
+        if shift > 0 {
+            return Self(dropFirst(shiftCount) + prefix(shiftCount))
+        } else {
+            return Self(suffix(shiftCount) + dropLast(shiftCount))
+        }
+    }
+    
     public mutating func removeRandom() -> Element {
-        let randomIndex = Index.random(in: startIndex..<endIndex)
-        return remove(at: randomIndex)
+        indices.randomElement().flatMap { remove(at: $0) } ?? removeFirst()
     }
     
     public mutating func popRandom() -> Element? {
         guard !isEmpty else { return nil }
         return removeRandom()
+    }
+    
+    public func removingDuplicates(by isEqual: (Element, Element) -> Bool) -> Self {
+        return reduce(into: Self()) { result, element in
+            if !result.contains(where: { isEqual($0, element) }) {
+                result.append(element)
+            }
+        }
+    }
+    
+    public mutating func removeDuplicates(by isEqual: (Element, Element) -> Bool) {
+        self = removingDuplicates(by: isEqual)
+    }
+    
+    public func removingDuplicates() -> Self where Element: Equatable {
+        removingDuplicates(by: ==)
+    }
+    
+    public mutating func removeDuplicates() where Element: Equatable {
+        self = removingDuplicates()
+    }
+    
+    public mutating func removeDuplicates() where Element: Hashable {
+        self = removingDuplicates()
+    }
+    
+    public func removingDuplicates() -> Self where Element: Hashable {
+        var seen = Set<Element>()
+        return filter { seen.insert($0).inserted }
     }
 }
 
