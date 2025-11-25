@@ -72,7 +72,7 @@ class SequenceTests: XCTestCase {
     func test_mutatingMap() {
         XCTAssertEqual((1...3).mutatingMap { $0 += 5 }, [6, 7, 8])
     }
-
+    
     func test_recursiveMap_flattenTree() {
         struct Node: Equatable {
             let value: Int
@@ -88,11 +88,11 @@ class SequenceTests: XCTestCase {
             ]),
             Node(value: 5, children: [])
         ]
-
+        
         let result = tree.recursiveMap(at: \.children) { $0.value }
         XCTAssertEqual(result, [1, 2, 3, 4, 5])
     }
-
+    
     func test_recursiveCompactMap_flattenOptionalTree() {
         struct OptionalNode {
             let value: Int?
@@ -108,7 +108,7 @@ class SequenceTests: XCTestCase {
             ]),
             OptionalNode(value: nil, children: nil)
         ]
-
+        
         let result = tree.recursiveCompactMap(at: \.children, { $0.value })
         XCTAssertEqual(result, [1, 3, 4])
     }
@@ -151,6 +151,47 @@ class SequenceTests: XCTestCase {
             array.reduce(into: [2: KeyValue(2, "b1"), 5: KeyValue(5, "e")], keyedBy: \.key),
             [2: KeyValue(2, "b"), 3: KeyValue(3, "c"), 1: KeyValue(1, "d"), 5: KeyValue(5, "e")]
         )
+    }
+    
+    struct StableSortItem: Equatable {
+        let value: Int
+        let tag: String
+    }
+    
+    func test_stableSorted_byComparator() {
+        let input = [
+            StableSortItem(value: 2, tag: "a"),
+            StableSortItem(value: 1, tag: "b"),
+            StableSortItem(value: 2, tag: "c"),
+            StableSortItem(value: 1, tag: "d")
+        ]
+        
+        let result = input.stableSorted { $0.value < $1.value }
+        
+        XCTAssertEqual(result.map(\.tag), ["b", "d", "a", "c"])
+    }
+    
+    func test_stableSorted_byKeyPath() {
+        let input = [
+            StableSortItem(value: 3, tag: "x"),
+            StableSortItem(value: 2, tag: "y"),
+            StableSortItem(value: 3, tag: "z"),
+        ]
+        
+        let result = input.stableSorted(by: \.value)
+        XCTAssertEqual(result.map(\.tag), ["y", "x", "z"])
+    }
+    
+    func test_stableSorted_empty() {
+        let input: [StableSortItem] = []
+        let result = input.stableSorted(by: \.value)
+        XCTAssertEqual(result, [])
+    }
+    
+    func test_stableSorted_allEqual() {
+        let input = [StableSortItem(value: 1, tag: "a"), StableSortItem(value: 1, tag: "b")]
+        let result = input.stableSorted(by: \.value)
+        XCTAssertEqual(result.map(\.tag), ["a", "b"])
     }
 }
 

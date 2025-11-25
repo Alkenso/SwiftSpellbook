@@ -213,6 +213,16 @@ extension Array {
     }
 }
 
+extension Array {
+    public mutating func stableSort<E: Error>(by areInIncreasingOrder: (Element, Element) throws(E) -> Bool) throws(E) {
+        self = try stableSorted(by: areInIncreasingOrder)
+    }
+    
+    public mutating func stableSort<Property: Comparable>(by keyPath: KeyPath<Element, Property>) {
+        self = stableSorted(by: keyPath)
+    }
+}
+
 // MARK: - Sequence
 
 extension Sequence {
@@ -361,12 +371,32 @@ extension Sequence {
 }
 
 extension Sequence {
-    @inlinable public func sorted<T: Comparable>(by keyPath: KeyPath<Element, T>) -> [Element] {
+    @inlinable
+    public func sorted<T: Comparable>(by keyPath: KeyPath<Element, T>) -> [Element] {
         sorted {
             let lhs = $0[keyPath: keyPath]
             let rhs = $1[keyPath: keyPath]
             return lhs < rhs
         }
+    }
+    
+    public func stableSorted<E: Error>(
+        by areInIncreasingOrder: (Element, Element) throws(E) -> Bool
+    ) throws(E) -> [Element] {
+        do {
+            return try enumerated()
+                .sorted { lhs, rhs -> Bool in
+                    try areInIncreasingOrder(lhs.element, rhs.element) ||
+                    (lhs.offset < rhs.offset && !areInIncreasingOrder(rhs.element, lhs.element))
+                }
+                .map(\.element)
+        } catch {
+            throw error as! E
+        }
+    }
+    
+    public func stableSorted<Property: Comparable>(by keyPath: KeyPath<Element, Property>) -> [Element] {
+        stableSorted { $0[keyPath: keyPath] < $1[keyPath: keyPath] }
     }
 }
 
