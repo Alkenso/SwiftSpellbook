@@ -105,7 +105,7 @@ public final class Resource<T>: @unchecked Sendable {
 
 extension Resource {
     /// Safe way accessing the value
-    public func withValue<R>(_ body: (T) throws -> R) rethrows -> R {
+    public func withValue<R, E: Error>(_ body: (T) throws(E) -> R) throws(E) -> R {
         try body(wrappedValue)
     }
     

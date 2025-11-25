@@ -37,7 +37,7 @@ extension Change where T: Equatable {
         self.init(old: old, new: new, isEqual: ==)
     }
     
-    public func map<U: Equatable>(_ transform: (T) throws -> U) rethrows -> Change<U>? {
+    public func map<U: Equatable, E: Error>(_ transform: (T) throws(E) -> U) throws(E) -> Change<U>? {
         try .init(old: transform(old), new: transform(new))
     }
 }
@@ -52,7 +52,7 @@ extension Change {
         .init(old, new)
     }
     
-    public func mapUnchecked<U>(_ transform: (T) throws -> U) rethrows -> Change<U> {
+    public func mapUnchecked<U, E: Error>(_ transform: (T) throws(E) -> U) throws(E) -> Change<U> {
         try .unchecked(old: transform(old), new: transform(new))
     }
 }
@@ -100,11 +100,11 @@ public struct Pair<First, Second> {
 }
 
 extension Pair {
-    public func mapFirst<U>(_ transform: (First) throws -> U) rethrows -> Pair<U, Second> {
+    public func mapFirst<U, E: Error>(_ transform: (First) throws(E) -> U) throws(E) -> Pair<U, Second> {
         try .init(transform(first), second)
     }
     
-    public func mapSecond<U>(_ transform: (Second) throws -> U) rethrows -> Pair<First, U> {
+    public func mapSecond<U, E: Error>(_ transform: (Second) throws(E) -> U) throws(E) -> Pair<First, U> {
         try .init(first, transform(second))
     }
 }
@@ -131,11 +131,11 @@ public struct KeyValue<Key, Value> {
 }
 
 extension KeyValue {
-    public func mapKey<U>(_ transform: (Key) throws -> U) rethrows -> KeyValue<U, Value> {
+    public func mapKey<U, E: Error>(_ transform: (Key) throws(E) -> U) throws(E) -> KeyValue<U, Value> {
         try .init(transform(key), value)
     }
     
-    public func mapValue<U>(_ transform: (Value) throws -> U) rethrows -> KeyValue<Key, U> {
+    public func mapValue<U, E: Error>(_ transform: (Value) throws(E) -> U) throws(E) -> KeyValue<Key, U> {
         try .init(key, transform(value))
     }
 }
@@ -153,7 +153,7 @@ public enum Either<First, Second> {
 }
 
 extension Either {
-    public func mapFirst<U>(_ transform: (First) throws -> U) rethrows -> Either<U, Second> {
+    public func mapFirst<U, E: Error>(_ transform: (First) throws(E) -> U) throws(E) -> Either<U, Second> {
         switch self {
         case .first(let first):
             return try .first(transform(first))
@@ -162,7 +162,7 @@ extension Either {
         }
     }
     
-    public func mapSecond<U>(_ transform: (Second) throws -> U) rethrows -> Either<First, U> {
+    public func mapSecond<U, E: Error>(_ transform: (Second) throws(E) -> U) throws(E) -> Either<First, U> {
         switch self {
         case .first(let first):
             return .first(first)
@@ -171,12 +171,12 @@ extension Either {
         }
     }
     
-    public func flatMapFirst<U>(_ transform: (First) throws -> U) rethrows -> U? {
+    public func flatMapFirst<U, E: Error>(_ transform: (First) throws(E) -> U) throws(E) -> U? {
         guard case .first(let value) = self else { return nil }
         return try transform(value)
     }
     
-    public func flatMapSecond<U>(_ transform: (Second) throws -> U) rethrows -> U? {
+    public func flatMapSecond<U, E: Error>(_ transform: (Second) throws(E) -> U) throws(E) -> U? {
         guard case .second(let value) = self else { return nil }
         return try transform(value)
     }

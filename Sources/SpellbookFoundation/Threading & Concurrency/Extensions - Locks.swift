@@ -23,7 +23,7 @@
 import Foundation
 
 extension NSLocking {
-    public func withLock<R>(_ body: () throws -> R) rethrows -> R {
+    public func withLock<R, E: Error>(_ body: () throws(E) -> R) throws(E) -> R {
         lock()
         defer { unlock() }
         return try body()

@@ -26,7 +26,7 @@ public enum Benchmark {
     /// Executes the given block and returns the number of seconds
     /// with nanosecond precision it takes to execute.
     /// This function is for debugging and performance analysis.
-    public static func measure<R>(execute: () throws -> R) rethrows -> (result: R, time: TimeInterval) {
+    public static func measure<R, E: Error>(execute: () throws(E) -> R) throws(E) -> (result: R, time: TimeInterval) {
         let start = DispatchTime.now()
         let result = try execute()
         return (result, duration(startingAt: start))
@@ -35,14 +35,16 @@ public enum Benchmark {
     /// Executes the given block and returns the number of seconds
     /// with nanosecond precision it takes to execute.
     /// This function is for debugging and performance analysis.
-    public static func measure(execute: () throws -> Void) rethrows -> TimeInterval {
+    public static func measure<E: Error>(execute: () throws(E) -> Void) throws(E) -> TimeInterval {
         try measure(execute: execute).time
     }
     
     /// Executes the given block and returns the number of seconds
     /// with nanosecond precision it takes to execute.
     /// This function is for debugging and performance analysis.
-    public static func measure<R>(execute: () async throws -> R) async rethrows -> (result: R, time: TimeInterval) {
+    public static func measure<R, E: Error>(
+        execute: () async throws(E) -> R
+    ) async throws(E) -> (result: R, time: TimeInterval) {
         let start = DispatchTime.now()
         let result = try await execute()
         return (result, duration(startingAt: start))
@@ -51,7 +53,7 @@ public enum Benchmark {
     /// Executes the given block and returns the number of seconds
     /// with nanosecond precision it takes to execute.
     /// This function is for debugging and performance analysis.
-    public static func measure(execute: () async throws -> Void) async rethrows -> TimeInterval {
+    public static func measure<E: Error>(execute: () async throws(E) -> Void) async throws(E) -> TimeInterval {
         try await measure(execute: execute).time
     }
     
@@ -67,11 +69,11 @@ public enum Benchmark {
     /// Executes the given block and prints the `name` and the number of seconds
     /// with nanosecond precision it takes to execute the block.
     /// This function is for debugging and performance analysis work.
-    public static func measure<R>(
+    public static func measure<R, E: Error>(
         _ name: String,
         print: (String) -> Void = { print($0) },
-        execute: () throws -> R
-    ) rethrows -> R {
+        execute: () throws(E) -> R
+    ) throws(E) -> R {
         let (result, durationSec) = try measure(execute: execute)
         print("\(name) takes \(durationSec) sec")
         

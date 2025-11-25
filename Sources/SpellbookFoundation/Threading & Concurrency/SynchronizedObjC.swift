@@ -27,7 +27,7 @@ import Foundation
 /// - faster than `DispatchQueue`
 /// - slower than `os_unfair_lock`
 @inline(__always)
-public func synchronized<R>(_ obj: AnyObject, _ body: () throws -> R) rethrows -> R {
+public func synchronized<R, E: Error>(_ obj: AnyObject, _ body: () throws(E) -> R) throws(E) -> R {
     objc_sync_enter(obj)
     defer { objc_sync_exit(obj) }
     return try body()

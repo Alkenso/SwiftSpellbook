@@ -42,3 +42,13 @@ extension Optional where Wrapped == DispatchQueue {
         }
     }
 }
+
+/// Use with care only in functions that don't `rethrow` but `throws(E)`.
+@usableFromInline
+internal func _typedRethrow<R, E: Error>(error: E.Type, _ body: () throws -> R) throws(E) -> R {
+    do {
+        return try body()
+    } catch {
+        throw error as! E
+    }
+}

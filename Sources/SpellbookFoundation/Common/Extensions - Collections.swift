@@ -141,19 +141,11 @@ extension Dictionary {
     /// - Parameter remaining: A dictionary to collect elements that are
     ///   not included into returned dictionary.
     /// - Returns: A dictionary of the key-value pairs that `isIncluded` allows.
-    public func filter<Failure>(
+    public func filter<E: Error>(
         remaining: inout [Key: Value],
-        _ isIncluded: SBPredicate<Element, Failure>
-    ) throws(Failure) -> [Key: Value] {
-        var filtered: [Key: Value] = [:]
-        for (key, value) in self {
-            if try isIncluded.evaluate((key, value)) {
-                filtered[key] = value
-            } else {
-                remaining[key] = value
-            }
-        }
-        return filtered
+        _ isIncluded: SBPredicate<Element, E>
+    ) throws(E) -> [Key: Value] {
+        try filter(remaining: &remaining, isIncluded.evaluate)
     }
     
     /// Returns a new dictionary containing the key-value pairs of the dictionary
@@ -166,8 +158,19 @@ extension Dictionary {
     /// - Parameter remaining: A dictionary to collect elements that are
     ///   not included into returned dictionary.
     /// - Returns: A dictionary of the key-value pairs that `isIncluded` allows.
-    public func filter(remaining: inout [Key: Value], _ isIncluded: (Element) throws -> Bool) rethrows -> [Key: Value] {
-        try withoutActuallyEscaping(isIncluded) { try filter(remaining: &remaining, .where($0)) }
+    public func filter<E: Error>(
+        remaining: inout [Key: Value],
+        _ isIncluded: (Element) throws(E) -> Bool
+    ) throws(E) -> [Key: Value] {
+        var filtered: [Key: Value] = [:]
+        for (key, value) in self {
+            if try isIncluded((key, value)) {
+                filtered[key] = value
+            } else {
+                remaining[key] = value
+            }
+        }
+        return filtered
     }
 }
 
@@ -280,9 +283,9 @@ extension Sequence {
 }
 
 extension Sequence {
-    @inlinable public func mutatingMap(mutate: (inout Element) throws -> Void) rethrows -> [Element] {
-        try map {
-            var mutated = $0
+    @inlinable public func mutatingMap<E: Error>(mutate: (inout Element) throws(E) -> Void) throws(E) -> [Element] {
+        try map { element throws(E) in
+            var mutated = element
             try mutate(&mutated)
             return mutated
         }
@@ -290,7 +293,7 @@ extension Sequence {
     
     /// Searches for first element that can be transformed with given predicate
     /// and returns transformed one.
-    @inlinable public func firstMapped<T>(where transform: (Element) throws -> T?) rethrows -> T? {
+    @inlinable public func firstMapped<T, E: Error>(where transform: (Element) throws(E) -> T?) throws(E) -> T? {
         for element in self {
             if let mapped = try transform(element) {
                 return mapped
@@ -328,15 +331,7 @@ extension Sequence {
         remaining: inout [Element],
         _ isIncluded: SBPredicate<Element, Failure>
     ) throws(Failure) -> [Element] {
-        var filtered: [Element] = []
-        for element in self {
-            if try isIncluded.evaluate(element) {
-                filtered.append(element)
-            } else {
-                remaining.append(element)
-            }
-        }
-        return filtered
+        try filter(remaining: &remaining, isIncluded.evaluate)
     }
     
     /// Returns an array containing, in order, the elements of the sequence
@@ -362,11 +357,19 @@ extension Sequence {
     /// - Returns: An array of the elements that `isIncluded` allowed.
     ///
     /// - Complexity: O(*n*), where *n* is the length of the sequence.
-    @inlinable public func filter(
+    @inlinable public func filter<E: Error>(
         remaining: inout [Element],
-        _ isIncluded: (Element) throws -> Bool
-    ) rethrows -> [Element] {
-        try _withoutActuallyEscaping(isIncluded) { try filter(remaining: &remaining, $0) }
+        _ isIncluded: (Element) throws(E) -> Bool
+    ) throws(E) -> [Element] {
+        var filtered: [Element] = []
+        for element in self {
+            if try isIncluded(element) {
+                filtered.append(element)
+            } else {
+                remaining.append(element)
+            }
+        }
+        return filtered
     }
 }
 
@@ -476,13 +479,15 @@ extension Sequence {
     ///   - extractKey: A closure that extracts the `Key` from an element of the sequence.
     /// - Returns: The final accumulated dictionary. If the sequence has no elements,
     ///   the result is `initialDictionary`.
-    @inlinable public func reduce<Key: Hashable>(
+    @inlinable public func reduce<Key: Hashable, E: Error>(
         into initialDictionary: [Key: Element] = [:],
-        keyedBy extractKey: (Element) throws -> Key?
-    ) rethrows -> [Key: Element] {
-        try reduce(into: initialDictionary) {
-            if let key = try extractKey($1) {
-                $0[key] = $1
+        keyedBy extractKey: (Element) throws(E) -> Key?
+    ) throws(E) -> [Key: Element] {
+        try _typedRethrow(error: E.self) {
+            try reduce(into: initialDictionary) {
+                if let key = try extractKey($1) {
+                    $0[key] = $1
+                }
             }
         }
     }
@@ -496,7 +501,7 @@ extension RangeReplaceableCollection {
         (startIndex..<endIndex).contains(index) ? self[index] : nil
     }
     
-    public mutating func mutateElements(mutate: (inout Element) throws -> Void) rethrows {
+    public mutating func mutateElements<E: Error>(mutate: (inout Element) throws(E) -> Void) throws(E) {
         self = try Self(mutatingMap(mutate: mutate))
     }
     
@@ -547,8 +552,8 @@ extension RangeReplaceableCollection {
     ///
     /// - Returns: The first element of the collection or `nil` if collection is empty.
     @discardableResult
-    public mutating func removeFirst(where predicate: (Element) throws -> Bool) rethrows -> Element? {
-        try _withoutActuallyEscaping(predicate) { try removeFirst($0) }
+    public mutating func removeFirst<E: Error>(where predicate: (Element) throws(E) -> Bool) throws(E) -> Element? {
+        try _withoutActuallyEscaping(predicate) { element throws(E) in try removeFirst(element) }
     }
     
     /// Returns the first index where the specified value with specific property
@@ -689,13 +694,8 @@ internal func _withoutActuallyEscaping<Value, Failure: Error, R>(
 }
 
 extension SBPredicate {
-    /// Use with care only in functions that don't `rethrow` but `throws(Failure)`.
     @usableFromInline
     internal func _call<R>(_ body: ((Value) throws(Failure) -> Bool) throws -> R) throws(Failure) -> R {
-        do {
-            return try body(evaluate)
-        } catch {
-            throw error as! Failure
-        }
+        try _typedRethrow(error: Failure.self) { try body(evaluate) }
     }
 }

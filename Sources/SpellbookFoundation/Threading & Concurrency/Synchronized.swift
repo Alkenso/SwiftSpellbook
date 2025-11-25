@@ -54,20 +54,20 @@ public final class Synchronized<Value>: @unchecked Sendable {
         }
     }
     
-    public func read<R>(_ reader: (Value) throws -> sending R) rethrows -> sending R {
-        try lock.withReadLock { try reader(value) }
+    public func read<R, E: Error>(_ reader: (Value) throws(E) -> sending R) throws(E) -> sending R {
+        try lock.withReadLock { () throws(E) in try reader(value) }
     }
     
-    public func readUnchecked<R>(_ reader: (Value) throws -> R) rethrows -> R {
-        try lock.withReadLock { try reader(value) }
+    public func readUnchecked<R, E: Error>(_ reader: (Value) throws(E) -> R) throws(E) -> R {
+        try lock.withReadLock { () throws(E) in try reader(value) }
     }
     
-    public func write<R>(_ writer: (inout Value) throws -> sending R) rethrows -> sending R {
-        try lock.withWriteLock { try writer(&value) }
+    public func write<R, E: Error>(_ writer: (inout Value) throws(E) -> sending R) throws(E) -> sending R {
+        try lock.withWriteLock { () throws(E) in try writer(&value) }
     }
     
-    public func writeUnchecked<R>(_ writer: (inout Value) throws -> R) rethrows -> R {
-        try lock.withWriteLock { try writer(&value) }
+    public func writeUnchecked<R, E: Error>(_ writer: (inout Value) throws(E) -> R) throws(E) -> R {
+        try lock.withWriteLock { () throws(E) in try writer(&value) }
     }
 }
 
@@ -105,13 +105,13 @@ extension Synchronized {
         self.init(primitive, nil)
     }
     
-    public func initialize<T: Sendable>(produceValue: () throws -> T) rethrows -> T where Value == T? {
-        try write {
-            if let value = $0 {
+    public func initialize<T: Sendable, E: Error>(produceValue: () throws(E) -> T) throws(E) -> T where Value == T? {
+        try write { value throws(E) in
+            if let value {
                 return value
             } else {
                 let newValue = try produceValue()
-                $0 = newValue
+                value = newValue
                 return newValue
             }
         }

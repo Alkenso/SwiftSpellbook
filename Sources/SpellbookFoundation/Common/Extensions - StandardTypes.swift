@@ -376,7 +376,12 @@ extension Optional where Wrapped: Error {
 
 extension Optional {
     /// Sets the value to `defaultValue` only if current value is `nil`.
-    public mutating func coalesce(_ defaultValue: @autoclosure () throws -> Wrapped) rethrows -> Wrapped {
+    public mutating func coalesce(_ defaultValue: Wrapped) -> Wrapped {
+        coalesce { defaultValue }
+    }
+    
+    /// Sets the value to `defaultValue` only if current value is `nil`.
+    public mutating func coalesce<E: Error>(_ defaultValue: () throws(E) -> Wrapped) throws(E) -> Wrapped {
         if let self {
             return self
         } else {
