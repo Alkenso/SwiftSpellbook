@@ -244,6 +244,29 @@ extension Sequence {
     @inlinable public func keyedCompactMap<Key>(_ transform: (Element) -> Key?) -> [KeyValue<Key, Element>] {
         compactMap { element in transform(element).flatMap { KeyValue($0, element) } }
     }
+    
+    public func recursiveMap<U, C, E: Error>(
+        at children: (Element) -> C,
+        _ transform: (Element) throws(E) -> U
+    ) throws(E) -> [U] where C: Collection, C.Element == Element {
+        try recursiveCompactMap(at: children, transform)
+    }
+    
+    public func recursiveCompactMap<U, C, E: Error>(
+        at children: (Element) -> C?,
+        _ transform: (Element) throws(E) -> U?
+    ) throws(E) -> [U] where C: Collection, C.Element == Element {
+        var transformed: [U] = []
+        for element in self {
+            if let transformedElement = try transform(element) {
+                transformed.append(transformedElement)
+            }
+            if let childrenElements = children(element) {
+                transformed.append(contentsOf: try childrenElements.recursiveCompactMap(at: children, transform))
+            }
+        }
+        return transformed
+    }
 }
 
 extension Sequence {

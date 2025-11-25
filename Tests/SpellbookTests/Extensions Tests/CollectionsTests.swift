@@ -72,6 +72,46 @@ class SequenceTests: XCTestCase {
     func test_mutatingMap() {
         XCTAssertEqual((1...3).mutatingMap { $0 += 5 }, [6, 7, 8])
     }
+
+    func test_recursiveMap_flattenTree() {
+        struct Node: Equatable {
+            let value: Int
+            let children: [Node]
+        }
+        
+        let tree = [
+            Node(value: 1, children: [
+                Node(value: 2, children: [
+                    Node(value: 3, children: [])
+                ]),
+                Node(value: 4, children: [])
+            ]),
+            Node(value: 5, children: [])
+        ]
+
+        let result = tree.recursiveMap(at: \.children) { $0.value }
+        XCTAssertEqual(result, [1, 2, 3, 4, 5])
+    }
+
+    func test_recursiveCompactMap_flattenOptionalTree() {
+        struct OptionalNode {
+            let value: Int?
+            let children: [OptionalNode]?
+        }
+        
+        let tree = [
+            OptionalNode(value: 1, children: [
+                OptionalNode(value: nil, children: [
+                    OptionalNode(value: 3, children: nil)
+                ]),
+                OptionalNode(value: 4, children: nil)
+            ]),
+            OptionalNode(value: nil, children: nil)
+        ]
+
+        let result = tree.recursiveCompactMap(at: \.children, { $0.value })
+        XCTAssertEqual(result, [1, 3, 4])
+    }
     
     func test_filterRemaining() {
         let arr = [1, 5, 11, 10]
