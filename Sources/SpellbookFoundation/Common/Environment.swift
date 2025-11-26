@@ -23,7 +23,7 @@
 import Foundation
 
 /// Different indicators related to Application build environment.
-public enum BuildEnvironment {
+public enum BuildEnvironment: Sendable {
     /// Runtime check if run in debug mode.
     public static let isDebug: Bool = {
         #if DEBUG
@@ -35,7 +35,23 @@ public enum BuildEnvironment {
 }
 
 /// Different indicators related to Application run environment.
-public enum RunEnvironment {
+public enum RunEnvironment: Sendable {
+    public enum Flags: Sendable {
+        case isXCTesting
+        case isRunFromXcode
+        case isXcodePreview
+        case isSimulator
+    }
+    
+    public static let flags = {
+        var flags: Set<Flags> = []
+        if isXCTesting { flags.insert(.isXCTesting) }
+        if isRunFromXcode { flags.insert(.isRunFromXcode) }
+        if isXcodePreview { flags.insert(.isXcodePreview) }
+        if isSimulator { flags.insert(.isSimulator) }
+        return flags
+    }()
+    
     /// Runtime check if run inside XCTest bundle.
     public static let isXCTesting: Bool = {
         let envKeys = ["XCTestBundlePath", "XCTestConfigurationFilePath", "XCTestSessionIdentifier"]
