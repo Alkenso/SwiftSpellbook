@@ -65,7 +65,7 @@ class DataExtensionsTests: XCTestCase {
             Data([0x00, 0x01, 0x10, 0x0a, 0xa0, 0xff, 0x00])
         )
         XCTAssertEqual(
-            Data(hexString: "0x0001100AA0FF00"),
+            Data(hexString: "0x0001100aa0ff00"),
             Data([0x00, 0x01, 0x10, 0x0a, 0xa0, 0xff, 0x00])
         )
         XCTAssertEqual(
@@ -88,8 +88,8 @@ class DataExtensionsTests: XCTestCase {
     
     func test_toHexString() {
         XCTAssertEqual(
-            Data([0x00, 0x01, 0x10, 0x0a, 0xa0, 0xff, 0x00]).hexString,
-            "0001100aa0ff00"
+            Data([0x00, 0x01, 0x10, 0x0a, 0xb0, 0xcd, 0xef, 0x00]).hexString,
+            "0001100ab0cdef00"
         )
         XCTAssertEqual(
             Data().hexString,

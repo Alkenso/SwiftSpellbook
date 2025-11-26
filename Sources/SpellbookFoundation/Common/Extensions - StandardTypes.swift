@@ -55,7 +55,7 @@ extension Data {
         for i in stride(from: 0, to: hexString.count, by: 2) {
             let byteStart = hexString.index(hexString.startIndex, offsetBy: i)
             let byteEnd = hexString.index(after: byteStart)
-            let byteString = hexString[byteStart ... byteEnd]
+            let byteString = hexString[byteStart...byteEnd]
             guard let byte = UInt8(byteString, radix: 16) else { return nil }
             data.append(byte)
         }
