@@ -29,7 +29,17 @@ extension DataProtocol {
     /// Returns data representation as hex string.
     /// - returns: string in form "00fab1c0".
     public var hexString: String {
-        map { String(format: "%02x", $0) }.joined()
+        let hexDigits = Array("0123456789abcdef".utf8)
+        
+        var result: [UInt8] = []
+        result.reserveCapacity(count * 2)
+        
+        for byte in self {
+            result.append(hexDigits[Int(byte >> 4)])
+            result.append(hexDigits[Int(byte & 0xF)])
+        }
+        
+        return String(decoding: result, as: UTF8.self)
     }
 }
 
