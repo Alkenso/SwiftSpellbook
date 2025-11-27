@@ -126,6 +126,18 @@ class SequenceTests: XCTestCase {
         XCTAssertEqual(values.firstMapped { Int($0) }, 1)
     }
     
+    func test_lastMapped() {
+        let values = ["a", "1", "2", "b"]
+        XCTAssertEqual(values.lastMapped { Int($0) }, 2)
+    }
+    
+    func test_minMax() {
+        struct Item { var id: Int }
+        let items = [KeyValue(1, "q"), KeyValue(2, "w"), KeyValue(3, "e"), KeyValue(4, "r")].shuffled()
+        XCTAssertEqual(items.min(by: \.key)?.value, "q")
+        XCTAssertEqual(items.max(by: \.key)?.value, "r")
+    }
+    
     func test_sorted_keyPath() {
         XCTAssertEqual(["aaa", "d", "cccc", "bb"].sorted(by: \.count), ["d", "bb", "aaa", "cccc"])
     }

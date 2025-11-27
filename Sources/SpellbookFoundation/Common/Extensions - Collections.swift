@@ -280,10 +280,9 @@ extension Sequence {
         }
         return transformed
     }
-}
-
-extension Sequence {
-    @inlinable public func mutatingMap<E: Error>(mutate: (inout Element) throws(E) -> Void) throws(E) -> [Element] {
+    
+    @inlinable
+    public func mutatingMap<E: Error>(mutate: (inout Element) throws(E) -> Void) throws(E) -> [Element] {
         try map { element throws(E) in
             var mutated = element
             try mutate(&mutated)
@@ -293,13 +292,29 @@ extension Sequence {
     
     /// Searches for first element that can be transformed with given predicate
     /// and returns transformed one.
-    @inlinable public func firstMapped<T, E: Error>(where transform: (Element) throws(E) -> T?) throws(E) -> T? {
+    @inlinable
+    public func firstMapped<T, E: Error>(where transform: (Element) throws(E) -> T?) throws(E) -> T? {
         for element in self {
             if let mapped = try transform(element) {
                 return mapped
             }
         }
         return nil
+    }
+    
+    @inlinable
+    public func first<E: Error>(where predicate: SBPredicate<Element, E>) throws(E) -> Element? {
+        try _typedRethrow(error: E.self) { try first(where: predicate.evaluate) }
+    }
+    
+    @inlinable
+    public func min<T: Comparable>(by keyPath: KeyPath<Element, T>) -> Element? {
+        self.min { $0[keyPath: keyPath] < $1[keyPath: keyPath] }
+    }
+    
+    @inlinable
+    public func max<T: Comparable>(by keyPath: KeyPath<Element, T>) -> Element? {
+        self.max { $0[keyPath: keyPath] < $1[keyPath: keyPath] }
     }
 }
 
@@ -680,6 +695,26 @@ extension RangeReplaceableCollection {
     public func removingDuplicates() -> Self where Element: Hashable {
         var seen = Set<Element>()
         return filter { seen.insert($0).inserted }
+    }
+}
+
+extension BidirectionalCollection {
+    /// Searches for last element that can be transformed with given predicate
+    /// and returns transformed one.
+    /// Combination of `reversed` and `firstMapped`.
+    @inlinable
+    public func lastMapped<T, E: Error>(where transform: (Element) throws(E) -> T?) throws(E) -> T? {
+        for element in reversed() {
+            if let mapped = try transform(element) {
+                return mapped
+            }
+        }
+        return nil
+    }
+    
+    @inlinable
+    public func last<E: Error>(where predicate: SBPredicate<Element, E>) throws(E) -> Element? {
+        try _typedRethrow(error: E.self) { try last(where: predicate.evaluate) }
     }
 }
 
