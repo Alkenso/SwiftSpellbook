@@ -590,6 +590,16 @@ extension RangeReplaceableCollection {
         try predicate._call(firstIndex(where:))
     }
     
+    @inlinable public func firstAfter(_ element: Element) -> Element? where Element: Equatable {
+        firstAfter(element, by: ==)
+    }
+    
+    @inlinable public func firstAfter(_ element: Element, by: (Element, Element) -> Bool) -> Element? {
+        guard let index = firstIndex(where: { by($0, element) }) else { return nil }
+        let after = self.index(after: index)
+        return after < endIndex ? self[after] : nil
+    }
+    
     /// Returns the indices of all the elements with specific property that are equal to the given
     /// `property`.
     ///
@@ -715,6 +725,16 @@ extension BidirectionalCollection {
     @inlinable
     public func last<E: Error>(where predicate: SBPredicate<Element, E>) throws(E) -> Element? {
         try _typedRethrow(error: E.self) { try last(where: predicate.evaluate) }
+    }
+    
+    @inlinable public func firstBefore(_ element: Element) -> Element? where Element: Equatable {
+        firstBefore(element, by: ==)
+    }
+    
+    @inlinable public func firstBefore(_ element: Element, by: (Element, Element) -> Bool) -> Element? {
+        guard let index = firstIndex(where: { by($0, element) }), index > startIndex else { return nil }
+        let before = self.index(before: index)
+        return self[before]
     }
 }
 

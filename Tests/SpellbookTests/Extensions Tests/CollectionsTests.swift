@@ -265,6 +265,23 @@ class CollectionTests: XCTestCase {
         XCTAssertThrowsError(try arr.removeFirst { _ in throw CommonError("") })
     }
     
+    func test_firstBefore() {
+        let arr = [1, 2, 3, 4]
+        XCTAssertEqual(arr.firstBefore(1), nil)
+        XCTAssertEqual(arr.firstBefore(2), 1)
+        XCTAssertEqual(arr.firstBefore(4), 3)
+        XCTAssertEqual(arr.firstBefore(5), nil)
+    }
+    
+    func test_firstAfter() {
+        let arr = [1, 2, 3, 4]
+        XCTAssertEqual(arr.firstAfter(1), 2)
+        XCTAssertEqual(arr.firstAfter(2), 3)
+        XCTAssertEqual(arr.firstAfter(4), nil)
+        XCTAssertEqual(arr.firstAfter(5), nil)
+        
+    }
+    
     func test_popAll() {
         var arr = [1, 2, 20, 30]
         XCTAssertEqual(arr.popAll(), [1, 2, 20, 30])
