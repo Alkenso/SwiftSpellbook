@@ -510,12 +510,58 @@ extension Sequence {
 
 // MARK: - Collection
 
-extension RangeReplaceableCollection {
+extension Collection {
     /// Bounds-safe access to the element at index.
     public subscript(safe index: Index) -> Element? {
-        (startIndex..<endIndex).contains(index) ? self[index] : nil
+        indices.contains(index) ? self[index] : nil
     }
     
+    /// Returns the first index where the specified value with specific property
+    /// appears in the collection.
+    ///
+    /// - Parameter property: A property indicates whether the element
+    ///   represents a match.
+    /// - Returns: The index of the first element for which `property` matches
+    ///   `true`. If no elements in the collection satisfy the given predicate,
+    ///   returns `nil`.
+    ///
+    /// - Parameter keyPath: A KeyPath to property of the element to search for in the collection.
+    /// - Parameter property: A property of the element to search for in the collection.
+    /// - Returns: The first index where element with given `property` is found.
+    ///   If element with given `property` is not found in the collection, returns `nil`.
+    ///
+    /// - Complexity: O(*n*), where *n* is the length of the collection.
+    @inlinable public func firstIndex<Failure>(_ predicate: SBPredicate<Element, Failure>) throws(Failure) -> Index? {
+        try predicate._call(firstIndex(where:))
+    }
+    
+    /// Returns the indices of all the elements with specific property that are equal to the given
+    /// `property`.
+    ///
+    /// - Parameter keyPath: A KeyPath to property of the element to look for in the collection.
+    /// - Parameter element: A property of the element to look for in the collection.
+    /// - Returns: A set of the indices of the elements whose properties are equal to `property`.
+    ///
+    /// - Complexity: O(*n*), where *n* is the length of the collection.
+    @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+    @inlinable public func indices<Failure>(
+        _ predicate: SBPredicate<Element, Failure>
+    ) throws(Failure) -> RangeSet<Index> {
+        try predicate._call(indices(where:))
+    }
+    
+    @inlinable public func firstAfter(_ element: Element) -> Element? where Element: Equatable {
+        firstAfter(element, by: ==)
+    }
+    
+    @inlinable public func firstAfter(_ element: Element, by: (Element, Element) -> Bool) -> Element? {
+        guard let index = firstIndex(where: { by($0, element) }) else { return nil }
+        let after = self.index(after: index)
+        return after < endIndex ? self[after] : nil
+    }
+}
+
+extension RangeReplaceableCollection {
     public mutating func mutateElements<E: Error>(mutate: (inout Element) throws(E) -> Void) throws(E) {
         self = try Self(mutatingMap(mutate: mutate))
     }
@@ -569,50 +615,6 @@ extension RangeReplaceableCollection {
     @discardableResult
     public mutating func removeFirst<E: Error>(where predicate: (Element) throws(E) -> Bool) throws(E) -> Element? {
         try _withoutActuallyEscaping(predicate) { element throws(E) in try removeFirst(element) }
-    }
-    
-    /// Returns the first index where the specified value with specific property
-    /// appears in the collection.
-    ///
-    /// - Parameter property: A property indicates whether the element
-    ///   represents a match.
-    /// - Returns: The index of the first element for which `property` matches
-    ///   `true`. If no elements in the collection satisfy the given predicate,
-    ///   returns `nil`.
-    ///
-    /// - Parameter keyPath: A KeyPath to property of the element to search for in the collection.
-    /// - Parameter property: A property of the element to search for in the collection.
-    /// - Returns: The first index where element with given `property` is found.
-    ///   If element with given `property` is not found in the collection, returns `nil`.
-    ///
-    /// - Complexity: O(*n*), where *n* is the length of the collection.
-    @inlinable public func firstIndex<Failure>(_ predicate: SBPredicate<Element, Failure>) throws(Failure) -> Index? {
-        try predicate._call(firstIndex(where:))
-    }
-    
-    @inlinable public func firstAfter(_ element: Element) -> Element? where Element: Equatable {
-        firstAfter(element, by: ==)
-    }
-    
-    @inlinable public func firstAfter(_ element: Element, by: (Element, Element) -> Bool) -> Element? {
-        guard let index = firstIndex(where: { by($0, element) }) else { return nil }
-        let after = self.index(after: index)
-        return after < endIndex ? self[after] : nil
-    }
-    
-    /// Returns the indices of all the elements with specific property that are equal to the given
-    /// `property`.
-    ///
-    /// - Parameter keyPath: A KeyPath to property of the element to look for in the collection.
-    /// - Parameter element: A property of the element to look for in the collection.
-    /// - Returns: A set of the indices of the elements whose properties are equal to `property`.
-    ///
-    /// - Complexity: O(*n*), where *n* is the length of the collection.
-    @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
-    @inlinable public func indices<Failure>(
-        _ predicate: SBPredicate<Element, Failure>
-    ) throws(Failure) -> RangeSet<Index> {
-        try predicate._call(indices(where:))
     }
     
     /// Adds a new element at the end of the array or updates the element if it exists.
