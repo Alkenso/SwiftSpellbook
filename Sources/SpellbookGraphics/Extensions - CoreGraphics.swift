@@ -47,6 +47,26 @@ extension CGPoint: @retroactive AdditiveArithmetic {
     }
 }
 
+extension CGPoint {
+    public static func + (lhs: CGPoint, rhs: CGSize) -> CGPoint {
+        CGPoint(x: lhs.x + rhs.width, y: lhs.y + rhs.height)
+    }
+    
+    public static func += (lhs: inout CGPoint, rhs: CGSize) {
+        lhs.x += rhs.width
+        lhs.y += rhs.height
+    }
+    
+    public static func - (lhs: CGPoint, rhs: CGSize) -> CGPoint {
+        CGPoint(x: lhs.x - rhs.width, y: lhs.y - rhs.height)
+    }
+    
+    public static func -= (lhs: inout CGPoint, rhs: CGSize) {
+        lhs.x -= rhs.width
+        lhs.y -= rhs.height
+    }
+}
+
 extension CGSize {
     public static let unit = CGSize(width: 1, height: 1)
     
