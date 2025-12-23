@@ -182,6 +182,21 @@ extension Dictionary {
     }
 }
 
+extension Dictionary {
+    @inlinable
+    public subscript(key: Key, create newValue: @autoclosure () -> Value) -> Value {
+        mutating get {
+            if let value = self[key] {
+                return value
+            } else {
+                let value = newValue()
+                self[key] = value
+                return value
+            }
+        }
+    }
+}
+
 // MARK: - Set
 
 extension Set {

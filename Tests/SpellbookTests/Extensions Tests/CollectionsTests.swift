@@ -28,6 +28,14 @@ class DictionaryTests: XCTestCase {
         XCTAssertEqual(filtered, [2: "w", 4: "r"])
         XCTAssertEqual(remaining, [1: "q", 3: "e"])
     }
+    
+    func test_subscript_create() {
+        var dict = [1: "q", 2: "w"]
+        XCTAssertEqual(dict[2, create: "e"], "w")
+        XCTAssertEqual(dict.count, 2)
+        XCTAssertEqual(dict[3, create: "e"], "e")
+        XCTAssertEqual(dict.count, 3)
+    }
 }
 
 class ArrayTests: XCTestCase {
