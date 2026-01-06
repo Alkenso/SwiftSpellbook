@@ -9,7 +9,7 @@ let package = Package(
     products: [
         .library(
             name: "SpellbookFoundation",
-            targets: ["SpellbookFoundation", "_SpellbookFoundationObjC"]
+            targets: ["SpellbookFoundation", "SpellbookFoundationObjC"],
         ),
         .library(
             name: "SpellbookHTTP",
@@ -33,13 +33,28 @@ let package = Package(
     targets: [
         .target(
             name: "SpellbookFoundation",
-            dependencies: ["_SpellbookFoundationObjC"],
+            dependencies: ["SpellbookFoundationObjC"],
             linkerSettings: [
                 .linkedLibrary("bsm", .when(platforms: [.macOS])),
             ]
         ),
+//        .target(
+//            name: <#T##String#>,
+//            dependencies: <#T##[Target.Dependency]#>,
+//            path: <#T##String?#>,
+//            exclude: <#T##[String]#>,
+//            sources: <#T##[String]?#>,
+//            resources: <#T##[Resource]?#>,
+//            publicHeadersPath: <#T##String?#>,
+//            packageAccess: <#T##Bool#>,
+//            cSettings: <#T##[CSetting]?#>,
+//            cxxSettings: <#T##[CXXSetting]?#>,
+//            swiftSettings: <#T##[SwiftSetting]?#>,
+//            linkerSettings: <#T##[LinkerSetting]?#>,
+//            plugins: <#T##[Target.PluginUsage]?#>
+//        )
         .target(
-            name: "_SpellbookFoundationObjC",
+            name: "SpellbookFoundationObjC",
             path: "Sources/SpellbookFoundationObjC",
             publicHeadersPath: "."
         ),
