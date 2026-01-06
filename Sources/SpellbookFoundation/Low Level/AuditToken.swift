@@ -22,7 +22,7 @@
 
 #if os(macOS)
 
-import _SpellbookFoundationObjC
+@_implementationOnly import _SpellbookFoundationObjC
 
 import Foundation
 
