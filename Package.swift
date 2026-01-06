@@ -9,7 +9,7 @@ let package = Package(
     products: [
         .library(
             name: "SpellbookFoundation",
-            targets: ["SpellbookFoundation", "SpellbookFoundationObjC"],
+            targets: ["SpellbookFoundation"],
         ),
         .library(
             name: "SpellbookHTTP",
