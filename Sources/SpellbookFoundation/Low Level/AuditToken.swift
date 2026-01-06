@@ -22,7 +22,7 @@
 
 #if os(macOS)
 
-private import SpellbookFoundationObjC
+private import _SpellbookFoundationObjC
 
 import Foundation
 

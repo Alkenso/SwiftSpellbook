@@ -33,28 +33,13 @@ let package = Package(
     targets: [
         .target(
             name: "SpellbookFoundation",
-            dependencies: ["SpellbookFoundationObjC"],
+            dependencies: ["_SpellbookFoundationObjC"],
             linkerSettings: [
                 .linkedLibrary("bsm", .when(platforms: [.macOS])),
             ]
         ),
-//        .target(
-//            name: <#T##String#>,
-//            dependencies: <#T##[Target.Dependency]#>,
-//            path: <#T##String?#>,
-//            exclude: <#T##[String]#>,
-//            sources: <#T##[String]?#>,
-//            resources: <#T##[Resource]?#>,
-//            publicHeadersPath: <#T##String?#>,
-//            packageAccess: <#T##Bool#>,
-//            cSettings: <#T##[CSetting]?#>,
-//            cxxSettings: <#T##[CXXSetting]?#>,
-//            swiftSettings: <#T##[SwiftSetting]?#>,
-//            linkerSettings: <#T##[LinkerSetting]?#>,
-//            plugins: <#T##[Target.PluginUsage]?#>
-//        )
         .target(
-            name: "SpellbookFoundationObjC",
+            name: "_SpellbookFoundationObjC",
             path: "Sources/SpellbookFoundationObjC",
             publicHeadersPath: "."
         ),

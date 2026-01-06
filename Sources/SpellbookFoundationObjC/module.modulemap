@@ -1,0 +1,4 @@
+module _SpellbookFoundationObjC {
+    header "SpellbookObjC.h"
+    export *
+}
