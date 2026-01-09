@@ -332,3 +332,55 @@ extension Serializable {
         try data.encode(to: encoder)
     }
 }
+
+// MARK: - Dictionary Coder
+
+public struct DictionaryCoder: Sendable {
+    public enum Proxy: Sendable {
+        case json
+        case plist
+    }
+    
+    public init(proxy: Proxy = .json) {
+        self.proxy = proxy
+    }
+    
+    public var proxy: Proxy
+    
+    public func encode<T: Encodable, Key: Hashable, Value>(
+        _ value: T,
+        as: [Key: Value].Type = [Key: Value].self
+    ) throws -> [Key: Value] {
+        let encoder: ObjectEncoder<T>
+        let decoder: ObjectDecoder<[Key: Value]>
+        switch proxy {
+        case .json:
+            encoder = .json()
+            decoder = .foundationJSON()
+        case .plist:
+            encoder = .plist(.binary)
+            decoder = .foundationPlist()
+        }
+        
+        let data = try encoder.encode(value)
+        let dict = try decoder.decode([Key: Value].self, data)
+        return dict
+    }
+    
+    public func decode<T: Decodable, Key: Hashable, Value>(_ type: T.Type = T.self, from: [Key: Value]) throws -> T {
+        let encoder: ObjectEncoder<[Key: Value]>
+        let decoder: ObjectDecoder<T>
+        switch proxy {
+        case .json:
+            encoder = .foundationJSON()
+            decoder = .json()
+        case .plist:
+            encoder = .foundationPlist(.binary)
+            decoder = .plist()
+        }
+        
+        let data = try encoder.encode(from)
+        let value = try decoder.decode(T.self, data)
+        return value
+    }
+}

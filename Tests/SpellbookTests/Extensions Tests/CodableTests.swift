@@ -62,3 +62,28 @@ class CodableTests: XCTestCase {
         XCTAssertEqual(decoded.userInfo[NSDebugDescriptionErrorKey] as? String, "test")
     }
 }
+
+class DictionaryCoderTests: XCTestCase {
+    struct Foo: Equatable, Codable {
+        var a = 10
+        var b = "qwerty"
+        var c = [1, 2, 3]
+        var d = ["q": 1, "w": 2]
+        var e: [Foo] = []
+    }
+    
+    func test() throws {
+        var value = Foo()
+        value.e = [Foo(), Foo()]
+        
+        let dict = try DictionaryCoder().encode(value, as: [String: Any].self)
+        XCTAssertEqual(dict["a"] as? Int, value.a)
+        XCTAssertEqual(dict["b"] as? String, value.b)
+        XCTAssertEqual(dict["c"] as? [Int], value.c)
+        XCTAssertEqual(dict["d"] as? [String: Int], value.d)
+        XCTAssertEqual((dict["e"] as? [[String: Any]])?.count, value.e.count)
+        
+        let decoded = try DictionaryCoder().decode(Foo.self, from: dict)
+        XCTAssertEqual(decoded, value)
+    }
+}
