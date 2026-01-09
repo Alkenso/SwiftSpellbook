@@ -105,3 +105,30 @@ extension ValueObservable {
         }
     }
 }
+
+extension ValueObservable {
+    @MainActor
+    public final class ObservableObject: Foundation.ObservableObject {
+        private var cancellables: [AnyCancellable] = []
+        
+        public init(observable: ValueObservable<Value>) {
+            self.observable = observable
+            self.value = observable.value
+            let token = UUID()
+            observable.subscribe { [weak self] newValue, context in
+                if (context as? UUID) != token {
+                    DispatchQueue.syncOnMain { self?.value = newValue }
+                }
+            }
+            .store(in: &cancellables)
+        }
+        
+        @Published public private(set) var value: Value
+        public let observable: ValueObservable<Value>
+    }
+    
+    @MainActor
+    public var observableObject: ValueObservable.ObservableObject {
+        .init(observable: self)
+    }
+}

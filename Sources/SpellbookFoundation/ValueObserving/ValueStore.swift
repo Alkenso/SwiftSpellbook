@@ -227,8 +227,8 @@ extension ValueStore {
 
 extension ValueStore {
     @MainActor
-    public class ObservableObject: Foundation.ObservableObject {
-        private var cancellables: Set<AnyCancellable> = []
+    public final class ObservableObject: Foundation.ObservableObject {
+        private var cancellables: [AnyCancellable] = []
         
         public init(store: ValueStore<Value>) {
             self.store = store
