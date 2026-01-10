@@ -70,6 +70,10 @@ extension CGPoint {
 extension CGSize {
     public static let unit = CGSize(width: 1, height: 1)
     
+    public static func square(_ size: CGFloat) -> CGSize {
+        CGSize(width: size, height: size)
+    }
+    
     public var area: CGFloat { width * height }
     
     public mutating func scale(_ scale: CGFloat) {
@@ -93,6 +97,10 @@ extension CGSize: @retroactive AdditiveArithmetic {
 
 extension CGRect {
     public static let unit = CGRect(x: 0, y: 0, width: 1, height: 1)
+    
+    public static func square(offsets: CGFloat, size: CGFloat) -> CGRect {
+        CGRect(x: offsets, y: offsets, width: size, height: size)
+    }
     
     public var center: CGPoint { CGPoint(x: midX, y: midY) }
     public var area: CGFloat { width * height }
