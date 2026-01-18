@@ -481,6 +481,14 @@ extension Calendar {
     }
 }
 
+extension TimeInterval {
+    public static func milliseconds(_ ms: TimeInterval) -> Self { seconds(0.001 * ms) }
+    public static func seconds(_ seconds: TimeInterval) -> Self { seconds }
+    public static func minutes(_ minutes: TimeInterval) -> Self { 60 * minutes }
+    public static func hours(_ hours: TimeInterval) -> Self { minutes(60 * hours) }
+    public static func days(_ days: TimeInterval) -> Self { hours(24 * days) }
+}
+
 // MARK: - Simple types
 
 extension Bool {

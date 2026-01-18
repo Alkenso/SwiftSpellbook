@@ -228,6 +228,14 @@ class DateTimeExtensionsTests: XCTestCase {
         XCTAssertEqual(ts3.timeInterval, 123.990000000, accuracy: 1 / Double(NSEC_PER_SEC))
     }
     
+    func test_TimeInterval_inits() {
+        XCTAssertEqual(TimeInterval.seconds(10.5), 10.5)
+        XCTAssertEqual(TimeInterval.milliseconds(123), 0.123)
+        XCTAssertEqual(TimeInterval.minutes(10.5), 630)
+        XCTAssertEqual(TimeInterval.hours(2), 7200)
+        XCTAssertEqual(TimeInterval.days(1.5), 129600.0)
+    }
+    
     func test_Calendar_endOfDay() {
         // GMT: Friday, 7 April 2023 y., 10:46:19
         let date = Date(timeIntervalSince1970: 1680864379)
