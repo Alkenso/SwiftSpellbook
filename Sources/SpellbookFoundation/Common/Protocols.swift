@@ -5,6 +5,8 @@
 //  Created by Alkenso (Vladimir Vashurkin) on 11/01/2026.
 //
 
+// MARK: - EmptyInitializable
+
 protocol EmptyInitializable {
     init()
 }
@@ -37,3 +39,11 @@ extension Int128: EmptyInitializable {}
 
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension UInt128: EmptyInitializable {}
+
+// MARK: - SelfIdentifiable
+
+public protocol SelfIdentifiable: Identifiable where Self: Hashable {}
+
+extension SelfIdentifiable where Self: Hashable {
+    public var id: Self { self }
+}
