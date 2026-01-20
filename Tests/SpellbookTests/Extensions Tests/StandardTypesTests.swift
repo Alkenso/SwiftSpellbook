@@ -127,6 +127,12 @@ class ComparableExtensionsTests: XCTestCase {
         XCTAssertEqual(0.5.clamped(to: 0 ... 1.0), 0.5)
         XCTAssertEqual((-0.1).clamped(to: 0 ... 1.0), 0)
         XCTAssertEqual(1.1.clamped(to: 0 ... 1.0), 1)
+        
+        XCTAssertEqual(5.clamped(to: 0...), 5)
+        XCTAssertEqual((-5).clamped(to: 0...), 0)
+        
+        XCTAssertEqual(5.clamped(to: ...10), 5)
+        XCTAssertEqual(15.clamped(to: ...10), 10)
     }
     
     func test_relation() {

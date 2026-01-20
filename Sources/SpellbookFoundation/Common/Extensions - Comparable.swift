@@ -22,12 +22,34 @@
 
 import Foundation
 
+public protocol ClampingRange<Bound>: RangeExpression & Sendable {
+    func clamp(_ value: Bound) -> Bound
+}
+
+extension ClosedRange: ClampingRange {
+    public func clamp(_ value: Bound) -> Bound {
+        Swift.min(Swift.max(value, lowerBound), upperBound)
+    }
+}
+
+extension PartialRangeFrom: ClampingRange {
+    public func clamp(_ value: Bound) -> Bound {
+        Swift.max(value, lowerBound)
+    }
+}
+
+extension PartialRangeThrough: ClampingRange {
+    public func clamp(_ value: Bound) -> Bound {
+        Swift.min(value, upperBound)
+    }
+}
+
 @propertyWrapper
 public struct Clamped<Value: Comparable> {
-    var value: Value
-    let range: ClosedRange<Value>
+    private var value: Value
+    private let range: any ClampingRange<Value>
     
-    public init(wrappedValue value: Value, _ range: ClosedRange<Value>) {
+    public init<R: ClampingRange>(wrappedValue value: Value, _ range: R) where R.Bound == Value {
         self.value = value.clamped(to: range)
         self.range = range
     }
@@ -38,13 +60,15 @@ public struct Clamped<Value: Comparable> {
     }
 }
 
+extension Clamped: Sendable where Value: Sendable {}
+
 extension Comparable {
-    public func clamped(to limits: ClosedRange<Self>) -> Self {
-        return min(max(self, limits.lowerBound), limits.upperBound)
+    public func clamped<R: ClampingRange>(to limits: R) -> Self where R.Bound == Self {
+        limits.clamp(self)
     }
 }
 
-public enum ComparisonRelation: String, Hashable, CaseIterable {
+public enum ComparisonRelation: String, Hashable, CaseIterable, Sendable {
     case lessThan = "<"
     case lessThanOrEqual = "<="
     case equal = "=="
