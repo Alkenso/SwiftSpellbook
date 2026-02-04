@@ -75,7 +75,7 @@ public struct ProgressValue {
 
 extension ProgressValue {
     public var unsafeRatio: Double { Double(current) / Double(total) }
-    public var ratio: Double { unsafeRatio.clamped(to: 0...1) }
+    public var ratio: Double { total > 0 ? unsafeRatio.clamped(to: 0...1) : 0 }
     
     public mutating func increment(by value: Int = 1, unsafe: Bool = false) {
         current += value
