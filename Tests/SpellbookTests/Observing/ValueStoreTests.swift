@@ -157,7 +157,7 @@ class StoreTests: XCTestCase {
         var scopeSubscription = store?.scope(\.val).subscribe { XCTAssertEqual($0, "") }
         _ = scopeSubscription
         
-#if swift(>=6.2)
+#if compiler(>=6.2.3)
         weak let weakStore = store
 #else
         weak var weakStore = store
