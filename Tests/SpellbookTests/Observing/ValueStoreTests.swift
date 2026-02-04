@@ -157,7 +157,11 @@ class StoreTests: XCTestCase {
         var scopeSubscription = store?.scope(\.val).subscribe { XCTAssertEqual($0, "") }
         _ = scopeSubscription
         
+#if swift(>=6.2)
+        weak let weakStore = store
+#else
         weak var weakStore = store
+#endif
         store = nil
         
         XCTAssertNotNil(weakStore)

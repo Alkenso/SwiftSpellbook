@@ -304,24 +304,24 @@ class CollectionTests: XCTestCase {
     
     func test_firstIndex_property() {
         let arr = ["q", "ww", "eee", "rr"]
-        XCTAssertEqual(arr.firstIndex(.equals(at: \.count, to: 2)), 1)
+        XCTAssertEqual(arr.firstIndex { $0.count == 2 }, 1)
         if #available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *) {
-            XCTAssertEqual(arr.indices(.equals(at: \.count, to: 2)), RangeSet([1, 3], within: arr))
+            XCTAssertEqual(arr.indices { $0.count == 2 }, RangeSet([1, 3], within: arr))
         }
     }
     
     func test_updateFirst() {
         var arr = ["q", "ww", "eee", "rr"]
-        arr.updateFirst("ttt", .where { $0.count == 3 })
+        arr.updateFirst("ttt") { $0.count == 3 }
         XCTAssertEqual(arr, ["q", "ww", "ttt", "rr"])
         
-        arr.updateFirst("yy", .equals(at: \.count, to: 2))
+        arr.updateFirst("yy") { $0.count == 2 }
         XCTAssertEqual(arr, ["q", "yy", "ttt", "rr"])
         
         arr.updateFirst("uuu", by: \.count)
         XCTAssertEqual(arr, ["q", "yy", "uuu", "rr"])
         
-        arr.updateFirst("ii", .where { $0.count == 4 })
+        arr.updateFirst("ii") { $0.count == 4 }
         XCTAssertEqual(arr, ["q", "yy", "uuu", "rr", "ii"])
     }
     

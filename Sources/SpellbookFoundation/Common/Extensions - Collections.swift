@@ -22,37 +22,6 @@
 
 import Foundation
 
-// MARK: - SBPredicate
-
-public struct SBPredicate<Value, Failure: Error> {
-    public var evaluate: (Value) throws(Failure) -> Bool
-    
-    public init(_ evaluate: @escaping (Value) throws(Failure) -> Bool) {
-        self.evaluate = evaluate
-    }
-    
-    public static func `where`(_ predicate: @escaping (Value) throws(Failure) -> Bool) -> Self {
-        .init(predicate)
-    }
-    
-    public var negated: Self {
-        .init { (value) throws(Failure) -> Bool in try evaluate(value) }
-    }
-}
-
-extension SBPredicate where Failure == Never {
-    public static func equals(to value: Value) -> Self where Value: Equatable {
-        .init { $0 == value }
-    }
-    
-    public static func equals<Property: Equatable>(
-        at keyPath: KeyPath<Value, Property>,
-        to value: Property
-    ) -> Self {
-        .init { $0[keyPath: keyPath] == value }
-    }
-}
-
 // MARK: - Dictionary
 
 extension Dictionary {
@@ -112,42 +81,20 @@ extension Dictionary {
     }
     
     /// Removes the all elements from the array and returns them.
-    public mutating func popAll(_ predicate: SBPredicate<Element, Never>) -> Self {
+    public mutating func popAll(where predicate: (Element) -> Bool) -> Self {
         guard !isEmpty else { return [:] }
         var removed: [Key: Value] = [:]
         for element in self {
-            if predicate.evaluate(element) {
+            if predicate(element) {
                 removeValue(forKey: element.key)
                 removed[element.key] = element.value
             }
         }
         return removed
     }
-    
-    /// Removes the all elements from the array and returns them.
-    public mutating func popAll(where predicate: (Element) -> Bool) -> Self {
-        _withoutActuallyEscaping(predicate) { popAll($0) }
-    }
 }
 
 extension Dictionary {
-    /// Returns a new dictionary containing the key-value pairs of the dictionary
-    /// that satisfy the given predicate.
-    /// Collects unsatisfied elements into `remaining` dictionary.
-    ///
-    /// - Parameter isIncluded: A predicate that takes a key-value pair as its
-    ///   argument and returns a Boolean value indicating whether the pair
-    ///   should be included in the returned dictionary.
-    /// - Parameter remaining: A dictionary to collect elements that are
-    ///   not included into returned dictionary.
-    /// - Returns: A dictionary of the key-value pairs that `isIncluded` allows.
-    public func filter<E: Error>(
-        remaining: inout [Key: Value],
-        _ isIncluded: SBPredicate<Element, E>
-    ) throws(E) -> [Key: Value] {
-        try filter(remaining: &remaining, isIncluded.evaluate)
-    }
-    
     /// Returns a new dictionary containing the key-value pairs of the dictionary
     /// that satisfy the given predicate.
     /// Collects unsatisfied elements into `remaining` dictionary.
@@ -318,11 +265,6 @@ extension Sequence {
     }
     
     @inlinable
-    public func first<E: Error>(where predicate: SBPredicate<Element, E>) throws(E) -> Element? {
-        try _typedRethrow(error: E.self) { try first(where: predicate.evaluate) }
-    }
-    
-    @inlinable
     public func min<T: Comparable>(by keyPath: KeyPath<Element, T>) -> Element? {
         self.min { $0[keyPath: keyPath] < $1[keyPath: keyPath] }
     }
@@ -334,36 +276,6 @@ extension Sequence {
 }
 
 extension Sequence {
-    /// Returns an array containing, in order, the elements of the sequence
-    /// that satisfy the given predicate.
-    /// Collects unsatisfied elements into `remaining` array.
-    ///
-    /// In this example, `filter(_:)` is used to include only names shorter than
-    /// five characters.
-    ///
-    ///     let cast = ["Vivien", "Marlon", "Kim", "Karl"]
-    ///     var longNames: [String] = []
-    ///     let shortNames = cast.filter(remaining: &longNames) { $0.count < 5 }
-    ///     print(shortNames)
-    ///     // Prints "["Kim", "Karl"]"
-    ///     print(longNames)
-    ///     // Prints "["Vivien", "Marlon"]"
-    ///
-    /// - Parameter isIncluded: A predicate that takes an element of the
-    ///   sequence as its argument and returns a Boolean value indicating
-    ///   whether the element should be included in the returned array.
-    /// - Parameter remaining: An array to collect elements that are
-    ///   not included into returned array.
-    /// - Returns: An array of the elements that `isIncluded` allowed.
-    ///
-    /// - Complexity: O(*n*), where *n* is the length of the sequence.
-    public func filter<Failure>(
-        remaining: inout [Element],
-        _ isIncluded: SBPredicate<Element, Failure>
-    ) throws(Failure) -> [Element] {
-        try filter(remaining: &remaining, isIncluded.evaluate)
-    }
-    
     /// Returns an array containing, in order, the elements of the sequence
     /// that satisfy the given predicate.
     /// Collects unsatisfied elements into `remaining` array.
@@ -452,49 +364,6 @@ extension Sequence {
 
 extension Sequence {
     /// Returns the result of combining the elements of the sequence into the dictionary
-    /// using the given KeyPath to produce dictionary keys.
-    ///
-    /// Use the `reduce(into:_:)` method to produce a dictionary from the
-    /// elements of an entire sequence.
-    ///
-    /// The `keyPath` KeyPath is applied sequentially to each element
-    /// of the sequence and returns optional `Key`.
-    /// If returned key is `nil`, it will not be included into resulting dictionary.
-    ///
-    /// - Parameters:
-    ///   - initialDictionary: The value to use as the initial accumulating dictionary.
-    ///   - keyPath: Keypath used to extract the `Key` from an element of the sequence.
-    /// - Returns: The final accumulated dictionary. If the sequence has no elements,
-    ///   the result is `initialDictionary`.
-    @inlinable public func reduce<Key: Hashable>(
-        into initialDictionary: [Key: Element] = [:],
-        keyedBy keyPath: KeyPath<Element, Key?>
-    ) -> [Key: Element] {
-        reduce(into: initialDictionary) { $0[keyPath: keyPath] }
-    }
-    
-    /// Returns the result of combining the elements of the sequence into the dictionary
-    /// using the given KeyPath to produce dictionary keys.
-    ///
-    /// Use the `reduce(into:_:)` method to produce a dictionary from the
-    /// elements of an entire sequence.
-    ///
-    /// The `keyPath` KeyPath is applied sequentially to each element
-    /// of the sequence and returns `Key`.
-    ///
-    /// - Parameters:
-    ///   - initialDictionary: The value to use as the initial accumulating dictionary.
-    ///   - keyPath: Keypath used to extract the `Key` from an element of the sequence.
-    /// - Returns: The final accumulated dictionary. If the sequence has no elements,
-    ///   the result is `initialDictionary`.
-    @inlinable public func reduce<Key: Hashable>(
-        into initialDictionary: [Key: Element] = [:],
-        keyedBy keyPath: KeyPath<Element, Key>
-    ) -> [Key: Element] {
-        reduce(into: initialDictionary) { $0[keyPath: keyPath] }
-    }
-    
-    /// Returns the result of combining the elements of the sequence into the dictionary
     /// using the given closure to produce dictionary keys.
     ///
     /// Use the `reduce(into:_:)` method to produce a dictionary from the
@@ -529,40 +398,6 @@ extension Collection {
     /// Bounds-safe access to the element at index.
     public subscript(safe index: Index) -> Element? {
         indices.contains(index) ? self[index] : nil
-    }
-    
-    /// Returns the first index where the specified value with specific property
-    /// appears in the collection.
-    ///
-    /// - Parameter property: A property indicates whether the element
-    ///   represents a match.
-    /// - Returns: The index of the first element for which `property` matches
-    ///   `true`. If no elements in the collection satisfy the given predicate,
-    ///   returns `nil`.
-    ///
-    /// - Parameter keyPath: A KeyPath to property of the element to search for in the collection.
-    /// - Parameter property: A property of the element to search for in the collection.
-    /// - Returns: The first index where element with given `property` is found.
-    ///   If element with given `property` is not found in the collection, returns `nil`.
-    ///
-    /// - Complexity: O(*n*), where *n* is the length of the collection.
-    @inlinable public func firstIndex<Failure>(_ predicate: SBPredicate<Element, Failure>) throws(Failure) -> Index? {
-        try predicate._call(firstIndex(where:))
-    }
-    
-    /// Returns the indices of all the elements with specific property that are equal to the given
-    /// `property`.
-    ///
-    /// - Parameter keyPath: A KeyPath to property of the element to look for in the collection.
-    /// - Parameter element: A property of the element to look for in the collection.
-    /// - Returns: A set of the indices of the elements whose properties are equal to `property`.
-    ///
-    /// - Complexity: O(*n*), where *n* is the length of the collection.
-    @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
-    @inlinable public func indices<Failure>(
-        _ predicate: SBPredicate<Element, Failure>
-    ) throws(Failure) -> RangeSet<Index> {
-        try predicate._call(indices(where:))
     }
     
     @inlinable public func firstAfter(_ element: Element) -> Element? where Element: Equatable {
@@ -603,25 +438,11 @@ extension RangeReplaceableCollection {
     }
     
     /// Removes all elements from the array satisfying predicate and returns them.
-    @inlinable public mutating func popAll(_ predicate: SBPredicate<Element, Never>) -> Self {
+    @inlinable public mutating func popAll<E: Error>(where predicate: (Element) throws(E) -> Bool) throws(E) -> Self {
         var remaining: [Element] = []
-        let removed = Self(filter(remaining: &remaining, predicate))
+        let removed = try Self(filter(remaining: &remaining, predicate))
         self = Self(remaining)
         return removed
-    }
-    
-    /// Removes all elements from the array satisfying predicate and returns them.
-    @inlinable public mutating func popAll(where predicate: (Element) -> Bool) -> Self {
-        _withoutActuallyEscaping(predicate) { popAll($0) }
-    }
-    
-    /// Removes and returns the first element of the collection.
-    ///
-    /// - Returns: The first element of the collection or `nil` if collection is empty.
-    @discardableResult
-    @inlinable public mutating func removeFirst<Failure>(_ predicate: SBPredicate<Element, Failure>) throws(Failure) -> Element? {
-        guard let idx = try predicate._call(firstIndex(where:)) else { return nil }
-        return remove(at: idx)
     }
     
     /// Removes and returns the first element of the collection.
@@ -629,46 +450,43 @@ extension RangeReplaceableCollection {
     /// - Returns: The first element of the collection or `nil` if collection is empty.
     @discardableResult
     public mutating func removeFirst<E: Error>(where predicate: (Element) throws(E) -> Bool) throws(E) -> Element? {
-        try _withoutActuallyEscaping(predicate) { element throws(E) in try removeFirst(element) }
-    }
-    
-    /// Adds a new element at the end of the array or updates the element if it exists.
-    ///
-    /// - Parameter element: The element to append to or update in the array.
-    /// - Parameter predicate: A closure that takes an element as its argument
-    ///   and returns a Boolean value that indicates whether the passed element
-    ///   represents a match.
-    /// - Returns: Previous element existed in array or `nil` if new element was appended.
-    ///
-    /// - Complexity: O(*n*), where *n* is the length of the collection.
-    @discardableResult
-    @inlinable public mutating func updateFirst<Failure>(
-        _ element: Element,
-        _ predicate: SBPredicate<Element, Failure>
-    ) throws(Failure) -> Element? {
-        if let idx = try predicate._call(firstIndex(where:)) {
-            let oldValue = self[idx]
-            replaceSubrange(idx..<index(after: idx), with: [element])
-            return oldValue
-        } else {
-            append(element)
-            return nil
+        try _typedRethrow(error: E.self) {
+            guard let idx = try firstIndex(where: predicate) else { return nil }
+            return remove(at: idx)
         }
     }
     
-    /// Adds a new element at the end of the array or updates the element if it exists.
+    /// Appends a new element to the collection or updates the element if it exists.
     ///
-    /// - Parameter element: The element to append to or update in the array.
+    /// - Parameter element: The element to append to or update in the collection.
     /// - Parameter keyPath: A KeyPath to property of the element to search for in the collection.
-    /// - Returns: Previous element existed in array or `nil` if new element was appended.
+    /// - Returns: Previous element existed in the collection or `nil` if new element was appended.
     ///
     /// - Complexity: O(*n*), where *n* is the length of the collection.
+    @discardableResult
+    @inlinable public mutating func updateFirst<E: Error>(
+        _ element: Element,
+        where equality: (Element) throws(E) -> Bool
+    ) throws(E) -> Element? {
+        try _typedRethrow(error: E.self) {
+            if let idx = try firstIndex(where: equality) {
+                let oldValue = self[idx]
+                replaceSubrange(idx..<index(after: idx), with: [element])
+                return oldValue
+            } else {
+                append(element)
+                return nil
+            }
+        }
+    }
+    
     @discardableResult
     @inlinable public mutating func updateFirst<Property: Equatable>(
         _ element: Element,
         by keyPath: KeyPath<Element, Property>
     ) -> Element? {
-        updateFirst(element, .equals(at: keyPath, to: element[keyPath: keyPath]))
+        let lhs = element[keyPath: keyPath]
+        return updateFirst(element, where: { lhs == $0[keyPath: keyPath] })
     }
     
     public mutating func rotate(shift: Int = 1) {
@@ -686,25 +504,27 @@ extension RangeReplaceableCollection {
         }
     }
     
-    public mutating func removeRandom() -> Element {
+    @inlinable public mutating func removeRandom() -> Element {
         indices.randomElement().flatMap { remove(at: $0) } ?? removeFirst()
     }
     
-    public mutating func popRandom() -> Element? {
+    @inlinable public mutating func popRandom() -> Element? {
         guard !isEmpty else { return nil }
         return removeRandom()
     }
     
-    public func removingDuplicates(by isEqual: (Element, Element) -> Bool) -> Self {
-        return reduce(into: Self()) { result, element in
-            if !result.contains(where: { isEqual($0, element) }) {
-                result.append(element)
+    public func removingDuplicates<E: Error>(by isEqual: (Element, Element) throws(E) -> Bool) throws(E) -> Self {
+        try _typedRethrow(error: E.self) {
+            try reduce(into: Self()) { result, element in
+                if try !result.contains(where: { try isEqual($0, element) }) {
+                    result.append(element)
+                }
             }
         }
     }
     
-    public mutating func removeDuplicates(by isEqual: (Element, Element) -> Bool) {
-        self = removingDuplicates(by: isEqual)
+    public mutating func removeDuplicates<E: Error>(by isEqual: (Element, Element) throws(E) -> Bool) throws(E) {
+        self = try removingDuplicates(by: isEqual)
     }
     
     public func removingDuplicates() -> Self where Element: Equatable {
@@ -739,11 +559,6 @@ extension BidirectionalCollection {
         return nil
     }
     
-    @inlinable
-    public func last<E: Error>(where predicate: SBPredicate<Element, E>) throws(E) -> Element? {
-        try _typedRethrow(error: E.self) { try last(where: predicate.evaluate) }
-    }
-    
     @inlinable public func firstBefore(_ element: Element) -> Element? where Element: Equatable {
         firstBefore(element, by: ==)
     }
@@ -752,22 +567,5 @@ extension BidirectionalCollection {
         guard let index = firstIndex(where: { by($0, element) }), index > startIndex else { return nil }
         let before = self.index(before: index)
         return self[before]
-    }
-}
-
-@usableFromInline
-internal func _withoutActuallyEscaping<Value, Failure: Error, R>(
-    _ predicate: (Value) throws(Failure) -> Bool,
-    do body: (SBPredicate<Value, Failure>) throws(Failure) -> R
-) throws(Failure) -> R {
-    try withoutActuallyEscaping(consume predicate) { (predicate) throws(Failure) -> R in
-        try body(.where(predicate))
-    }
-}
-
-extension SBPredicate {
-    @usableFromInline
-    internal func _call<R>(_ body: ((Value) throws(Failure) -> Bool) throws -> R) throws(Failure) -> R {
-        try _typedRethrow(error: Failure.self) { try body(evaluate) }
     }
 }
