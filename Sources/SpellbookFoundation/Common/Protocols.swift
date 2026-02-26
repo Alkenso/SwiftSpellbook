@@ -7,7 +7,7 @@
 
 // MARK: - EmptyInitializable
 
-protocol EmptyInitializable {
+public protocol EmptyInitializable {
     init()
 }
 

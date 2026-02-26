@@ -109,6 +109,12 @@ extension Pair {
     }
 }
 
+extension Pair: EmptyInitializable where First: EmptyInitializable, Second: EmptyInitializable {
+    public init() {
+        self.init(.init(), .init())
+    }
+}
+
 extension Pair: Hashable where First: Hashable, Second: Hashable {}
 extension Pair: Equatable where First: Equatable, Second: Equatable {}
 extension Pair: Encodable where First: Encodable, Second: Encodable {}
@@ -137,6 +143,12 @@ extension KeyValue {
     
     public func mapValue<U, E: Error>(_ transform: (Value) throws(E) -> U) throws(E) -> KeyValue<Key, U> {
         try .init(key, transform(value))
+    }
+}
+
+extension KeyValue: EmptyInitializable where Key: EmptyInitializable, Value: EmptyInitializable {
+    public init() {
+        self.init(.init(), .init())
     }
 }
 
