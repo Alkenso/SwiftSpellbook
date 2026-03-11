@@ -31,8 +31,10 @@ extension UInt64: EmptyInitializable {}
 extension Float: EmptyInitializable {}
 extension Double: EmptyInitializable {}
 
+#if arch(arm64)
 @available(macOS 11.0, iOS 14.0, watchOS 7.0, tvOS 14.0, *)
 extension Float16: EmptyInitializable {}
+#endif
 
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension Int128: EmptyInitializable {}
