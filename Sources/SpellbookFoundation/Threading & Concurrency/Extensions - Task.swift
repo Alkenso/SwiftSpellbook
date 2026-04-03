@@ -65,23 +65,10 @@ extension Task {
 
 extension Task where Success == Never, Failure == Never {
     public static func sleep(forTimeInterval interval: TimeInterval) async throws {
-        try await sleep(nanoseconds: UInt64(interval * TimeInterval(NSEC_PER_SEC)))
-    }
-    
-    @available(macOS, deprecated: 13.0, message: "Use `sleep(for:)` method instead")
-    @available(iOS, deprecated: 16.0, message: "Use `sleep(for:)` method instead")
-    @available(watchOS, deprecated: 9.0, message: "Use `sleep(for:)` method instead")
-    @available(tvOS, deprecated: 16.0, message: "Use `sleep(for:)` method instead")
-    public static func sleep(seconds duration: Int) async throws {
-        try await sleep(nanoseconds: UInt64(duration) * NSEC_PER_SEC)
-    }
-    
-    @available(macOS, deprecated: 13.0, message: "Use `sleep(for:)` method instead")
-    @available(iOS, deprecated: 16.0, message: "Use `sleep(for:)` method instead")
-    @available(watchOS, deprecated: 9.0, message: "Use `sleep(for:)` method instead")
-    @available(tvOS, deprecated: 16.0, message: "Use `sleep(for:)` method instead")
-    public static func sleep(milliseconds duration: Int) async throws {
-        try await sleep(nanoseconds: UInt64(duration) * NSEC_PER_MSEC)
+        // Workaround for issue: https://github.com/swiftlang/swift/issues/88259
+        try await Task<(), Error> {
+            try await sleep(nanoseconds: UInt64(interval * TimeInterval(NSEC_PER_SEC)))
+        }.value
     }
 }
 
