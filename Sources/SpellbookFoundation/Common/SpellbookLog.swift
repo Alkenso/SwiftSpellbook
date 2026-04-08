@@ -297,12 +297,18 @@ public struct SpellbookLogDestination: Sendable {
 }
 
 extension SpellbookLogDestination {
-    public static func print(minLevel: SpellbookLogLevel = .info) -> Self {
-        .init(minLevel: minLevel) { Swift.print($0.fullDescription) }
+    public static func print(
+        minLevel: SpellbookLogLevel = .info,
+        transform: @escaping @Sendable (SpellbookLogRecord) -> String = \.fullDescription
+    ) -> Self {
+        .init(minLevel: minLevel) { Swift.print(transform($0)) }
     }
     
-    public static func nslog(minLevel: SpellbookLogLevel = .info) -> Self {
-        .init(minLevel: minLevel) { NSLog($0.fullDescription) }
+    public static func nslog(
+        minLevel: SpellbookLogLevel = .info,
+        transform: @escaping @Sendable (SpellbookLogRecord) -> String = \.fullDescription
+    ) -> Self {
+        .init(minLevel: minLevel) { NSLog(transform($0)) }
     }
 }
 
