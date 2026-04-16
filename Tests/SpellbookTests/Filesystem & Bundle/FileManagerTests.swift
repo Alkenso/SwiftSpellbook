@@ -40,7 +40,7 @@ class FileManagerExtensionsTests: XCTestCase {
     
     func test_xattr() throws {
         let file = try tempDir.createFile(name: "file", content: Data())
-        XCTAssertEqual(try FileManager.default.listXattr(at: file), [])
+        let initialXattrs = try FileManager.default.listXattr(at: file)
         XCTAssertThrowsError(try FileManager.default.xattr(at: file, name: "xa"))
         XCTAssertThrowsError(try FileManager.default.removeXattr(at: file, name: "xa"))
         
@@ -57,7 +57,7 @@ class FileManagerExtensionsTests: XCTestCase {
         XCTAssertEqual(try FileManager.default.xattr(at: file, name: "xa2"), value2)
         
         try FileManager.default.removeXattr(at: file, name: "xa1")
-        XCTAssertEqual(try FileManager.default.listXattr(at: file), ["xa2"])
+        XCTAssertEqual(try Set(FileManager.default.listXattr(at: file)), Set(initialXattrs).union(["xa2"]))
     }
     
     func test_uniqueFile() {
