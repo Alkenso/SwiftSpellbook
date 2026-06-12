@@ -41,7 +41,6 @@ class DictionaryTests: XCTestCase {
 class ArrayTests: XCTestCase {
     func test_initCreate() {
         XCTAssertEqual(Array<Int>(count: 3, create: { 1 }), [1, 1, 1])
-        XCTAssertEqual(Array<Int>(count: 3, create: 1), [1, 1, 1])
         
         class Foo {}
         let refsFoo = Array<Foo>(count: 2, create: Foo.init)

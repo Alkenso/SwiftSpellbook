@@ -30,7 +30,7 @@ extension DispatchQueue {
     }
 }
 
-public class DebounceContext {
+public class DebounceContext: @unchecked Sendable {
     private let delay: TimeInterval
     @Atomic private var currentTask: DispatchWorkItem?
     

@@ -83,6 +83,10 @@ extension CGSize {
     public func scaled(_ scale: CGFloat) -> CGSize {
         CGSize(width: width * scale, height: height * scale)
     }
+    
+    public var min: CGFloat { Swift.min(width, height) }
+    
+    public var max: CGFloat { Swift.max(width, height) }
 }
 
 extension CGSize: @retroactive AdditiveArithmetic {

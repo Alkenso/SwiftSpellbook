@@ -132,14 +132,18 @@ extension Dictionary {
 extension Dictionary {
     @inlinable
     public subscript(key: Key, create newValue: @autoclosure () -> Value) -> Value {
-        mutating get {
-            if let value = self[key] {
-                return value
-            } else {
-                let value = newValue()
-                self[key] = value
-                return value
-            }
+        mutating get { createValue(create: newValue(), forKey: key) }
+    }
+    
+    @discardableResult
+    @inlinable
+    public mutating func createValue(create newValue: @autoclosure () -> Value, forKey key: Key) -> Value {
+        if let value = self[key] {
+            return value
+        } else {
+            let value = newValue()
+            self[key] = value
+            return value
         }
     }
 }
@@ -162,19 +166,8 @@ extension Array {
     ///   - count: The number of times to create the value using passed in the
     ///     `create` closure. `count` must be zero or greater.
     @inlinable
-    public init(count: Int, create createElement: () -> Element) {
-        self = (0..<count).map { _ in createElement() }
-    }
-    
-    /// Creates a new array containing the specified number of a created elements.
-    ///
-    /// - Parameters:
-    ///   - createElement: The closure to create elements.
-    ///   - count: The number of times to create the value using passed in the
-    ///     `create` closure. `count` must be zero or greater.
-    @inlinable
-    public init(count: Int, create createElement: @autoclosure () -> Element) {
-        self.init(count: count, create: createElement)
+    public init<E: Error>(count: Int, create createElement: () throws(E) -> Element) throws(E) {
+        self = try _typedRethrow(error: E.self) { try (0..<count).map { _ in try createElement() } }
     }
 }
 

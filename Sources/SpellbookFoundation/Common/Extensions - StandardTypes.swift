@@ -182,6 +182,12 @@ extension URL {
     }
 }
 
+extension URLResponse {
+    public func asHTTP() throws -> HTTPURLResponse {
+        try throwingCast(self, to: HTTPURLResponse.self)
+    }
+}
+
 // MARK: - String
 
 extension String {
