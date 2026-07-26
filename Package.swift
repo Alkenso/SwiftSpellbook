@@ -24,6 +24,10 @@ let package = Package(
             targets: ["SpellbookGraphics"]
         ),
         .library(
+            name: "SpellbookCrash",
+            targets: ["SpellbookCrash"]
+        ),
+        .library(
             name: "SpellbookTestUtils",
             targets: ["SpellbookTestUtils"]
         ),
@@ -59,12 +63,18 @@ let package = Package(
             ]
         ),
         .target(
+            name: "SpellbookCrash",
+            swiftSettings: [
+                .enableExperimentalFeature("SymbolLinkageMarkers")
+            ]
+        ),
+        .target(
             name: "SpellbookTestUtils",
             dependencies: ["SpellbookFoundation"]
         ),
         .testTarget(
             name: "SpellbookTests",
-            dependencies: ["SpellbookFoundation", "SpellbookBinaryParsing", "SpellbookGraphics", "SpellbookTestUtils"]
+            dependencies: ["SpellbookFoundation", "SpellbookBinaryParsing", "SpellbookGraphics", "SpellbookCrash", "SpellbookTestUtils"]
         ),
         .testTarget(
             name: "SpellbookTestUtilsTests",
