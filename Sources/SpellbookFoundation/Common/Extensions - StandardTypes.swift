@@ -71,7 +71,9 @@ extension Data {
             return Data(bytes: address, count: MemoryLayout<PODType>.size)
         }
     }
+}
     
+extension DataProtocol where Self: ContiguousBytes {
     /// Converts data to POD (Plain Old Data) value.
     public func pod<PODType>(exactly type: PODType.Type) -> PODType? {
         guard MemoryLayout<PODType>.size == count else { return nil }
@@ -79,16 +81,17 @@ extension Data {
     }
     
     /// Converts data to POD (Plain Old Data) value.
-    /// If count > PODType size, only 'size' bytes are taken.
+    /// If count > PODType size, only `size` bytes are taken.
     /// If count < PODType size, the data are appended with zeroes to match the size.
     public func pod<PODType>(adopting type: PODType.Type) -> PODType {
-        var adopted = self
-        let advanceSize = MemoryLayout<PODType>.size - adopted.count
-        if advanceSize > 0 {
-            adopted += Data(count: advanceSize)
+        let advanceSize = MemoryLayout<PODType>.size - count
+        let source: ContiguousBytes
+        if advanceSize <= 0 {
+            source = self
+        } else {
+            source = Data(self) + Data(count: advanceSize)
         }
-        
-        return adopted.withUnsafeBytes { $0.load(fromByteOffset: 0, as: type) }
+        return source.withUnsafeBytes { $0.load(fromByteOffset: 0, as: type) }
     }
 }
 
