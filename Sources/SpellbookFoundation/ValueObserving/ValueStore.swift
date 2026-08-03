@@ -20,46 +20,55 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-import Combine
 import Foundation
 
-@propertyWrapper
-public final class ValueStored<Value: Sendable>: Sendable {
-    private let store: ValueStore<Value>
-    
-    public init(wrappedValue: Value) {
-        self.store = .init(initialValue: wrappedValue)
-    }
-    
-    public init(store: ValueStore<Value>) {
-        self.store = store
-    }
-    
-    public var wrappedValue: Value { store.value }
-    public var projectedValue: ValueStore<Value> { store }
-}
-
 @dynamicMemberLookup
-public final class ValueStore<Value: Sendable>: ValueObserving, @unchecked Sendable {
-    private let lock = NSRecursiveLock()
-    private let valueLock = UnfairLock()
-    private let subscriptions: EventNotify<Value>
-    private var currentValueGet: [Value]
-    private var currentValue: Value
-    private var updateDepth = 0
+public final class ValueStore<Value: Sendable>: ValueChangeObserving {
+    private let valueStore: Synchronized<Value>
+    private let trait: Trait
+    private let downstream: Downstream
     
-    private var parentUpdate: ((_ context: Any?, _ body: (inout Value) -> Any) -> Any)?
-    private var parentSubscription: SubscriptionToken?
-    private var updateChildren = EventNotify<Value>()
-    
-    public init(initialValue: Value) {
-        subscriptions = EventNotify(initialValue: initialValue)
-        currentValue = initialValue
-        currentValueGet = [initialValue]
+    public convenience init(initialValue: Value) {
+        self.init(initialValue: initialValue, trait: .parent(UnfairLock()))
     }
     
-    public var value: Value {
-        valueLock.withLock { currentValueGet[updateDepth > 0 ? updateDepth - 1 : 0] }
+    private init(initialValue: Value, trait: Trait) {
+        let valueStore = Synchronized(.unfair, initialValue)
+        self.valueStore = valueStore
+        self.trait = trait
+        self.downstream = Downstream(valueStore: valueStore)
+    }
+    
+    deinit {
+        if case .parent = trait {
+            downstream.finish()
+        }
+    }
+    
+    // MARK: - Access & Observe
+    
+    public var value: Value { valueStore.read() }
+    
+    public func observe(includingCurrentValue: Bool, _ observer: ValueChangeObserver<Value>) -> Cancellation {
+        downstream.register(observer: observer, withCurrentValue: includingCurrentValue)
+    }
+    
+    public var observable: ValueObservable<Value> {
+        ValueObservable(view: view, observe: observe)
+    }
+    
+    public var view: ValueView<Value> {
+        ValueView { [valueStore] in valueStore.read() }
+    }
+    
+    // MARK: - Modify
+    
+    public func update<R>(context: Any? = nil, body: (inout Value) -> sending R) -> sending R {
+        let result = directUpdate(context: context, body: body)
+        guard let result = result as? R else {
+            fatalError("Internal inconsistency: failed to cast \(result) to expected type \(R.self)")
+        }
+        return result
     }
     
     @discardableResult
@@ -83,17 +92,6 @@ public final class ValueStore<Value: Sendable>: ValueObserving, @unchecked Senda
         update(context: context) { $0?[keyPath: keyPath] = property }
     }
     
-    /// This is designated implementation of value update.
-    /// Use it carefully: `body` closure is invoked under internal lock.
-    /// Careless use may lead to performance problems or even deadlock.
-    public func update<R>(context: Any? = nil, body: (inout Value) -> R) -> R {
-        let result = updateImpl(context: context, body: body)
-        guard let result = result as? R else {
-            fatalError("Internal inconsistency: failed to cast \(result) to expected type \(R.self)")
-        }
-        return result
-    }
-    
     public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
         value[keyPath: keyPath]
     }
@@ -104,89 +102,54 @@ public final class ValueStore<Value: Sendable>: ValueObserving, @unchecked Senda
         value?[keyPath: keyPath]
     }
     
-    public func subscribe(
-        suppressInitialNotify: Bool,
-        receiveValue: @escaping @Sendable (Value, _ context: Any?) -> Void
-    ) -> SubscriptionToken {
-        lock.withLock {
-            subscriptions
-                .subscribe(suppressInitialNotify: suppressInitialNotify, receiveValue: receiveValue)
-                .capturing(self)
+    public func scope<U>(transform: @escaping @Sendable (Value) -> U, merge: @escaping @Sendable (U, inout Value) -> Void) -> ValueStore<U> {
+        let child = ValueStore<U>(initialValue: transform(value), trait: .child({ context, diff in
+            self.directUpdate(context: context) { global in
+                var local = transform(global)
+                let result = diff(&local)
+                merge(local, &global)
+                return result
+            }
+        }))
+        
+        downstream.register(child: child.downstream, transform: transform)
+        child.valueStore.write(transform(value))
+        
+        return child
+    }
+    
+    private func directUpdate(context: Any?, body: (inout Value) -> sending Any) -> sending Any {
+        switch trait {
+        case .parent(let lock): lock.withLock { rootUpdate(context: context, body: body) }
+        case .child(let parentUpdate): parentUpdate(context, body)
         }
     }
     
-    private func updateImpl(context: Any?, body: (inout Value) -> Any) -> Any {
-        if let parentUpdate = parentUpdate {
-            parentUpdate(context, body)
-        } else {
-            directUpdate(context, body: body)
-        }
-    }
-    
-    private func directUpdate(_ context: Any?, body: (inout Value) -> Any) -> Any {
-        lock.withLock {
-            let result = body(&currentValue)
-            
-            valueLock.withLock {
-                updateDepth += 1
-                currentValueGet.append(currentValue)
-            }
-            
-            updateChildren.notify(currentValue, context: context)
-            subscriptions.notify(currentValue, context: context)
-            
-            valueLock.withLock {
-                currentValueGet.removeFirst()
-                updateDepth -= 1
-            }
-            
-            return result
-        }
+    private func rootUpdate(context: Any?, body: (inout Value) -> sending Any) -> sending Any {
+        let oldValue = valueStore.read()
+        var change = Change(old: oldValue, new: oldValue, context: context)
+        let result = body(&change.new)
+        downstream.yield(change)
+        return result
     }
 }
 
 extension ValueStore {
     public func scope<U: Sendable>(_ keyPath: WritableKeyPath<Value, U> & Sendable) -> ValueStore<U> {
-        scope(transform: { $0[keyPath: keyPath] }, merge: { $0[keyPath: keyPath] = $1 })
-    }
-    
-    public func scope<U: Sendable>(
-        transform: @escaping @Sendable (Value) -> U,
-        merge: @escaping @Sendable (inout Value, U) -> Void
-    ) -> ValueStore<U> {
-        lock.withLock {
-            let scoped = ValueStore<U>(initialValue: transform(value))
-            
-            scoped.parentUpdate = { context, localBody in
-                self.updateImpl(context: context) { globalValue in
-                    var localValue = transform(globalValue)
-                    let result = localBody(&localValue)
-                    merge(&globalValue, localValue)
-                    return result
-                }
-            }
-            
-            scoped.parentSubscription = updateChildren.subscribe { [weak scoped] globalValue, context in
-                _ = scoped?.directUpdate(context) { localValue in
-                    localValue = transform(globalValue)
-                }
-            }
-            
-            return scoped
-        }
+        scope(transform: { $0[keyPath: keyPath] }, merge: { $1[keyPath: keyPath] = $0 })
     }
     
     /// Converts `ValueStore<T?>` into `ValueStore<T>`, unwrapping single level of optionality.
     /// - Parameters:
-    ///     - default: the value returned used by new ValueStore if parent's value is `nil`.
-    ///     - mergeIntoNil: if `false`, any changes made through new `ValueStore`
+    ///     - default: the value used by the new ValueStore if parent's value is `nil`.
+    ///     - mergeIntoNil: if `false`, any changes made through the new `ValueStore`
     ///                     will be **ignored** if parent's value is `nil`.
     public func unwrapped<Unwrapped: Sendable>(
         default: Unwrapped, mergeIntoNil: Bool = false
     ) -> ValueStore<Unwrapped> where Value == Unwrapped? {
         scope(
             transform: { $0 ?? `default` },
-            merge: { storedValue, newValue in
+            merge: { newValue, storedValue in
                 if storedValue != nil || mergeIntoNil {
                     storedValue = newValue
                 }
@@ -196,12 +159,12 @@ extension ValueStore {
     
     /// Converts `ValueStore<T>` into `ValueStore<T?>`, wrapping single level of optionality.
     /// - Parameters:
-    ///     - fallback: used in case optional ValueStore's value is updated to `nil`.
-    ///     In such case, if `fallback` is not `nil`, it will update original store with `fallback` value.
-    public func optional(fallback: Value?, mergeIntoNil: Bool = false) -> ValueStore<Value?> {
+    ///     - fallback: used in case the optional ValueStore's value is updated to `nil`.
+    ///     In such case, if `fallback` is not `nil`, it will update the original store with `fallback` value.
+    public func optional(fallback: Value?) -> ValueStore<Value?> {
         scope(
             transform: { $0 },
-            merge: { storedValue, newValue in
+            merge: { newValue, storedValue in
                 if let newValue {
                     storedValue = newValue
                 } else if let fallback {
@@ -213,43 +176,74 @@ extension ValueStore {
 }
 
 extension ValueStore {
-    public var observable: ValueObservable<Value> {
-        ValueObservable(
-            view: .init { self.value },
-            subscribeReceiveValue: subscribe
-        )
+    private typealias Observer = ValueChangeObserver<Value>
+    private typealias Change = ValueChange<Value>
+    
+    private enum Trait {
+        case parent(UnfairLock)
+        case child(@Sendable (Any?, (_ value: inout Value) -> sending Any) -> sending Any)
     }
     
-    public var view: ValueView<Value> {
-        .init { self.value }
-    }
-}
-
-extension ValueStore {
-    @MainActor
-    public final class ObservableObject: Foundation.ObservableObject {
-        private var cancellables: [AnyCancellable] = []
+    private class Downstream: @unchecked Sendable {
+        private let lock = UnfairLock()
+        weak let valueStore: Synchronized<Value>?
+        var observers: [UUID: Observer] = [:]
+        var children: [UUID: @Sendable (Change?) -> Bool] = [:]
         
-        public init(store: ValueStore<Value>) {
-            self.store = store
-            self.value = store.value
-            let token = UUID()
-            store.subscribe { [weak self] newValue, context in
-                if (context as? UUID) != token {
-                    DispatchQueue.syncOnMain { self?.value = newValue }
-                }
-            }
-            .store(in: &cancellables)
-            $value.dropFirst().sink { store.update($0, context: token) }.store(in: &cancellables)
+        init(valueStore: Synchronized<Value>?) {
+            self.valueStore = valueStore
         }
         
-        @Published public var value: Value
-        public let store: ValueStore<Value>
-    }
-    
-    @MainActor
-    public var observableObject: ValueStore.ObservableObject {
-        .init(store: self)
+        func register<U>(child: ValueStore<U>.Downstream, transform: @escaping @Sendable (Value) -> U) {
+            lock.withLock { children[UUID()] = { child.notify($0?.map(transform)) } }
+        }
+        
+        func register(observer: Observer, withCurrentValue: Bool) -> Cancellation {
+            lock.withLock {
+                let id = UUID()
+                let cancellation = Cancellation { [self] in
+                    lock.withLock { _ = observers.removeValue(forKey: id) }
+                }
+                observers[id] = observer
+                if withCurrentValue, let value = valueStore?.read() {
+                    observer.notify(Change(old: value, new: value, context: ValueChangeContextCurrentValue()))
+                }
+                return cancellation
+            }
+        }
+        
+        private func notify(_ change: Change?) -> Bool {
+            guard let change else {
+                let (observers, children) = lock.withLock { (self.observers, self.children) }
+                observers.values.forEach { $0.notify(nil) }
+                children.values.forEach { _ = $0(nil) }
+                return false
+            }
+            
+            let (observers, children, storeExists) = lock.withLock {
+                (self.observers, self.children, valueStore?.write(change.new) != nil)
+            }
+            
+            observers.values.forEach { $0.notify(change) }
+            var childrenExist = false
+            for (childID, childUpdate) in children {
+                if childUpdate(change) {
+                    childrenExist = true
+                } else {
+                    lock.withLock { _ = self.children.removeValue(forKey: childID) }
+                }
+            }
+            
+            return storeExists || !observers.isEmpty || childrenExist
+        }
+        
+        func yield(_ change: Change) {
+            _ = notify(change)
+        }
+        
+        func finish() {
+            _ = notify(nil)
+        }
     }
 }
 
@@ -264,15 +258,5 @@ extension ValueStore {
     
     public convenience init() where Value: ExpressibleByDictionaryLiteral {
         self.init(initialValue: [:])
-    }
-}
-
-extension ValueStore: _ValueUpdateWrapping {
-    public func _readValue<R>(body: (Value) -> sending R) -> sending R {
-        update { body($0) }
-    }
-    
-    public func _updateValue<R>(body: (inout Value) -> sending R) -> sending R {
-        update(body: body)
     }
 }

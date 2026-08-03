@@ -81,3 +81,4 @@ extension Task where Success == Never, Failure == Never {
 }
 
 extension Task: Combine.Cancellable {}
+extension Task: SafeCancellable {}
