@@ -22,21 +22,21 @@
 
 import Foundation
 
-public protocol ValueChangeObserving<Value>: Sendable {
+public protocol ValueObserving<Value>: Sendable {
     associatedtype Value: Sendable
     
-    func observe(includingCurrentValue: Bool, _ observer: ValueChangeObserver<Value>) -> Cancellation
+    func observe(includingCurrentValue: Bool, _ observer: ValueObserver<Value>) -> Cancellation
 }
 
-extension ValueChangeObserving {
-    public func observe(_ observer: ValueChangeObserver<Value>) -> Cancellation {
+extension ValueObserving {
+    public func observe(_ observer: ValueObserver<Value>) -> Cancellation {
         observe(includingCurrentValue: false, observer)
     }
     
     public func observe(
         isolation: isolated (any Actor)? = #isolation,
         includingCurrentValue: Bool = false,
-        _ observer: @escaping (ValueChange<Value>?) async -> Void
+        _ observer: @escaping (Value?) async -> Void
     ) -> Cancellation {
         Task { [stream = stream(includingCurrentValue: includingCurrentValue)] in
             _ = isolation
@@ -47,12 +47,12 @@ extension ValueChangeObserving {
         }.eraseToCancellation()
     }
     
-    public func stream(includingCurrentValue: Bool = false) -> AsyncStream<ValueChange<Value>> {
-        let (stream, continuation) = AsyncStream<ValueChange<Value>>.makeStream()
+    public func stream(includingCurrentValue: Bool = false) -> AsyncStream<Value> {
+        let (stream, continuation) = AsyncStream<Value>.makeStream()
         
-        let observer = ValueChangeObserver<Value> { change in
-            if let change {
-                continuation.yield(change)
+        let observer = ValueObserver<Value> { value in
+            if let value {
+                continuation.yield(value)
             } else {
                 continuation.finish()
             }
@@ -64,38 +64,22 @@ extension ValueChangeObserving {
     }
 }
 
-public struct ValueChange<Value: Sendable>: Sendable {
-    public var old: Value
-    public var new: Value
-    public nonisolated(unsafe) var context: Any?
-    
-    public init(old: Value, new: Value, context: Any? = nil) {
-        self.old = old
-        self.new = new
-        self.context = context
-    }
-    
-    public func map<U>(_ transform: (Value) -> U) -> ValueChange<U> {
-        .init(old: transform(old), new: transform(new), context: context)
-    }
-}
-
-public struct ValueChangeContextCurrentValue: Equatable, Sendable {
-    public init() {}
-}
-
-public struct ValueChangeObserver<Value: Sendable>: Sendable {
+public struct ValueObserver<Value: Sendable>: Sendable {
     public var name: String?
-    public var notify: @Sendable (ValueChange<Value>?) -> Void
+    public var observe: @Sendable (Value?) -> Void
     
-    public init(name: String? = nil, notify: @escaping @Sendable (ValueChange<Value>?) -> Void) {
+    public init(name: String? = nil, observe: @escaping @Sendable (Value?) -> Void) {
         self.name = name
-        self.notify = notify
+        self.observe = observe
+    }
+    
+    public func notify(_ value: Value?) {
+        observe(value)
     }
 }
 
-extension ValueChangeObserver {
+extension ValueObserver {
     public func queue(_ queue: DispatchQueue) -> Self {
-        updateValue(self, at: \.notify, with: { [notify] change in queue.async { notify(change) } })
+        updateValue(self, at: \.observe, with: { [notify] change in queue.async { notify(change) } })
     }
 }

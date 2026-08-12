@@ -23,7 +23,7 @@
 import Foundation
 
 @dynamicMemberLookup
-public final class ValueStore<Value: Sendable>: ValueChangeObserving {
+public final class ValueStore<Value: Sendable>: ValueObserving {
     private let valueStore: Synchronized<Value>
     private let trait: Trait
     private let downstream: Downstream
@@ -49,7 +49,7 @@ public final class ValueStore<Value: Sendable>: ValueChangeObserving {
     
     public var value: Value { valueStore.read() }
     
-    public func observe(includingCurrentValue: Bool, _ observer: ValueChangeObserver<Value>) -> Cancellation {
+    public func observe(includingCurrentValue: Bool, _ observer: ValueObserver<ValueChange<Value>>) -> Cancellation {
         downstream.register(observer: observer, withCurrentValue: includingCurrentValue)
     }
     
@@ -176,8 +176,8 @@ extension ValueStore {
 }
 
 extension ValueStore {
-    private typealias Observer = ValueChangeObserver<Value>
     private typealias Change = ValueChange<Value>
+    private typealias Observer = ValueObserver<Change>
     
     private enum Trait {
         case parent(UnfairLock)

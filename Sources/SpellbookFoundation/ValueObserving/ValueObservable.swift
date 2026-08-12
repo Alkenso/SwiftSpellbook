@@ -23,12 +23,12 @@
 import Foundation
 
 @dynamicMemberLookup
-public final class ValueObservable<Value: Sendable>: ValueChangeObserving {
-    private let observe: @Sendable (Bool, ValueChangeObserver<Value>) -> Cancellation
+public final class ValueObservable<Value: Sendable>: ValueObserving {
+    private let observe: @Sendable (Bool, ValueObserver<ValueChange<Value>>) -> Cancellation
     
     public init(
         view: ValueView<Value>,
-        observe: @escaping @Sendable (Bool, ValueChangeObserver<Value>) -> Cancellation
+        observe: @escaping @Sendable (Bool, ValueObserver<ValueChange<Value>>) -> Cancellation
     ) {
         self.view = view
         self.observe = observe
@@ -42,7 +42,7 @@ public final class ValueObservable<Value: Sendable>: ValueChangeObserving {
         value[keyPath: keyPath]
     }
     
-    public func observe(includingCurrentValue: Bool, _ observer: ValueChangeObserver<Value>) -> Cancellation {
+    public func observe(includingCurrentValue: Bool, _ observer: ValueObserver<ValueChange<Value>>) -> Cancellation {
         observe(includingCurrentValue, observer)
     }
 }
@@ -58,7 +58,7 @@ extension ValueObservable {
             observe: { includingCurrentValue, observer in
                 self.observe(
                     includingCurrentValue: includingCurrentValue,
-                    ValueChangeObserver(
+                    ValueObserver(
                         name: observer.name.flatMap { "\($0).scope(\(U.self))" },
                         notify: { observer.notify($0?.map(transform)) }
                     )
