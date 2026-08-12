@@ -213,7 +213,7 @@ extension String {
 
 extension String {
     /// Creates String from valid UTF-8 data.
-    /// The caller if fully responsible for validity of the data passed in.
+    /// The caller is fully responsible for validity of the data passed in.
     public init<UTF8Data: DataProtocol>(validUTF8 data: UTF8Data) {
         self.init(decoding: data, as: UTF8.self)
     }
