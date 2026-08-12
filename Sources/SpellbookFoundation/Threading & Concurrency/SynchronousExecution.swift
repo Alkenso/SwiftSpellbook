@@ -25,6 +25,7 @@ import Foundation
 /// Executes synchronously the asynchronous method.
 /// - Note: While this is not the best practice ever,
 ///         real-world tasks time to time require exactly this.
+@available(*, noasync)
 public func synchronouslyWithTask<R, E: Error>(_ action: sending @escaping () async throws(E) -> R) throws(E) -> R {
     let (group, result) = synchronouslyWithTask(action)
     group.wait()
@@ -34,6 +35,7 @@ public func synchronouslyWithTask<R, E: Error>(_ action: sending @escaping () as
 /// Executes synchronously the asynchronous method.
 /// - Note: While this is not the best practice ever,
 ///         real-world tasks time to time require exactly this.
+@available(*, noasync)
 public func synchronouslyWithTask<R, E: Error>(timeout: TimeInterval?, _ action: sending @escaping () async throws(E) -> R) throws(E) -> R? {
     guard let timeout else { return try synchronouslyWithTask(action) }
     let (group, result) = synchronouslyWithTask(action)
@@ -60,6 +62,7 @@ private func synchronouslyWithTask<R, E: Error>(_ action: sending @escaping () a
 /// Executes synchronously the asynchronous method.
 /// - Note: While this is not the best practice ever,
 ///         real-world tasks time to time require exactly this.
+@available(*, noasync)
 public func synchronouslyWithCallback<R>(_ action: (_ callback: @escaping @Sendable (R) -> Void) -> Void) -> R {
     let (group, result) = synchronouslyWithCallback(action)
     group.wait()
@@ -69,6 +72,7 @@ public func synchronouslyWithCallback<R>(_ action: (_ callback: @escaping @Senda
 /// Executes synchronously the asynchronous method.
 /// - Note: While this is not the best practice ever,
 ///         real-world tasks time to time require exactly this.
+@available(*, noasync)
 public func synchronouslyWithCallback<R>(
     timeout: TimeInterval?,
     _ action: (_ callback: @escaping @Sendable (R) -> Void) -> Void
