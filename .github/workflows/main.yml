@@ -14,7 +14,7 @@ jobs:
           - xcode: "16.4" # Swift 6
             macOS: "15"
             iOS: "17.0"
-          - xcode: "26.0" # Swift 6.2
+          - xcode: "26.6" # Swift 6.3
             macOS: "26"
             iOS: "26"
       fail-fast: false
