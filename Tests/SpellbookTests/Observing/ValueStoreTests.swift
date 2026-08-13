@@ -1,289 +1,187 @@
 import SpellbookFoundation
-import SpellbookTestUtils
 
-import Combine
-import XCTest
+import Testing
 
-private struct TestStru: Equatable {
-    var val = ""
-    var nested = Nested()
-    
-    struct Nested: Equatable {
-        var val1 = 0
-        var val2 = false
+private struct Branch: Equatable, Sendable {
+    var leaf = 0
+}
+
+private struct Root: Equatable, Sendable {
+    var a = Branch()
+    var b = Branch()
+}
+
+extension ValueChange: Equatable where Value: Equatable {
+    public static func == (lhs: ValueChange<Value>, rhs: ValueChange<Value>) -> Bool {
+        lhs.old == rhs.old && lhs.new == rhs.new
     }
 }
 
-class StoreTests: XCTestCase {
-    var cancellables: [SubscriptionToken] = []
-    
-    override func tearDown() {
-        cancellables.removeAll()
-    }
-    
-    func test() {
-        let store = ValueStore(initialValue: TestStru())
-        XCTAssertEqual(store.value, TestStru())
-        
-        nonisolated(unsafe) var initial = true
-        store.subscribe { val in
-            if initial {
-                XCTAssertEqual(val, store.value)
-            } else {
-                XCTAssertNotEqual(val, store.value)
-            }
-            initial = false
-        }.store(in: &cancellables)
-        
-        let updateValue = TestStru(val: "q", nested: TestStru.Nested(val1: 11, val2: true))
-        store.subscribeChange { change in
-            XCTAssertEqual(change.old, TestStru())
-            XCTAssertEqual(change.new, updateValue)
-        }.store(in: &cancellables)
-        
-        store.update(updateValue)
-        XCTAssertEqual(store.value.nested.val1, 11)
-    }
-    
-    func test_updateIfNil() {
-        let store = ValueStore<Pair<Int, String>?>(initialValue: .init(1, "q"))
-        XCTAssertEqual(store.value?.first, 1)
-        XCTAssertEqual(store.value?.second, "q")
-        
-        store.update(\.first, 2)
-        XCTAssertEqual(store.value?.first, 2)
-        
-        store.update(nil)
-        XCTAssertNil(store.value)
-        
-        store.update(\.first, 2)
-        XCTAssertNil(store.value)
-    }
-    
-    func test_scope() {
-        let store = ValueStore(initialValue: TestStru())
-        let nestedStore = store.scope(\.nested)
-        let valStore = store.scope(\.val)
-        let nestedValStore = nestedStore.scope(\.val1)
-        
-        store.update(TestStru(val: "q", nested: TestStru.Nested(val1: 10, val2: true)))
-        XCTAssertEqual(store.value, TestStru(val: "q", nested: TestStru.Nested(val1: 10, val2: true)))
-        XCTAssertEqual(nestedStore.value, TestStru.Nested(val1: 10, val2: true))
-        XCTAssertEqual(valStore.value, "q")
-        XCTAssertEqual(nestedValStore.value, 10)
-        
-        nestedStore.update(TestStru.Nested(val1: 20, val2: false))
-        XCTAssertEqual(store.nested, TestStru.Nested(val1: 20, val2: false))
-        XCTAssertEqual(nestedStore.value, TestStru.Nested(val1: 20, val2: false))
-        XCTAssertEqual(valStore.value, "q")
-        XCTAssertEqual(nestedValStore.value, 20)
-        
-        valStore.update("qwerty")
-        XCTAssertEqual(store.val, "qwerty")
-        XCTAssertEqual(valStore.value, "qwerty")
-        
-        nestedValStore.update(30)
-        XCTAssertEqual(store.nested.val1, 30)
-        XCTAssertEqual(nestedStore.val1, 30)
-        XCTAssertEqual(nestedValStore.value, 30)
-    }
-    
-    func test_update_return() {
-        let store = ValueStore(initialValue: TestStru())
-        let nestedStore = store.scope(\.nested)
-        let valStore = store.scope(\.val)
-        let nestedValStore = nestedStore.scope(\.val1)
-        
-        XCTAssertEqual(store.update { _ in 1 }, 1)
-        XCTAssertEqual(nestedStore.update { _ in 2 }, 2)
-        XCTAssertEqual(valStore.update { _ in 3 }, 3)
-        XCTAssertEqual(nestedValStore.update { _ in 4 }, 4)
-    }
-    
-    func test_scope_subscribe() {
-        let store = ValueStore(initialValue: TestStru())
-        
-        nonisolated(unsafe) var expectedValues = ["", "qwert"]
-        
-        let exp = expectation(description: "Expected to be notified on parent update")
-        exp.expectedFulfillmentCount = expectedValues.count
-        store.scope(\.val).subscribe {
-            guard !expectedValues.isEmpty else { return }
-            XCTAssertEqual($0, expectedValues.removeFirst())
-            exp.fulfill()
-        }.store(in: &cancellables)
-        
-        store.update(\.val, "qwert")
-        
-        waitForExpectations()
-    }
-    
-    func test_unwrap() {
-        func test(mergeIntoNil: Bool) {
-            let store = ValueStore<Pair<Int, String>?>(initialValue: .init(10, "q"))
-            let unwrapped = store.unwrapped(default: .init(1, "w"), mergeIntoNil: mergeIntoNil)
-            
-            XCTAssertEqual(unwrapped.value.first, 10)
-            XCTAssertEqual(unwrapped.value.second, "q")
-            
-            unwrapped.update(\.second, "e")
-            XCTAssertEqual(unwrapped.value.second, "e")
-            XCTAssertEqual(store.value?.second, "e")
-            
-            store.update(nil)
-            XCTAssertEqual(unwrapped.value.second, "w")
-            XCTAssertEqual(store.value?.second, nil)
-            
-            unwrapped.update(\.second, "r")
-            if mergeIntoNil {
-                XCTAssertEqual(unwrapped.value.second, "r")
-                XCTAssertEqual(store.value?.first, 1)
-                XCTAssertEqual(store.value?.second, "r")
-            } else {
-                XCTAssertEqual(unwrapped.value.second, "w")
-                XCTAssertEqual(store.value, nil)
-            }
+@Suite
+struct ValueStoreTests {
+    @Test
+    func update_resultAndContext() async {
+        let store = ValueStore(initialValue: 10)
+        var iterator = store.stream().makeAsyncIterator()
+
+        let oldValue = store.update(context: "test context") {
+            exchange(&$0, with: 20)
         }
-        
-        test(mergeIntoNil: true)
-        test(mergeIntoNil: false)
+        let change = await iterator.next()
+
+        #expect(oldValue == 10)
+        #expect(store.value == 20)
+        #expect(change?.context as? String == "test context")
     }
-    
-    func test_subscribe_retainCycle() {
-        var store: ValueStore? = ValueStore(initialValue: TestStru())
-        
-        var parentSubscription = store?.subscribe { XCTAssertEqual($0.val, "") }
-        _ = parentSubscription
-        var scopeSubscription = store?.scope(\.val).subscribe { XCTAssertEqual($0, "") }
-        _ = scopeSubscription
-        
-#if compiler(>=6.2.3)
-        weak let weakStore = store
-#else
-        weak var weakStore = store
-#endif
-        store = nil
-        
-        XCTAssertNotNil(weakStore)
-        
-        parentSubscription = nil
-        XCTAssertNotNil(weakStore)
-        
-        scopeSubscription = nil
-        XCTAssertNil(weakStore)
-    }
-    
-    func test_context() {
-        let initialValue = Pair<Int, String>(10, "qq")
-        let store = ValueStore(initialValue: initialValue)
-        let intStore = store.scope(\.first)
-        let stringStore = store.scope(\.second)
-        
-        let storeExp = expectation(description: "On value received - store")
-        storeExp.expectedFulfillmentCount = 4 // 3 updates + initial value
-        let contextObject = Data(pod: 123)
-        store.subscribe { value, context in
-            if value == initialValue {
-                XCTAssertNil(context)
-            } else {
-                XCTAssertEqual(context as? Data, contextObject)
-            }
-            storeExp.fulfill()
-        }.store(in: &cancellables)
-        
-        let intStoreExp = expectation(description: "On value received - intStore")
-        intStoreExp.expectedFulfillmentCount = 4 // 2 updates + 1 same value + initial value
-        intStore.subscribe { value, context in
-            if value == initialValue.first {
-                XCTAssertNil(context)
-            } else {
-                XCTAssertEqual(context as? Data, contextObject)
-            }
-            intStoreExp.fulfill()
-        }.store(in: &cancellables)
-        
-        let stringStoreExp = expectation(description: "On value received - stringStore")
-        stringStoreExp.expectedFulfillmentCount = 4 // 2 updates + 1 same value + initial value
-        stringStore.subscribe { value, context in
-            if value == initialValue.second {
-                XCTAssertNil(context)
-            } else {
-                XCTAssertEqual(context as? Data, contextObject)
-            }
-            stringStoreExp.fulfill()
-        }.store(in: &cancellables)
-        
-        store.update(.init(20, "ww"), context: contextObject)
-        intStore.update(30, context: contextObject)
-        stringStore.update("ee", context: contextObject)
-        
-        waitForExpectations()
-    }
-    
-    func test_recursiveUpdate() {
-        let store = ValueStore<Int>(initialValue: 0)
-        let exp = expectation(description: "Recursive store calls")
-        exp.expectedFulfillmentCount = 3
-        store.subscribe { value in
-            guard value < 3 else { return }
-            if value == 0 {
-                XCTAssertEqual(value, store.value)
-            } else {
-                XCTAssertEqual(value, store.value + 1)
-            }
-            store.update(value + 1)
-            
-            exp.fulfill()
-        }.store(in: &cancellables)
-        
-        waitForExpectations()
-    }
-    
-    func test_get() {
-        let s1 = DispatchSemaphore(value: 0)
-        let s2 = DispatchSemaphore(value: 0)
-        
-        let store = ValueStore<Pair<Int, Int>>(initialValue: .init(0, 0))
-        let firstStore = store.scope(\.first)
-        DispatchQueue.global().async {
-            store.update {
-                s1.signal()
-                s2.wait()
-                $0 = .init(10, 10)
-                s1.signal()
-                s2.wait()
-            }
-            s1.signal()
-        }
-        
-        s1.wait()
-        XCTAssertEqual(store.value, .init(0, 0))
-        XCTAssertEqual(firstStore.value, 0)
-        s2.signal()
-        
-        s1.wait()
-        XCTAssertEqual(store.value, .init(0, 0))
-        XCTAssertEqual(firstStore.value, 0)
-        s2.signal()
-        
-        s1.wait()
-        XCTAssertEqual(store.value, .init(10, 10))
-        XCTAssertEqual(firstStore.value, 10)
-        s2.signal()
-    }
-    
-    @MainActor
-    func test_observableObject() {
+
+    @Test
+    func simpleNotify() async {
         let store = ValueStore(initialValue: 0)
-        let observableObject = store.observableObject
-        XCTAssertEqual(observableObject.value, 0)
+        var iterator = store.stream().makeAsyncIterator()
         
-        store.update(10)
-        XCTAssertEqual(store.value, 10)
-        XCTAssertEqual(observableObject.value, 10)
+        store.update(1)
+        #expect(store.value == 1)
         
-        observableObject.value = 20
-        XCTAssertEqual(store.value, 20)
-        XCTAssertEqual(observableObject.value, 20)
+        let change = await iterator.next()
+        #expect(change?.old == 0)
+        #expect(change?.new == 1)
+    }
+    
+    @Test
+    func simpleNotify_includingCurrentValue() async {
+        let store = ValueStore(initialValue: 0)
+        var iterator = store.stream(includingCurrentValue: true).makeAsyncIterator()
+        
+        let initialChange = await iterator.next()
+        #expect(initialChange?.old == 0)
+        #expect(initialChange?.new == 0)
+        
+        store.update(1)
+        #expect(store.value == 1)
+        
+        let change = await iterator.next()
+        #expect(change?.old == 0)
+        #expect(change?.new == 1)
+    }
+    
+    @Test
+    func asyncNotify() async {
+        let store = ValueStore(initialValue: 0)
+        var changes: [ValueChange<Int>?] = []
+        let cancellation = store.observe { changes.append($0) }
+        
+        store.update(1)
+        #expect(store.value == 1)
+        
+        await Task.yield()
+        #expect(changes.count == 1)
+        
+        cancellation.cancel()
+        await Task.yield()
+        #expect(changes.count == 2)
+        
+        #expect(changes[0]?.old == 0)
+        #expect(changes[0]?.new == 1)
+        #expect(changes[1] == nil)
+    }
+    
+    @Test
+    func hierarchicalUpdate() async {
+        let root = ValueStore<Root>(initialValue: .init())
+        let branchA = root.scope(\.a)
+        let leafA = branchA.scope(\.leaf)
+        
+        var iteratorRoot = root.stream().makeAsyncIterator()
+        var iteratorBranchA = branchA.stream().makeAsyncIterator()
+        var iteratorLeafA = leafA.stream().makeAsyncIterator()
+        
+        root.update(\.a.leaf, 1)
+        #expect(root.a.leaf == 1)
+        #expect(branchA.leaf == 1)
+        #expect(leafA.value == 1)
+        #expect(await iteratorRoot.next()?.map(\.a.leaf) == .init(old: 0, new: 1))
+        #expect(await iteratorBranchA.next()?.map(\.leaf) == .init(old: 0, new: 1))
+        #expect(await iteratorLeafA.next() == .init(old: 0, new: 1))
+        
+        branchA.update(\.leaf, 2)
+        #expect(root.a.leaf == 2)
+        #expect(branchA.leaf == 2)
+        #expect(leafA.value == 2)
+        #expect(await iteratorRoot.next()?.map(\.a.leaf) == .init(old: 1, new: 2))
+        #expect(await iteratorBranchA.next()?.map(\.leaf) == .init(old: 1, new: 2))
+        #expect(await iteratorLeafA.next() == .init(old: 1, new: 2))
+        
+        leafA.update(3)
+        #expect(root.a.leaf == 3)
+        #expect(branchA.leaf == 3)
+        #expect(leafA.value == 3)
+        #expect(await iteratorRoot.next()?.map(\.a.leaf) == .init(old: 2, new: 3))
+        #expect(await iteratorBranchA.next()?.map(\.leaf) == .init(old: 2, new: 3))
+        #expect(await iteratorLeafA.next() == .init(old: 2, new: 3))
+    }
+
+    @Test
+    func unwrapped_default() {
+        let root = ValueStore<Int?>(initialValue: nil)
+        let unwrapped = root.unwrapped(default: 10)
+
+        unwrapped.update(20)
+
+        #expect(root.value == nil)
+        #expect(unwrapped.value == 10)
+    }
+
+    @Test
+    func unwrapped_mergeIntoNil() {
+        let root = ValueStore<Int?>(initialValue: nil)
+        let unwrapped = root.unwrapped(default: 10, mergeIntoNil: true)
+
+        unwrapped.update(20)
+
+        #expect(root.value == 20)
+        #expect(unwrapped.value == 20)
+    }
+
+    @Test
+    func optional_fallback() {
+        let root = ValueStore(initialValue: 10)
+        let optional = root.optional(fallback: 20)
+
+        optional.update(nil)
+
+        #expect(root.value == 20)
+        #expect(optional.value == 20)
+    }
+    
+    @Test
+    func notify_deadIntermediate() async {
+        let root = ValueStore(initialValue: Root())
+        let leafA = root.scope(\.a).scope(\.leaf)
+        let leafB = root.scope(\.b).scope(\.leaf)
+        
+        var iteratorLeafA = leafA.stream().makeAsyncIterator()
+        var iteratorLeafB = leafB.stream().makeAsyncIterator()
+        
+        root.update {
+            $0.a.leaf = 1
+            $0.b.leaf = 2
+        }
+        
+        #expect(leafA.value == 1)
+        #expect(leafB.value == 2)
+        #expect(await iteratorLeafA.next() == .init(old: 0, new: 1))
+        #expect(await iteratorLeafB.next() == .init(old: 0, new: 2))
+    }
+    
+    @Test
+    func notify_cancel() async {
+        var root: ValueStore! = ValueStore(initialValue: Root())
+        var iteratorLeafA = root.scope(\.a).scope(\.leaf).stream().makeAsyncIterator()
+        
+        root.update { $0.a.leaf = 1 }
+        #expect(await iteratorLeafA.next() == .init(old: 0, new: 1))
+        
+        root = nil
+        #expect(await iteratorLeafA.next() == nil)
     }
 }

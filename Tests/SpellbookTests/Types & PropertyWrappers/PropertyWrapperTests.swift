@@ -56,7 +56,7 @@ class PropertyWrapperTests: XCTestCase {
     func test_ValueView() {
         XCTAssertEqual(ValueView.constant(10).value, 10)
         
-        var value1 = 1
+        nonisolated(unsafe) var value1 = 1
         @ValueViewed var view1 = value1
         
         XCTAssertEqual(view1, value1)
@@ -65,7 +65,7 @@ class PropertyWrapperTests: XCTestCase {
         value1 = 20
         XCTAssertEqual($view1.value, value1)
         
-        var value2 = 1
+        nonisolated(unsafe) var value2 = 1
         let view2 = ValueView { value2 }
         
         XCTAssertEqual(view2.value, value2)

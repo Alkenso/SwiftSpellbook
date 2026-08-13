@@ -1,6 +1,6 @@
 //  MIT License
 //
-//  Copyright (c) 2024 Alkenso (Vladimir Vashurkin)
+//  Copyright (c) 2026 Alkenso (Vladimir Vashurkin)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -22,30 +22,25 @@
 
 import Foundation
 
-/// Wrapper that provides access to value. Useful when value is a struct that may be changed over time.
-@dynamicMemberLookup
-public final class ValueView<Value: Sendable>: Sendable {
-    private nonisolated(unsafe) var accessor: @Sendable () -> Value
+public final class ValueBroadcast<Value: Sendable>: ValueObserving {
+    private let observers = Synchronized<[UUID: ValueObserver<Value>]>(.unfair)
     
-    public init(_ accessor: @escaping @Sendable () -> Value) {
-        self.accessor = accessor
+    public init() {}
+    
+    /// Queue to be used to notify observers. If not set, when will be notified on the caller thread.
+    nonisolated(unsafe)
+    public var notifyQueue: DispatchQueue? = .global()
+    
+    public func observe(includingCurrentValue: Bool = false, _ observer: ValueObserver<Value>) -> Cancellation {
+        let id = UUID()
+        observers[id] = observer
+        return .init { [weak observers] in observers?.removeValue(forKey: id) }
     }
     
-    public var value: Value { accessor() }
-    
-    public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
-        value[keyPath: keyPath]
-    }
-    
-    public func unsafeSetAccessor(_ accessor: @escaping @Sendable () -> Value) { self.accessor = accessor }
-}
-
-extension ValueView {
-    public static func constant(_ value: Value) -> ValueView {
-        .init { value }
-    }
-    
-    public static func weak<U: AnyObject>(_ value: U?) -> ValueView<U?> {
-        .init { [weak value] in value }
+    public func notify(_ value: Value) {
+        notifyQueue.async {
+            let observers = self.observers.read()
+            observers.values.forEach { $0.notify(value) }
+        }
     }
 }

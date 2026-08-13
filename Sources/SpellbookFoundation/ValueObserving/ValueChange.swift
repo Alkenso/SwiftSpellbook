@@ -1,6 +1,6 @@
 //  MIT License
 //
-//  Copyright (c) 2024 Alkenso (Vladimir Vashurkin)
+//  Copyright (c) 2026 Alkenso (Vladimir Vashurkin)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -22,30 +22,22 @@
 
 import Foundation
 
-/// Wrapper that provides access to value. Useful when value is a struct that may be changed over time.
-@dynamicMemberLookup
-public final class ValueView<Value: Sendable>: Sendable {
-    private nonisolated(unsafe) var accessor: @Sendable () -> Value
+public struct ValueChange<Value: Sendable>: Sendable {
+    public var old: Value
+    public var new: Value
+    public nonisolated(unsafe) var context: Any?
     
-    public init(_ accessor: @escaping @Sendable () -> Value) {
-        self.accessor = accessor
+    public init(old: Value, new: Value, context: Any? = nil) {
+        self.old = old
+        self.new = new
+        self.context = context
     }
     
-    public var value: Value { accessor() }
-    
-    public subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
-        value[keyPath: keyPath]
+    public func map<U>(_ transform: (Value) -> U) -> ValueChange<U> {
+        .init(old: transform(old), new: transform(new), context: context)
     }
-    
-    public func unsafeSetAccessor(_ accessor: @escaping @Sendable () -> Value) { self.accessor = accessor }
 }
 
-extension ValueView {
-    public static func constant(_ value: Value) -> ValueView {
-        .init { value }
-    }
-    
-    public static func weak<U: AnyObject>(_ value: U?) -> ValueView<U?> {
-        .init { [weak value] in value }
-    }
+public struct ValueChangeContextCurrentValue: Equatable, Sendable {
+    public init() {}
 }
