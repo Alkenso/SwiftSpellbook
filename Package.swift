@@ -28,6 +28,10 @@ let package = Package(
             targets: ["SpellbookCrash"]
         ),
         .library(
+            name: "SpellbookUI",
+            targets: ["SpellbookUI"]
+        ),
+        .library(
             name: "SpellbookTestUtils",
             targets: ["SpellbookTestUtils"]
         ),
@@ -66,6 +70,13 @@ let package = Package(
             name: "SpellbookCrash",
             swiftSettings: [
                 .enableExperimentalFeature("SymbolLinkageMarkers")
+            ]
+        ),
+        .target(
+            name: "SpellbookUI",
+            dependencies: ["SpellbookFoundation"],
+            linkerSettings: [
+                .linkedFramework("SwiftUI"),
             ]
         ),
         .target(
