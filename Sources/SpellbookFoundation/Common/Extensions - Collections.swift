@@ -449,20 +449,20 @@ extension RangeReplaceableCollection {
         }
     }
     
-    /// Appends a new element to the collection or updates the element if it exists.
+    /// Appends a new element to the collection or updates the first matched element if it exists.
     ///
     /// - Parameter element: The element to append to or update in the collection.
-    /// - Parameter keyPath: A KeyPath to property of the element to search for in the collection.
+    /// - Parameter match: A closure that checks whether some element in collection is treated as update candidate.
     /// - Returns: Previous element existed in the collection or `nil` if new element was appended.
     ///
     /// - Complexity: O(*n*), where *n* is the length of the collection.
     @discardableResult
     @inlinable public mutating func updateFirst<E: Error>(
         _ element: Element,
-        where equality: (Element) throws(E) -> Bool
+        where match: (Element) throws(E) -> Bool
     ) throws(E) -> Element? {
         try _typedRethrow(error: E.self) {
-            if let idx = try firstIndex(where: equality) {
+            if let idx = try firstIndex(where: match) {
                 let oldValue = self[idx]
                 replaceSubrange(idx..<index(after: idx), with: [element])
                 return oldValue
@@ -473,6 +473,13 @@ extension RangeReplaceableCollection {
         }
     }
     
+    /// Appends a new element to the collection or updates the element if it exists.
+    ///
+    /// - Parameter element: The element to append to or update in the collection.
+    /// - Parameter keyPath: A KeyPath to property of the element to search for in the collection.
+    /// - Returns: Previous element existed in the collection or `nil` if new element was appended.
+    ///
+    /// - Complexity: O(*n*), where *n* is the length of the collection.
     @discardableResult
     @inlinable public mutating func updateFirst<Property: Equatable>(
         _ element: Element,

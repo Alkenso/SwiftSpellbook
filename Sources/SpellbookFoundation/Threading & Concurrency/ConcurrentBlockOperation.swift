@@ -24,6 +24,7 @@ import Foundation
 
 public final class ConcurrentBlockOperation: Operation, @unchecked Sendable {
     @Atomic private var state: Bool?
+    private let finishOnce = AtomicFlag()
     private let block: @Sendable (ValueView<Bool>, @escaping @Sendable () -> Void) -> Void
     
     public init(block: @escaping @Sendable (_ isCancelled: ValueView<Bool>, _ completion: @escaping @Sendable () -> Void) -> Void) {
@@ -67,6 +68,8 @@ public final class ConcurrentBlockOperation: Operation, @unchecked Sendable {
     }
     
     private func finish() {
+        guard !finishOnce.testAndSet() else { return }
+        
         willChangeValue(for: \.isExecuting)
         willChangeValue(for: \.isFinished)
         state = true

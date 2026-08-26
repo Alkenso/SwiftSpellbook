@@ -77,7 +77,7 @@ extension DataProtocol where Self: ContiguousBytes {
     /// Converts data to POD (Plain Old Data) value.
     public func pod<PODType>(exactly type: PODType.Type) -> PODType? {
         guard MemoryLayout<PODType>.size == count else { return nil }
-        return withUnsafeBytes { $0.load(fromByteOffset: 0, as: type) }
+        return withUnsafeBytes { $0.loadUnaligned(fromByteOffset: 0, as: type) }
     }
     
     /// Converts data to POD (Plain Old Data) value.
@@ -91,7 +91,7 @@ extension DataProtocol where Self: ContiguousBytes {
         } else {
             source = Data(self) + Data(count: advanceSize)
         }
-        return source.withUnsafeBytes { $0.load(fromByteOffset: 0, as: type) }
+        return source.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: 0, as: type) }
     }
 }
 

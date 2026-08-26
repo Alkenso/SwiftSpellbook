@@ -100,7 +100,7 @@ class DictionaryReaderTests: XCTestCase {
 }
 
 class DictionaryWriterTests: XCTestCase {
-    func codingPath() throws {
+    func test_codingPath() throws {
         var person: [String: Any] = [
             "name": "Bob",
             "address": [
@@ -123,11 +123,35 @@ class DictionaryWriterTests: XCTestCase {
         let agePath: [DictionaryCodingKey] = ["children", .index(1), "age"]
         XCTAssertNoThrow(try writer.insert(value: 12, codingPath: agePath))
         XCTAssertEqual(person[codingPath: agePath, as: Int.self], 12)
+
+        // replace value at last array index
+        let lastAgePath: [DictionaryCodingKey] = ["children", .index(.max), "age"]
+        XCTAssertNoThrow(try writer.insert(value: 7, codingPath: lastAgePath))
+        XCTAssertEqual(person[codingPath: lastAgePath, as: Int.self], 7)
         
         // insert value
         let parentPath = "parents.[0].name"
         XCTAssertNoThrow(try writer.insert(value: "John", dotPath: parentPath))
         XCTAssertEqual(person[dotPath: parentPath, as: String.self], "John")
+    }
+
+    func test_arrayIndices() throws {
+        var nonempty = DictionaryWriter(["values": [1, 2, 3]])
+        try nonempty.insert(value: 4, codingPath: ["values", .index(.max)])
+        XCTAssertEqual(nonempty.dictionary["values"], [1, 2, 4])
+
+        var emptyAtFirst = DictionaryWriter(["values": [Int]()])
+        try emptyAtFirst.insert(value: 1, codingPath: ["values", .index(0)])
+        XCTAssertEqual(emptyAtFirst.dictionary["values"], [1])
+
+        var emptyAtLast = DictionaryWriter(["values": [Int]()])
+        try emptyAtLast.insert(value: 2, codingPath: ["values", .index(.max)])
+        XCTAssertEqual(emptyAtLast.dictionary["values"], [2])
+
+        var negative = DictionaryWriter(["values": [1, 2, 3]])
+        XCTAssertThrowsError(try negative.insert(value: 0, codingPath: ["values", .index(-1)])) {
+            XCTAssertEqual(($0 as? DictionaryCodingError)?.code, .keyNotFound)
+        }
     }
     
     func test_errorTypes() throws {

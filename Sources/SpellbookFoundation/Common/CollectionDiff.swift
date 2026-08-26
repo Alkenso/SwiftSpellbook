@@ -42,9 +42,15 @@ extension CollectionDiff {
         isEqual: (Element, Element) -> Bool
     ) where C.Element == Element {
         self.init()
+        let from = Array(from)
+        var matchedIndices: Set<Int> = []
         
         for toElement in to {
-            if let fromElement = from.first(where: { isSimilar($0, toElement) }) {
+            if let index = from.indices.first(where: {
+                !matchedIndices.contains($0) && isSimilar(from[$0], toElement)
+            }) {
+                matchedIndices.insert(index)
+                let fromElement = from[index]
                 if let change = Change(old: fromElement, new: toElement, isEqual: isEqual) {
                     updated.append(change)
                 } else {
@@ -54,7 +60,7 @@ extension CollectionDiff {
                 added.append(toElement)
             }
         }
-        removed = from.filter { fromElement in !to.contains { isSimilar($0, fromElement) } }
+        removed = from.indices.compactMap { matchedIndices.contains($0) ? nil : from[$0] }
     }
     
     public init<C: Collection>(from: C, to: C) where C.Element == Element, Element: Equatable {

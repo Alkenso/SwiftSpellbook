@@ -164,7 +164,8 @@ public struct DictionaryWriter<Key: Hashable, Value> {
             if array.isEmpty {
                 array.append(newItem)
             } else {
-                array[index] = newItem
+                let resolvedIndex = index == .max ? array.index(before: array.endIndex) : index
+                array[resolvedIndex] = newItem
             }
             return array
         }

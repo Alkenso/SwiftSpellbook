@@ -72,6 +72,18 @@ struct CrashTests {
         #expect(CrashInfo.string(\.signature)?.contains("sig-msg-2") == false)
         #expect(CrashInfo.string(\.signature)?.contains("sig-msg-manual") == true)
     }
+    
+    @Test
+    func withMessageThrows() {
+        struct ExpectedError: Error {}
+        
+        #expect(throws: ExpectedError.self) {
+            try CrashReportAugmentation.withMessage("throwing-message") {
+                throw ExpectedError()
+            }
+        }
+        #expect(CrashInfo.string(\.signature) == nil)
+    }
 }
 
 private extension CrashInfo {

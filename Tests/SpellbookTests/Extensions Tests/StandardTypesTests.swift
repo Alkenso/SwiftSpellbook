@@ -58,6 +58,14 @@ class DataExtensionsTests: XCTestCase {
         XCTAssertEqual(Data([0x20, 0xff, 0x10]).pod(adopting: Int32.self), 0x10ff20)
         XCTAssertEqual(Data([0x20, 0xff, 0x10]).pod(adopting: Int64.self), 0x10ff20)
     }
+
+    func test_PODTypes_unaligned() {
+        let bytes = Data([0xff, 0x20, 0xff, 0x10, 0x00, 0xee])
+        let unaligned = bytes[1..<5]
+
+        XCTAssertEqual(unaligned.pod(exactly: Int32.self), 0x10ff20)
+        XCTAssertEqual(unaligned.dropLast().pod(adopting: Int32.self), 0x10ff20)
+    }
     
     func test_fromHexString() {
         XCTAssertEqual(

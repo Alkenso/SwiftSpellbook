@@ -258,7 +258,7 @@ private final class Storage {
         
         let oldPointer = target.pointee
         target.pointee = !string.isEmpty ? string.withCString(strdup) : nil
-        oldPointer?.deallocate()
+        free(oldPointer)
     }
     
     func add(_ message: String, for id: Int) {
