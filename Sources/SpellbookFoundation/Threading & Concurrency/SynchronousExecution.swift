@@ -25,38 +25,46 @@ import Foundation
 /// Executes synchronously the asynchronous method.
 /// - Note: While this is not the best practice ever,
 ///         real-world tasks time to time require exactly this.
+/// - Warning: Do not call this while occupying a serial queue or actor that `action`
+///   must use, because neither operation will be able to complete.
 @available(*, noasync)
 public func synchronouslyWithTask<R, E: Error>(_ action: sending @escaping () async throws(E) -> R) throws(E) -> R {
-    let (group, result) = synchronouslyWithTask(action)
-    group.wait()
+    let (semaphore, result, _) = synchronouslyWithTask(action)
+    semaphore.wait()
     return try result.wrappedValue.get()!
 }
 
 /// Executes synchronously the asynchronous method.
 /// - Note: While this is not the best practice ever,
 ///         real-world tasks time to time require exactly this.
+/// - Warning: Do not call this while occupying a serial queue or actor that `action`
+///   must use, because neither operation will be able to complete.
 @available(*, noasync)
 public func synchronouslyWithTask<R, E: Error>(timeout: TimeInterval?, _ action: sending @escaping () async throws(E) -> R) throws(E) -> R? {
     guard let timeout else { return try synchronouslyWithTask(action) }
-    let (group, result) = synchronouslyWithTask(action)
-    _ = group.wait(timeout: .now() + timeout)
+    let (semaphore, result, task) = synchronouslyWithTask(action)
+    guard semaphore.wait(timeout: .now() + timeout) == .success else {
+        task.cancel()
+        return nil
+    }
     return try result.wrappedValue.get()
 }
 
-private func synchronouslyWithTask<R, E: Error>(_ action: sending @escaping () async throws(E) -> R) -> (DispatchGroup, Atomic<Result<R?, E>>) {
-    let group = DispatchGroup()
-    group.enter()
+private func synchronouslyWithTask<R, E: Error>(
+    _ action: sending @escaping () async throws(E) -> R
+) -> (RunLoopSemaphore, Atomic<Result<R?, E>>, Task<Void, Never>) {
+    let semaphore = RunLoopSemaphore()
     let result = Atomic<Result<R?, E>>(wrappedValue: .success(nil))
-    Task {
+    let task = Task.detached {
         do {
             let r = try await action()
             _ = result.exchange(.success(r))
         } catch {
             _ = result.exchange(.failure(error as! E))
         }
-        group.leave()
+        semaphore.signal()
     }
-    return (group, result)
+    return (semaphore, result, task)
 }
 
 /// Executes synchronously the asynchronous method.

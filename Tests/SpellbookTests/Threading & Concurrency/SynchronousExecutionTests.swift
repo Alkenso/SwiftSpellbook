@@ -3,6 +3,15 @@
 import Foundation
 import XCTest
 
+private actor SynchronousExecutorTestActor {
+    func run() -> Int {
+        synchronouslyWithTask {
+            await Task.yield()
+            return 10
+        }
+    }
+}
+
 class SynchronousExecutorTests: XCTestCase {
     func test() throws {
         let dummyValue = Dummy(value: 10, timeout: 0.05)
@@ -26,6 +35,56 @@ class SynchronousExecutorTests: XCTestCase {
         
         let dummyError = Dummy<Int>(value: nil, timeout: 0.1)
         XCTAssertThrowsError(try synchronouslyWithTask { try await dummyError.asyncError() })
+    }
+
+    @MainActor
+    func test_task_mainActor() {
+        XCTAssertTrue(Thread.isMainThread)
+
+        let value = synchronouslyWithTask {
+            await MainActor.run {
+                XCTAssertTrue(Thread.isMainThread)
+                return 10
+            }
+        }
+
+        XCTAssertEqual(value, 10)
+    }
+
+    @MainActor
+    func test_task_backgroundRunLoop() {
+        let completed = expectation(description: "background run loop completed")
+        let value = Synchronized<Int?>(.unfair)
+
+        DispatchQueue.global().async {
+            value.write(synchronouslyWithTask { 10 })
+            completed.fulfill()
+        }
+
+        waitForExpectations(timeout: 0.1)
+        XCTAssertEqual(value.read(), 10)
+    }
+
+    func test_task_customActor() async {
+        let value = await SynchronousExecutorTestActor().run()
+
+        XCTAssertEqual(value, 10)
+    }
+
+    @MainActor
+    func test_timeout_cancelsTask() {
+        let cancelled = expectation(description: "task cancelled")
+
+        let result = synchronouslyWithTask(timeout: 0.01) {
+            while !Task.isCancelled {
+                await Task.yield()
+            }
+            cancelled.fulfill()
+            return 10
+        }
+
+        XCTAssertNil(result)
+        waitForExpectations(timeout: 0.1)
     }
 }
 
