@@ -27,7 +27,7 @@ public final class ValueBroadcast<Value: Sendable>: ValueObserving {
     
     public init() {}
     
-    /// Queue to be used to notify observers. If not set, when will be notified on the caller thread.
+    /// Queue to be used to notify observers
     nonisolated(unsafe)
     public var notifyQueue: DispatchQueue? = .global()
     
@@ -40,7 +40,7 @@ public final class ValueBroadcast<Value: Sendable>: ValueObserving {
     public func notify(_ value: Value) {
         notifyQueue.async {
             let observers = self.observers.read()
-            observers.values.forEach { $0.notify(value) }
+            observers.values.forEach { $0.observe(value) }
         }
     }
 }

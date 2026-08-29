@@ -65,6 +65,27 @@ struct ValueStoreTests {
     }
     
     @Test
+    func currentValueObserverCanUpdateTheSameStore() {
+        let store = ValueStore(initialValue: 0)
+        nonisolated(unsafe) var receivedValues: [Int] = []
+        
+        let cancellation = store.observe(
+            includingCurrentValue: true,
+            ValueObserver { change in
+                guard let change else { return }
+                receivedValues.append(change.new)
+                if change.new == 0 {
+                    store.update(1)
+                }
+            }
+        )
+        
+        #expect(receivedValues == [0, 1])
+        #expect(store.value == 1)
+        withExtendedLifetime(cancellation) {}
+    }
+    
+    @Test
     func asyncNotify() async {
         let store = ValueStore(initialValue: 0)
         var changes: [ValueChange<Int>?] = []

@@ -185,7 +185,7 @@ extension ValueStore {
     }
     
     private class Downstream: @unchecked Sendable {
-        private let lock = UnfairLock()
+        private let lock = NSRecursiveLock()
         private var observers: [UUID: Observer] = [:]
         private var children: [UUID: @Sendable (Change?) -> Bool] = [:]
 
@@ -207,7 +207,7 @@ extension ValueStore {
                 }
                 observers[id] = observer
                 if withCurrentValue, let value = valueStore?.read() {
-                    observer.notify(Change(old: value, new: value, context: ValueChangeContextCurrentValue()))
+                    observer.observe(Change(old: value, new: value, context: ValueChangeContextCurrentValue()))
                 }
                 return cancellation
             }
@@ -216,7 +216,7 @@ extension ValueStore {
         private func notify(_ change: Change?) -> Bool {
             guard let change else {
                 let (observers, children) = lock.withLock { (self.observers, self.children) }
-                observers.values.forEach { $0.notify(nil) }
+                observers.values.forEach { $0.observe(nil) }
                 children.values.forEach { _ = $0(nil) }
                 return false
             }
@@ -225,7 +225,7 @@ extension ValueStore {
                 (self.observers, self.children, valueStore?.write(change.new) != nil)
             }
             
-            observers.values.forEach { $0.notify(change) }
+            observers.values.forEach { $0.observe(change) }
             var childrenExist = false
             for (childID, childUpdate) in children {
                 if childUpdate(change) {

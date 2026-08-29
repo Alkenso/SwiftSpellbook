@@ -60,7 +60,7 @@ extension ValueObservable {
                     includingCurrentValue: includingCurrentValue,
                     ValueObserver(
                         name: observer.name.flatMap { "\($0).scope(\(U.self))" },
-                        observe: { observer.notify($0?.map(transform)) }
+                        observe: { observer.observe($0?.map(transform)) }
                     )
                 )
             }
@@ -80,7 +80,7 @@ extension ValueObservable {
     public static func constant(_ value: Value) -> ValueObservable {
         .init(view: .constant(value)) { includeCurrentValue, observer in
             if includeCurrentValue {
-                observer.notify(.init(old: value, new: value, context: ValueChangeContextCurrentValue()))
+                observer.observe(.init(old: value, new: value, context: ValueChangeContextCurrentValue()))
             }
             return .init {}
         }

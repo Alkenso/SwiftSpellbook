@@ -63,23 +63,3 @@ extension ValueObserving {
         return stream
     }
 }
-
-public struct ValueObserver<Value: Sendable>: Sendable {
-    public var name: String?
-    public var observe: @Sendable (Value?) -> Void
-    
-    public init(name: String? = nil, observe: @escaping @Sendable (Value?) -> Void) {
-        self.name = name
-        self.observe = observe
-    }
-    
-    public func notify(_ value: Value?) {
-        observe(value)
-    }
-}
-
-extension ValueObserver {
-    public func queue(_ queue: DispatchQueue) -> Self {
-        updateValue(self, at: \.observe, with: { [notify] change in queue.async { notify(change) } })
-    }
-}
