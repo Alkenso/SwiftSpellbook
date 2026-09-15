@@ -69,13 +69,6 @@ class GGRectTests: XCTestCase {
         XCTAssertEqual(rect.verticallyFlipped(fullHeight: 400).verticallyFlipped(fullHeight: 400), rect)
     }
     
-    func test_scale() {
-        XCTAssertEqual(
-            CGRect(x: 10, y: 20, width: 30, height: 40).scaled(2),
-            CGRect(x: 20, y: 40, width: 60, height: 80)
-        )
-    }
-    
     func test_area() {
         XCTAssertEqual(CGRect(x: 10, y: 20, width: 30, height: 40).area, 1200)
     }

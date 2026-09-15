@@ -74,8 +74,6 @@ extension CGSize {
         CGSize(width: size, height: size)
     }
     
-    public var area: CGFloat { width * height }
-    
     public mutating func scale(_ scale: CGFloat) {
         self = scaled(scale)
     }
@@ -84,9 +82,10 @@ extension CGSize {
         CGSize(width: width * scale, height: height * scale)
     }
     
+    public var area: CGFloat { width * height }
     public var min: CGFloat { Swift.min(width, height) }
-    
     public var max: CGFloat { Swift.max(width, height) }
+    public var aspectRatio: CGFloat { width / height }
 }
 
 extension CGSize: @retroactive AdditiveArithmetic {
@@ -108,6 +107,7 @@ extension CGRect {
     
     public var center: CGPoint { CGPoint(x: midX, y: midY) }
     public var area: CGFloat { width * height }
+    public var aspectRatio: CGFloat { width / height }
     
     public init(origin: CGPoint, extent: CGPoint) {
         self.init(origin: origin, size: CGSize(width: extent.x - origin.x, height: extent.y - origin.y))
@@ -140,14 +140,6 @@ extension CGRect {
     
     public mutating func verticallyFlip(fullHeight: CGFloat) {
         self = verticallyFlipped(fullHeight: fullHeight)
-    }
-    
-    public mutating func scale(_ scale: CGFloat) {
-        self = scaled(scale)
-    }
-    
-    public func scaled(_ scale: CGFloat) -> CGRect {
-        CGRect(origin: origin.scaled(scale), size: size.scaled(scale))
     }
 }
 
