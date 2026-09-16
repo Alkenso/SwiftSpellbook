@@ -28,14 +28,13 @@ struct AsyncSequenceExtensionsTests {
         enum ExpectedError: Error {
             case failure
         }
-
+        
         let stream = AsyncThrowingStream<Int, any Error> { continuation in
             continuation.yield(10)
             continuation.finish(throwing: ExpectedError.failure)
         }
-        var values: [Int] = []
+        nonisolated(unsafe) var values: [Int] = []
         let task = stream.forEach { values.append($0) }
-
         await #expect(throws: ExpectedError.self) {
             try await task.value
         }
@@ -51,7 +50,6 @@ struct AsyncSequenceExtensionsTests {
             continuation.finish()
         }
         var values: [Int] = []
-
         await stream.forEach {
             MainActor.preconditionIsolated()
             values.append($0)

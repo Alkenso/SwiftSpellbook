@@ -48,7 +48,7 @@ public extension DeviceInfo {
     
     private static func search(property name: String) throws -> String {
         let platformExpert = IOServiceGetMatchingService(
-            kIOMasterPortDefault,
+            kIOMainPortDefault,
             IOServiceMatching("IOPlatformExpertDevice")
         )
         guard platformExpert != IO_OBJECT_NULL else {

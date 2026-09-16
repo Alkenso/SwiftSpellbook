@@ -42,6 +42,9 @@ let package = Package(
         .target(
             name: "SpellbookFoundation",
             dependencies: ["_SpellbookFoundationObjC"],
+            swiftSettings: [
+                .enableExperimentalFeature("CheckImplementationOnly")
+            ],
             linkerSettings: [
                 .linkedLibrary("bsm", .when(platforms: [.macOS])),
             ]

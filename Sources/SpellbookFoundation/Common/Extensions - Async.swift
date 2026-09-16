@@ -25,13 +25,11 @@ import Foundation
 extension AsyncSequence {
     @discardableResult
     public func forEach(
-        isolation: isolated (any Actor)? = #isolation,
-        _ body: @escaping (Element) -> Void
-    ) -> Task<Void, Error> {
+        @_inheritActorContext _ body: sending @escaping (Element) async -> Void
+    ) -> Task<Void, Error> where Self: Sendable {
         Task {
-            _ = isolation // required: this capture makes the closure inherit the caller's isolation
             for try await element in self {
-                body(element)
+                await body(element)
             }
         }
     }
@@ -39,13 +37,11 @@ extension AsyncSequence {
     @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
     @discardableResult
     public func forEach(
-        isolation: isolated (any Actor)? = #isolation,
-        _ body: @escaping (Element) -> Void
-    ) -> Task<Void, Never> where Failure == Never {
+        @_inheritActorContext _ body: sending @escaping (Element) async -> Void
+    ) -> Task<Void, Never> where Self: Sendable, Failure == Never {
         Task {
-            _ = isolation // required: this capture makes the closure inherit the caller's isolation
             for await element in self {
-                body(element)
+                await body(element)
             }
         }
     }
