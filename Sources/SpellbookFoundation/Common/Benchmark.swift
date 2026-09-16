@@ -26,7 +26,9 @@ public enum Benchmark {
     /// Executes the given block and returns the number of seconds
     /// with nanosecond precision it takes to execute.
     /// This function is for debugging and performance analysis.
-    public static func measure<R, E: Error>(execute: () throws(E) -> R) throws(E) -> (result: R, time: TimeInterval) {
+    public static func measure<R, E: Error>(
+        execute: () throws(E) -> R
+    ) throws(E) -> (result: R, time: TimeInterval) {
         let start = DispatchTime.now()
         let result = try execute()
         return (result, duration(startingAt: start))
@@ -53,7 +55,9 @@ public enum Benchmark {
     /// Executes the given block and returns the number of seconds
     /// with nanosecond precision it takes to execute.
     /// This function is for debugging and performance analysis.
-    public static func measure<E: Error>(execute: () async throws(E) -> Void) async throws(E) -> TimeInterval {
+    public static func measure<E: Error>(
+        execute: () async throws(E) -> Void
+    ) async throws(E) -> TimeInterval {
         try await measure(execute: execute).time
     }
     
@@ -65,7 +69,9 @@ public enum Benchmark {
         
         return durationSec
     }
-    
+}
+
+extension Benchmark {
     /// Executes the given block and prints the `name` and the number of seconds
     /// with nanosecond precision it takes to execute the block.
     /// This function is for debugging and performance analysis work.
@@ -75,6 +81,20 @@ public enum Benchmark {
         execute: () throws(E) -> R
     ) throws(E) -> R {
         let (result, durationSec) = try measure(execute: execute)
+        print("\(name) takes \(durationSec) sec")
+        
+        return result
+    }
+    
+    /// Executes the given block and prints the `name` and the number of seconds
+    /// with nanosecond precision it takes to execute the block.
+    /// This function is for debugging and performance analysis work.
+    public static func measure<R, E: Error>(
+        _ name: String,
+        print: (String) -> Void = { print($0) },
+        execute: () async throws(E) -> R
+    ) async throws(E) -> R {
+        let (result, durationSec) = try await measure(execute: execute)
         print("\(name) takes \(durationSec) sec")
         
         return result
