@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "SwiftSpellbook",
-    platforms: [.macOS(.v10_15), .iOS(.v13), .tvOS(.v13), .watchOS(.v6)],
+    platforms: [.macOS(.v12), .iOS(.v15), .tvOS(.v15), .watchOS(.v9), .visionOS(.v1)],
     products: [
         .library(
             name: "SpellbookFoundation",

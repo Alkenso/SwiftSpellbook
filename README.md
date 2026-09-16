@@ -2,9 +2,9 @@
 SwiftSpellbook is collection of additions to Swift standard library that makes development easier.
 
 <p>
-  <img src="https://img.shields.io/badge/swift-6.2-orange" />
-  <img src="https://img.shields.io/badge/platforms-macOS 10.15 | iOS 13 | watchOS 6 | tvOS 13-freshgreen" />
-  <img src="https://img.shields.io/badge/Xcode-16.4 | 26-blue" />
+  <img src="https://img.shields.io/badge/swift-6.4-orange" />
+  <img src="https://img.shields.io/badge/platforms-macOS 12 | iOS 15 | watchOS 9 | tvOS 15-freshgreen" />
+  <img src="https://img.shields.io/badge/Xcode-26 | 27-blue" />
   <img src="https://github.com/Alkenso/SwiftSpellbook/actions/workflows/main.yml/badge.svg" />
 </p>
 

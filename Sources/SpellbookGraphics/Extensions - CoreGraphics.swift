@@ -148,7 +148,6 @@ extension CGImage {
     /// - Parameters:
     ///     - format: Desired format of the image representation.
     /// - Returns: `Data` in requested format or `nil` if error occurs.
-    @available(macOS 11.0, iOS 14, tvOS 14.0, watchOS 7.0, *)
     public func representation(in format: UTType) -> Data? {
         let data = NSMutableData()
         guard let destination = CGImageDestinationCreateWithData(data, format.identifier as CFString, 1, nil) else {
@@ -177,7 +176,6 @@ extension CGImage {
     ///     - format: Desired format of the image representation.
     ///     If `nil`, format is tried to be obtained from `url` path extension.
     /// - Returns: Boolean indicating the write succeeds.
-    @available(macOS 11.0, iOS 14, tvOS 14.0, watchOS 7.0, *)
     public func writeToFile(_ url: URL, in format: UTType?) -> Bool {
         guard let format = format ?? UTType(filenameExtension: url.lastPathComponent, conformingTo: .image) else {
             return false
