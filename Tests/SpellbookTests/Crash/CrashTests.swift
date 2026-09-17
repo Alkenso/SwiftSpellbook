@@ -24,6 +24,7 @@ import SpellbookCrash
 import SpellbookFoundation
 import SpellbookTestUtils
 
+import Foundation
 import Testing
 
 @Suite(.serialized)
