@@ -15,7 +15,7 @@ class DispatchQueueExtensionsTests: XCTestCase {
             exp.fulfill()
             return count < limit
         }
-        Thread.sleep(forTimeInterval: 0.1 * Self.waitRate)
+        Thread.sleep(forTimeInterval: .testSeconds(0.1))
         XCTAssertEqual(count, limit)
         waitForExpectations()
     }
@@ -32,7 +32,7 @@ class DispatchQueueExtensionsTests: XCTestCase {
                 $0()
             }
         }
-        Thread.sleep(forTimeInterval: 0.1 * Self.waitRate)
+        Thread.sleep(forTimeInterval: .testSeconds(0.1))
         XCTAssertEqual(count, limit)
         waitForExpectations()
     }

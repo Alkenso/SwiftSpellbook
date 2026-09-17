@@ -1,7 +1,7 @@
 import Foundation
 import SpellbookFoundation
 
-public enum Testing {
+public enum TestData {
     public enum Web {
         public static let urlPath = "/get/stuff"
         public static let urlScheme = "https"

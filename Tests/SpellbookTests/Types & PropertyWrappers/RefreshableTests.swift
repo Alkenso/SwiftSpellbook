@@ -1,4 +1,5 @@
 import SpellbookFoundation
+import SpellbookTestUtils
 import XCTest
 
 class RefreshableTests: XCTestCase {
@@ -29,14 +30,14 @@ class RefreshableTests: XCTestCase {
     func test_ttl() {
         var value = Refreshable(
             wrappedValue: 10,
-            expire: .ttl(0.05),
+            expire: .ttl(.testSeconds(0.05)),
             source: .defaultValue(1)
         )
         
         XCTAssertEqual(value.wrappedValue, 10)
         
-        //  Value is expired after 0.1 and reset to default
-        Thread.sleep(forTimeInterval: 0.1)
+        //  Value is expired after the scaled wait interval and reset to default
+        Thread.sleep(forTimeInterval: .testSeconds(0.1))
         XCTAssertEqual(value.wrappedValue, 1)
     }
 }

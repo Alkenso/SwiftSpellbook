@@ -23,12 +23,6 @@
 import CoreFoundation
 import Foundation
 
-private enum RunLoopSemaphoreState {
-    case idle
-    case waiting(UInt)
-    case signaled(activeWait: UInt?)
-}
-
 /// A one-shot semaphore that keeps its creating thread's run loop responsive while waiting.
 ///
 /// After ``signal()`` is called, all current and future waits succeed.
@@ -141,4 +135,10 @@ public final class RunLoopSemaphore: @unchecked Sendable {
             CFRunLoopStop(runLoop)
         }
     }
+}
+
+private enum RunLoopSemaphoreState {
+    case idle
+    case waiting(UInt)
+    case signaled(activeWait: UInt?)
 }

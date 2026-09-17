@@ -12,21 +12,21 @@ class ResourceTests: XCTestCase {
     
     func test_reset() {
         func test(free: Bool, newValue: Int?, cleanupCalls: Int) {
-            withScope {
-                let expectation = expectation(description: "Cleanup should be called \(cleanupCalls) times only")
-                if cleanupCalls > 0 {
-                    expectation.expectedFulfillmentCount = cleanupCalls
-                } else {
-                    expectation.isInverted = true
-                }
-                
-                let resource = Resource<Int>(10) { _ in
-                    expectation.fulfill()
-                }
-                
-                XCTAssertEqual(resource.reset(free: free, to: newValue), 10)
-                XCTAssertEqual(resource.wrappedValue, newValue ?? 10)
+            let expectation = expectation(description: "Cleanup should be called \(cleanupCalls) times only")
+            if cleanupCalls > 0 {
+                expectation.expectedFulfillmentCount = cleanupCalls
+            } else {
+                expectation.isInverted = true
             }
+            
+            let resource = Resource<Int>(10) { _ in
+                expectation.fulfill()
+            }
+            
+            XCTAssertEqual(resource.reset(free: free, to: newValue), 10)
+            XCTAssertEqual(resource.wrappedValue, newValue ?? 10)
+            
+            _ = consume resource
             
             waitForExpectations()
         }

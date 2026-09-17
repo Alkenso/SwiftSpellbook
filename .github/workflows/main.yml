@@ -36,7 +36,7 @@ jobs:
           set -e 
           set -o pipefail
           
-          xcodebuild test -scheme SwiftSpellbook-Package -destination "platform=macOS" SWIFT_ACTIVE_COMPILATION_CONDITIONS="SPELLBOOK_SLOW_CI_x20" | xcpretty
+          xcodebuild test -scheme SwiftSpellbook-Package -destination "platform=macOS" SWIFT_ACTIVE_COMPILATION_CONDITIONS="SPELLBOOK_TEST_SLEEP_RATE_x10" | xcbeautify
       
       # Temporary disabled
       # - name: Test iOS with Xcode ${{ matrix.xcode }}

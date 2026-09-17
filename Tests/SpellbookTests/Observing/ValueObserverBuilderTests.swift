@@ -1,5 +1,6 @@
 import Foundation
 import SpellbookFoundation
+import SpellbookTestUtils
 
 import Testing
 
@@ -224,7 +225,7 @@ struct ValueObserverBuilderTests {
         observer.observe(1)
         observer.observe(nil)
 
-        #expect(completed.wait(timeout: .now() + 1) == .success)
+        #expect(completed.wait(timeout: .now() + .testSeconds(1)) == .success)
         #expect(events.read() == ["before", "after", "sync", "terminate"])
     }
 
@@ -250,7 +251,7 @@ struct ValueObserverBuilderTests {
         let queueObserver: ValueObserver<Int> = .queue(.global())
             .sync { _ in queueCompleted.signal() }
         queueObserver.observe(1)
-        #expect(queueCompleted.wait(timeout: .now() + 1) == .success)
+        #expect(queueCompleted.wait(timeout: .now() + .testSeconds(1)) == .success)
 
         let currentValues = Synchronized<[Int]>(.unfair, [])
         let store = ValueStore(initialValue: 7)
@@ -288,7 +289,7 @@ struct ValueObserverBuilderTests {
         store.update(.init(isValid: true, payload: nil))
         store.update(.init(isValid: true, payload: .init(value: 2)))
 
-        #expect(completed.wait(timeout: .now() + 1) == .success)
+        #expect(completed.wait(timeout: .now() + .testSeconds(1)) == .success)
         #expect(payloads.read() == [.init(value: 2)])
         withExtendedLifetime(cancellation) {}
     }
@@ -413,6 +414,6 @@ struct ValueObserverBuilderTests {
         sendTermination()
         queue.resume()
 
-        #expect(terminated.wait(timeout: .now() + 1) == .success)
+        #expect(terminated.wait(timeout: .now() + .testSeconds(1)) == .success)
     }
 }

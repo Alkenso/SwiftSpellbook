@@ -1,4 +1,5 @@
 import SpellbookFoundation
+import SpellbookTestUtils
 
 import XCTest
 
@@ -13,8 +14,8 @@ class UtilsTests: XCTestCase {
      }
     
     func test_task_cancel() async {
-        let task = Task.detached { try await Task.sleep(forTimeInterval: .seconds(3)) }
-        try? await Task.sleep(forTimeInterval: 0.01)
+        let task = Task.detached { try await Task.sleep(forTimeInterval: .testSeconds(3)) }
+        try? await Task.sleep(forTimeInterval: .testSeconds(0.01))
         task.cancel()
         let result = await task.result
         XCTAssertThrowsError(try result.get())

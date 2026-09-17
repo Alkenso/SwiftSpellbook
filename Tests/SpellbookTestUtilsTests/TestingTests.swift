@@ -5,13 +5,13 @@ import XCTest
 class TestingTests: XCTestCase {
     func test_web() {
         XCTAssertEqual(
-            Testing.Web.url,
-            URL(string: "\(Testing.Web.urlScheme)://\(Testing.Web.urlHost)\(Testing.Web.urlPath)")
+            TestData.Web.url,
+            URL(string: "\(TestData.Web.urlScheme)://\(TestData.Web.urlHost)\(TestData.Web.urlPath)")
         )
     }
     
     func test_files() {
-        XCTAssertEqual(Testing.Files.url(1), Testing.Files.url(1))
-        XCTAssertNotEqual(Testing.Files.url(1), Testing.Files.url(2))
+        XCTAssertEqual(TestData.Files.url(1), TestData.Files.url(1))
+        XCTAssertNotEqual(TestData.Files.url(1), TestData.Files.url(2))
     }
 }

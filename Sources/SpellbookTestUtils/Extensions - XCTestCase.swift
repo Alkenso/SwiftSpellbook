@@ -24,15 +24,23 @@ import SpellbookFoundation
 import XCTest
 
 extension XCTestCase {
-#if SPELLBOOK_SLOW_CI_x10
+#if SPELLBOOK_TEST_SLEEP_RATE_x1
+    public nonisolated(unsafe) static var waitRate = 1.0
+#elseif SPELLBOOK_TEST_SLEEP_RATE_x2
+    public nonisolated(unsafe) static var waitRate = 2.0
+#elseif SPELLBOOK_TEST_SLEEP_RATE_x3
+    public nonisolated(unsafe) static var waitRate = 3.0
+#elseif SPELLBOOK_TEST_SLEEP_RATE_x5
+    public nonisolated(unsafe) static var waitRate = 5.0
+#elseif SPELLBOOK_TEST_SLEEP_RATE_x10
     public nonisolated(unsafe) static var waitRate = 10.0
-#elseif SPELLBOOK_SLOW_CI_x20
+#elseif SPELLBOOK_TEST_SLEEP_RATE_x20
     public nonisolated(unsafe) static var waitRate = 20.0
-#elseif SPELLBOOK_SLOW_CI_x30
+#elseif SPELLBOOK_TEST_SLEEP_RATE_x30
     public nonisolated(unsafe) static var waitRate = 30.0
-#elseif SPELLBOOK_SLOW_CI_x50
+#elseif SPELLBOOK_TEST_SLEEP_RATE_x50
     public nonisolated(unsafe) static var waitRate = 50.0
-#elseif SPELLBOOK_SLOW_CI_x100
+#elseif SPELLBOOK_TEST_SLEEP_RATE_x100
     public nonisolated(unsafe) static var waitRate = 100.0
 #else
     public nonisolated(unsafe) static var waitRate = 1.0
@@ -66,22 +74,10 @@ extension XCTestCase {
         nonisolated(unsafe) let test = self
         return DispatchQueue.syncOnMain {
             nonisolated(unsafe) var error: Error?
-            test.waitForExpectations(timeout: timeout * Self.waitRate) {
+            test.waitForExpectations(timeout: .testSeconds(timeout)) {
                 error = $0
             }
             return error
         }
-    }
-    
-    public static func sleep(interval: TimeInterval) {
-        Thread.sleep(forTimeInterval: interval * Self.waitRate)
-    }
-    
-    public func sleep(interval: TimeInterval) {
-        Self.sleep(interval: interval)
-    }
-    
-    public func withScope<R, E: Error>(body: () throws(E) -> R) throws(E) -> R {
-        try body()
     }
 }

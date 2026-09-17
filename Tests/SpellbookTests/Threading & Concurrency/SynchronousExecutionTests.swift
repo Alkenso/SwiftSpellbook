@@ -1,4 +1,5 @@
 @testable import SpellbookFoundation
+import SpellbookTestUtils
 
 import Foundation
 import XCTest
@@ -14,7 +15,7 @@ private actor SynchronousExecutorTestActor {
 
 class SynchronousExecutorTests: XCTestCase {
     func test() throws {
-        let dummyValue = Dummy(value: 10, timeout: 0.05)
+        let dummyValue = Dummy(value: 10, timeout: .testSeconds(0.05))
         
         XCTAssertEqual(synchronouslyWithCallback(dummyValue.value), 10)
         XCTAssertEqual(try synchronouslyWithCallback(dummyValue.resultValue).get(), 10)
@@ -22,18 +23,18 @@ class SynchronousExecutorTests: XCTestCase {
         XCTAssertEqual(synchronouslyWithCallback { dummyValue.multiReplyValue(count: 10, reply: $0) }, 10)
         XCTAssertEqual(synchronouslyWithTask { await dummyValue.asyncValue() }, 10)
         
-        let dummyError = Dummy<Int>(value: nil, timeout: 0.05)
+        let dummyError = Dummy<Int>(value: nil, timeout: .testSeconds(0.05))
         XCTAssertThrowsError(try synchronouslyWithTask { try await dummyError.asyncError() })
     }
     
     func test_timeout() throws {
-        let dummyValue = Dummy(value: 10, timeout: 0.1)
-        XCTAssertNil(synchronouslyWithCallback(timeout: 0.05, dummyValue.value))
-        XCTAssertNil(synchronouslyWithCallback(timeout: 0.05, dummyValue.resultValue))
-        XCTAssertNil(synchronouslyWithCallback(timeout: 0.05, dummyValue.optionalValue))
-        XCTAssertNil(synchronouslyWithTask(timeout: 0.05) { await dummyValue.asyncValue() })
+        let dummyValue = Dummy(value: 10, timeout: .testSeconds(0.1))
+        XCTAssertNil(synchronouslyWithCallback(timeout: .testSeconds(0.05), dummyValue.value))
+        XCTAssertNil(synchronouslyWithCallback(timeout: .testSeconds(0.05), dummyValue.resultValue))
+        XCTAssertNil(synchronouslyWithCallback(timeout: .testSeconds(0.05), dummyValue.optionalValue))
+        XCTAssertNil(synchronouslyWithTask(timeout: .testSeconds(0.05)) { await dummyValue.asyncValue() })
         
-        let dummyError = Dummy<Int>(value: nil, timeout: 0.1)
+        let dummyError = Dummy<Int>(value: nil, timeout: .testSeconds(0.1))
         XCTAssertThrowsError(try synchronouslyWithTask { try await dummyError.asyncError() })
     }
 
@@ -75,7 +76,7 @@ class SynchronousExecutorTests: XCTestCase {
     func test_timeout_cancelsTask() {
         let cancelled = expectation(description: "task cancelled")
 
-        let result = synchronouslyWithTask(timeout: 0.01) {
+        let result = synchronouslyWithTask(timeout: .testSeconds(0.01)) {
             while !Task.isCancelled {
                 await Task.yield()
             }
