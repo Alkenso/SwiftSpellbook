@@ -1,5 +1,6 @@
 # SwiftSpellbook
-SwiftSpellbook is collection of additions to Swift standard library that makes development easier.
+
+SwiftSpellbook is a collection of small Swift libraries for Apple platform development. It grew out of utilities reused across macOS and iOS projects. Pick the products you need; the package has no external dependencies.
 
 <p>
   <img src="https://img.shields.io/badge/swift-6.4-orange" />
@@ -17,29 +18,62 @@ If you've found this or other my libraries helpful, share some beer with me :D
 While participating in many projects (macOS and iOS) I use the same tools and standard types extensions.
 Once I've decided stop to copy-paste code from project to project and make single library that covers lots of developer needs in utility code.
 
-## Content
-At top level, the code is organized into libraries that cover big areas.
-Now there are only two:
-- SpellbookFoundation: utility code
-- SpellbookBinaryParsing: convenient way to read and write binary data byte-by-byte
-- SpellbookHTTP: HTTP client
-- SpellbookTestUtils: utility code frequently used for Unit-Tests
 
-## SpellbookFoundation
-The most of utility code lives here.
-- Combine: Combine.framework extensions
-- Common: Mix of commonly used entities
-- DictionaryParsing: deal with data nested deeply in dictionaries
-- Filesystem & Bundle: FileManager, Bundle and same utilities
-- GUI: CoreGraphics utilities. This is NOT an AppKit/UIKit/SwiftUI
-- Low Level: extensions to deal with (popular) C structures, unsafe types, etc. 
-- ObjC Bridging: Caching Objective-C and C++ exceptions from Swift code
-- System & Hardware: UNIX and Process utilities
-- Threading & Concurrency: utilities that make multithead development easier
-- Types & PropertyWrappers: misc types and property wrappers
-- ValueObserving: utilities that allows observe and modify-with-observe on any types
+## Libraries
 
-# Other
+### SpellbookFoundation
+
+General purpose utilities used throughout the package. The main areas are:
+
+- **Common and Errors:** collection and `Codable` extensions, logging, cancellation, wildcard matching, `CommonError`, and error helpers.
+- **DictionaryParsing and Filesystem & Bundle:** nested dictionary reading and writing, `FileStore`, `FileEnumerator`, and `TemporaryDirectory`.
+- **Threading & Concurrency:** locks, `Synchronized`, `Atomic`, queues, promises, and synchronous/asynchronous bridges.
+- **ValueObserving:** stores, broadcasts, observers, and views for sharing and tracking values.
+- **Types & PropertyWrappers:** `Either`, `Pair`, boxing, refreshable values, and resource lifetime helpers.
+- **Combine, Low Level, and System & Hardware:** publisher helpers, memory and C interop, process information, and device information. Some APIs, such as `IOKitError`, are macOS only.
+
+### SpellbookHTTP
+
+Build and send HTTP requests with `URLSession`.
+
+- `HTTPRequest` builds requests; `HTTPMethod`, `HTTPHeader`, and `HTTPQueryItem` describe their parts.
+- `HTTPClient` offers callback and async APIs for data or decoded objects; `HTTPResult` keeps the value and HTTP response together.
+
+### SpellbookBinaryParsing
+
+Read and write binary data at explicit offsets or sequentially.
+
+- `BinaryReader` reads bytes and fixed-size values from `Data` or a custom `BinaryReaderInput`.
+- `BinaryWriter` writes to a `BinaryWriterOutput`, including the provided `DataBinaryWriterOutput`; `BinaryParsingError` reports parsing failures.
+
+### SpellbookGraphics
+
+Color and Core Graphics conveniences, separate from UI views.
+
+- `RGBColor` represents RGBA values, accepts hex colors, and bridges to `CGColor` and available platform color types.
+- Core Graphics extensions add geometry operations and `CGImage` file conversion helpers.
+
+### SpellbookCrash
+
+Attach application context to Apple crash reports.
+
+- `CrashReportAugmentation` adds and removes messages, including scoped messages for synchronous or async work.
+- `CrashInfo` provides access to the crash report's `__crash_info` storage.
+
+### SpellbookUI
+
+A small SwiftUI extension for conditionally transforming a view.
+
+- `View.modify` applies a transform when it produces a view and otherwise returns the original view.
+
+### SpellbookTestUtils
+
+Helpers for XCTest suites.
+
+- `XCTestCase` and `TimeInterval` extensions provide test bundles, temporary directories, and scaled expectation timeouts.
+- `TestData` supplies sample URLs, while `TestError` provides a simple error for tests.
+
+## Related projects
 If you've found this or other my libraries helpful, you could buy me some pizza
 
 <a href="https://www.buymeacoffee.com/alkenso"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a pizza&emoji=🍕&slug=alkenso&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" /></a>
