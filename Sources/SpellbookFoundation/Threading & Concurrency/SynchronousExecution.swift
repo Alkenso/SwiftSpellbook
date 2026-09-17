@@ -110,3 +110,37 @@ private func synchronouslyWithCallback<R>(
     }
     return (group, result)
 }
+
+// The run loop and source are immutable references with thread-safe signaling; completion is atomic.
+private final class RunLoopSemaphore: @unchecked Sendable {
+    private let runLoop = CFRunLoopGetCurrent()!
+    private let source: CFRunLoopSource
+    @Atomic private var completed = false
+    
+    init() {
+        var context = CFRunLoopSourceContext()
+        context.perform = { _ in }
+        self.source = CFRunLoopSourceCreate(nil, 0, &context)!
+    }
+    
+    func signal() {
+        completed = true
+        CFRunLoopSourceSignal(source)
+        CFRunLoopWakeUp(runLoop)
+    }
+    
+    @discardableResult
+    func wait(timeout: DispatchTime = .distantFuture) -> DispatchTimeoutResult {
+        // Keep even an otherwise empty run loop alive until completion or timeout.
+        CFRunLoopAddSource(runLoop, source, .defaultMode)
+        defer { CFRunLoopRemoveSource(runLoop, source, .defaultMode) }
+        
+        while !completed {
+            let now = DispatchTime.now()
+            guard now < timeout else { return .timedOut }
+            let interval = Double(timeout.uptimeNanoseconds - now.uptimeNanoseconds) / 1_000_000_000
+            CFRunLoopRunInMode(.defaultMode, interval, true)
+        }
+        return .success
+    }
+}
