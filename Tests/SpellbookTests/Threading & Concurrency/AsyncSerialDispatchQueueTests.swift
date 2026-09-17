@@ -3,14 +3,14 @@ import SpellbookFoundation
 import Testing
 
 @Suite
-struct AsyncSerialQueueTests {
+struct AsyncSerialDispatchQueueTests {
     private enum ExpectedError: Error, Equatable {
         case failure(Int)
     }
 
     @Test @MainActor
     func asyncRunsInSubmissionOrder() async {
-        let queue = AsyncSerialQueue()
+        let queue = AsyncSerialDispatchQueue()
         var values: [Int] = []
 
         queue.async {
@@ -28,7 +28,7 @@ struct AsyncSerialQueueTests {
 
     @Test(arguments: [false, true])
     func concurrentSync(suspends: Bool) async {
-        let queue = AsyncSerialQueue()
+        let queue = AsyncSerialDispatchQueue()
 
         await withTaskGroup { group in
             for input in 0..<16 {
@@ -47,7 +47,7 @@ struct AsyncSerialQueueTests {
 
     @Test(arguments: [false, true])
     func concurrentSyncFailure(suspends: Bool) async {
-        let queue = AsyncSerialQueue()
+        let queue = AsyncSerialDispatchQueue()
 
         await withTaskGroup(of: Void.self) { group in
             for input in 0..<16 {
@@ -70,7 +70,7 @@ struct AsyncSerialQueueTests {
 
     @Test
     func syncAcceptsInoutCapture() async {
-        func increment(_ value: inout Int, on queue: AsyncSerialQueue) async {
+        func increment(_ value: inout Int, on queue: AsyncSerialDispatchQueue) async {
             await queue.sync {
                 await Task.yield()
                 value += 1
@@ -78,7 +78,7 @@ struct AsyncSerialQueueTests {
         }
 
         var value = 41
-        await increment(&value, on: AsyncSerialQueue())
+        await increment(&value, on: AsyncSerialDispatchQueue())
         #expect(value == 42)
     }
 }

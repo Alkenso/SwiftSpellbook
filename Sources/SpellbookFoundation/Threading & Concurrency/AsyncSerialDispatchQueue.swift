@@ -22,7 +22,7 @@
 
 import Foundation
 
-public final class AsyncSerialQueue: @unchecked Sendable {
+public final class AsyncSerialDispatchQueue: @unchecked Sendable {
     private typealias Operation = () async -> Void
     
     private let continuation: AsyncStream<Operation>.Continuation
