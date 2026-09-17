@@ -215,11 +215,7 @@ public enum CrashReportAugmentation: Sendable {
         }
     }
     
-#if swift(>=6.3)
     @inline(always)
-#else
-    @inline(__always)
-#endif
     private static func storage(for target: Target) -> Storage {
         switch target {
         case .signature: storageSignature
@@ -232,11 +228,9 @@ public enum CrashReportAugmentation: Sendable {
         pthread_threadid_np(nil, &tid)
         
         var taskName: String?
-#if compiler(>=6.2)
         if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, *) {
             taskName = Task.name
         }
-#endif
         
         return [
             ("task", taskName ?? ""),

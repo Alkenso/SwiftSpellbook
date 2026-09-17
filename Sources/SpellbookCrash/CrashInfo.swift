@@ -36,13 +36,8 @@ public struct CrashInfo: BitwiseCopyable {
     }
 }
 
-#if swift(>=6.3)
 @section("__DATA_DIRTY,__crash_info")
 @used
-#else
-@_section("__DATA_DIRTY,__crash_info")
-@_used
-#endif
 private nonisolated(unsafe) var crashInfoStorage: (
     UInt32, UInt32, UInt64, UInt64, UInt64, UInt64, UInt64, UInt64, UInt64
 ) = (5,0,0,0,0,0,0,0,0)
