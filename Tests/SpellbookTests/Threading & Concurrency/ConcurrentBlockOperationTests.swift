@@ -75,8 +75,7 @@ class ConcurrentBlockOperationTests: XCTestCase {
             op.removeObserver(finishedObserver, forKeyPath: "isFinished")
         }
 
-        let queue = OperationQueue()
-        queue.addOperations([op], waitUntilFinished: true)
+        op.start()
 
         XCTAssertEqual(executingObserver.values.read(), [true, false])
         XCTAssertEqual(finishedObserver.values.read(), [true])

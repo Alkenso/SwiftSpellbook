@@ -73,7 +73,7 @@ public final class ConcurrentBlockOperation: Operation, @unchecked Sendable {
         willChangeValue(for: \.isExecuting)
         willChangeValue(for: \.isFinished)
         state = true
-        didChangeValue(for: \.isExecuting)
         didChangeValue(for: \.isFinished)
+        didChangeValue(for: \.isExecuting)
     }
 }
