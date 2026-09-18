@@ -83,14 +83,33 @@ public enum RunEnvironment: Sendable {
         return false
     }()
     
-    /// Runtime check if run from Xcode.
+    /// Runtime check if run from Xcode (Run / Test / Preview actions).
+    ///
+    /// Detection relies on environment variables Xcode injects into launched processes:
+    /// - `OS_ACTIVITY_DT_MODE` (or `IDE_DISABLED_OS_ACTIVITY_DT_MODE` if the user disabled it in the scheme);
+    /// - `__XCODE_BUILT_PRODUCTS_DIR_PATHS`, pointing to the build products directory.
+    /// Note: those variables are inherited by child processes spawned by the app.
     public static let isRunFromXcode: Bool = {
-        guard let mode = ProcessInfo.processInfo.environment["OS_ACTIVITY_DT_MODE"] else { return false }
-        return mode.uppercased() == "YES" || mode == "1"
+        let env = ProcessInfo.processInfo.environment
+        if env["OS_ACTIVITY_DT_MODE"].flatMap(parseBool) == true { return true }
+        if env["IDE_DISABLED_OS_ACTIVITY_DT_MODE"] != nil { return true }
+        if env["__XCODE_BUILT_PRODUCTS_DIR_PATHS"]?.isEmpty == false { return true }
+        return false
     }()
     
-    /// Runtime check if run as Xcode preview.
-    public static let isXcodePreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"]?.isEmpty == false
+    /// Runtime check if run as Xcode preview (SwiftUI / UIKit / AppKit `#Preview`).
+    public static let isXcodePreview: Bool = {
+        let env = ProcessInfo.processInfo.environment
+        if env["XCODE_RUNNING_FOR_PREVIEWS"].flatMap(parseBool) == true { return true }
+        
+        // Xcode 16+ hosts previews inside `XCPreviewAgent` process.
+        if ProcessInfo.processInfo.processName == "XCPreviewAgent" { return true }
+        
+        // Older Xcode versions build & run preview products from dedicated location.
+        if Bundle.main.bundlePath.contains("/Xcode/UserData/Previews/") { return true }
+        
+        return false
+    }()
     
     /// Runtime check if run in simulator.
     public static let isSimulator: Bool = {
@@ -100,4 +119,12 @@ public enum RunEnvironment: Sendable {
             return false
         #endif
     }()
+    
+    private static func parseBool(_ value: String) -> Bool? {
+        switch value.lowercased() {
+        case "1", "yes", "true": true
+        case "0", "no", "false": false
+        default: nil
+        }
+    }
 }
