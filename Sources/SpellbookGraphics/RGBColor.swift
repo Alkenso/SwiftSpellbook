@@ -9,7 +9,7 @@ import SpellbookFoundation
 
 import CoreGraphics
 
-public struct RGBColor: Hashable, Codable, Sendable, ValueBuilder {
+public struct RGBColor: Hashable, Codable, Sendable {
     public var red: CGFloat
     public var green: CGFloat
     public var blue: CGFloat

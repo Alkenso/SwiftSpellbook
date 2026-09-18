@@ -22,39 +22,47 @@
 
 import Foundation
 
-public protocol ValueBuilder {}
-
-extension ValueBuilder {
-    public func set<T>(_ keyPath: WritableKeyPath<Self, T>, _ value: T?) -> Self {
+struct ValueBuilder<T> {
+    public var value: T
+    
+    public func set<Property>(_ keyPath: WritableKeyPath<T, Property>, _ value: Property?) -> Self {
         guard let value = value else { return self }
         var copy = self
-        copy[keyPath: keyPath] = value
+        copy.value[keyPath: keyPath] = value
         return copy
     }
     
-    public func `if`(_ condition: Bool, then: (inout Self) -> Void, `else`: (inout Self) -> Void = { _ in }) -> Self {
+    public func `if`(
+        _ condition: Bool,
+        then: (inout T) -> Void,
+        `else`: (inout T) -> Void = { _ in }
+    ) -> Self {
         var copy = self
         if condition {
-            then(&copy)
+            then(&copy.value)
         } else {
-            `else`(&copy)
+            `else`(&copy.value)
         }
         return copy
     }
     
-    public func ifLet<T>(_ value: T?, then: (inout Self, T) -> Void, `else`: (inout Self) -> Void = { _ in }) -> Self {
+    public func ifLet<U>(
+        _ value: U?,
+        then: (inout T, U) -> Void,
+        `else`: (inout T) -> Void = { _ in }
+    ) -> Self {
         var copy = self
         if let value {
-            then(&copy, value)
+            then(&copy.value, value)
         } else {
-            `else`(&copy)
+            `else`(&copy.value)
         }
         return copy
     }
     
-    public func update(body: (inout Self) -> Void) -> Self {
+    public func modify(_ body: (inout T) -> Void) -> Self {
         var copy = self
-        body(&copy)
+        body(&copy.value)
         return copy
     }
 }

@@ -275,5 +275,3 @@ public struct DictionaryReader<Key: Hashable, Value> {
         )
     }
 }
-
-extension DictionaryReader: ValueBuilder {}
