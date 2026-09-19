@@ -174,7 +174,51 @@ class SequenceTests: XCTestCase {
     }
     
     func test_sorted_keyPath() {
-        XCTAssertEqual(["aaa", "d", "cccc", "bb"].sorted(by: \.count), ["d", "bb", "aaa", "cccc"])
+        XCTAssertEqual(["aaa", "d", "cccc", "bb"].sorted(using: .keyPath(\.count)), ["d", "bb", "aaa", "cccc"])
+        XCTAssertEqual(
+            ["aaa", "d", "cccc", "bb"].sorted(using: .keyPath(\.count, order: .reverse)),
+            ["cccc", "aaa", "bb", "d"]
+        )
+    }
+    
+    func test_sorted_keyPathOptions() {
+        let items = ["1", "11", "12", "112"].map { KeyValue(0, $0) }
+        // Follows Foundation: `String` values are compared using `localizedStandard`.
+        XCTAssertEqual(items.sorted(using: .keyPath(\.value)).map(\.value), ["1", "11", "12", "112"])
+        XCTAssertEqual(items.sorted(using: .keyPath(\.value, options: [])).map(\.value), ["1", "11", "112", "12"])
+        XCTAssertEqual(
+            items.sorted(using: .keyPath(\.value, options: .numeric)).map(\.value),
+            ["1", "11", "12", "112"]
+        )
+        XCTAssertEqual(
+            items.sorted(using: .keyPath(\.value, options: .numeric, order: .reverse)).map(\.value),
+            ["112", "12", "11", "1"]
+        )
+        XCTAssertEqual(
+            ["b", "A", "c"].sorted(using: StringOptionsComparator(options: .caseInsensitive)),
+            ["A", "b", "c"]
+        )
+    }
+
+    func test_sorted_string() {
+        let values = ["1", "11", "12", "112"]
+        XCTAssertEqual(values.sorted(using: .string(options: [])), ["1", "11", "112", "12"])
+        XCTAssertEqual(values.sorted(using: .string(options: .numeric)), ["1", "11", "12", "112"])
+        XCTAssertEqual(values.sorted(using: .string(options: .numeric, order: .reverse)), ["112", "12", "11", "1"])
+
+        XCTAssertEqual(["b", "C", "a"].sorted(using: .string(options: [])), ["C", "a", "b"])
+        XCTAssertEqual(["b", "C", "a"].sorted(using: .string(options: .caseInsensitive)), ["a", "b", "C"])
+
+        let substrings = "b1 a10 a2".split(separator: " ")
+        XCTAssertEqual(substrings.sorted(using: .string(options: .numeric)), ["a2", "a10", "b1"])
+
+        let comparator: StringOptionsComparator<String> = .string(options: .numeric)
+        XCTAssertEqual(comparator.compare("2", "10"), .orderedAscending)
+        XCTAssertEqual(comparator.compare("10", "2"), .orderedDescending)
+        XCTAssertEqual(comparator.compare("2", "2"), .orderedSame)
+        XCTAssertEqual(comparator, .string(options: .numeric))
+        XCTAssertNotEqual(comparator, .string(options: .numeric, order: .reverse))
+        XCTAssertNotEqual(comparator, .string(options: .caseInsensitive))
     }
     
     func test_sorted_options() {

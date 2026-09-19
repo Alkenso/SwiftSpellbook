@@ -314,29 +314,12 @@ extension Sequence {
 
 extension Sequence {
     @inlinable
-    public func sorted<T: Comparable>(by keyPath: KeyPath<Element, T>) -> [Element] {
-        sorted {
-            let lhs = $0[keyPath: keyPath]
-            let rhs = $1[keyPath: keyPath]
-            return lhs < rhs
-        }
-    }
-}
-
-extension Sequence {
-    @inlinable public func sorted(options: String.CompareOptions) -> [Element] where Element: StringProtocol {
-        sorted { $0.compare($1, options: options) == .orderedAscending }
+    public func sorted<T: Comparable>(by keyPath: KeyPath<Element, T> & Sendable) -> [Element] {
+        sorted(using: .keyPath(keyPath))
     }
     
-    @inlinable public func sorted<T: StringProtocol>(
-        by keyPath: KeyPath<Element, T>,
-        options: String.CompareOptions
-    ) -> [Element] {
-        sorted {
-            let lhs = $0[keyPath: keyPath]
-            let rhs = $1[keyPath: keyPath]
-            return lhs.compare(rhs, options: options) == .orderedAscending
-        }
+    @inlinable public func sorted(options: String.CompareOptions) -> [Element] where Element: StringProtocol {
+        sorted(using: .string(options: options))
     }
 }
 
