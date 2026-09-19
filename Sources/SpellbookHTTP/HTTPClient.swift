@@ -27,11 +27,9 @@ import Foundation
 public protocol HTTPClientProtocol: Sendable {
     func data(for request: () throws -> URLRequest, completion: @escaping @Sendable (Result<HTTPResult<Data>, Error>) -> Void)
     
-    @available(macOS 12.0, iOS 15, tvOS 15.0, watchOS 8.0, *)
     func data(for request: () throws -> URLRequest, delegate: URLSessionTaskDelegate?) async throws -> HTTPResult<Data>
 }
 
-@available(macOS 12.0, iOS 15, tvOS 15.0, watchOS 8.0, *)
 extension HTTPClientProtocol {
     public func data(for request: () throws -> URLRequest, completion: @escaping @Sendable (Result<HTTPResult<Data>, any Error>) -> Void) {
         let request = Result(catching: request)
@@ -88,7 +86,6 @@ open class HTTPClient: HTTPClientProtocol, @unchecked Sendable {
         }.resume()
     }
     
-    @available(macOS 12.0, iOS 15, tvOS 15.0, watchOS 8.0, *)
     public func data(
         for request: () throws -> URLRequest,
         delegate: URLSessionTaskDelegate? = nil
@@ -149,7 +146,6 @@ extension HTTPClientProtocol {
     }
 }
 
-@available(macOS 12.0, iOS 15, tvOS 15.0, watchOS 8.0, *)
 extension HTTPClientProtocol {
     public func data(
         for request: HTTPRequest,

@@ -4,7 +4,7 @@ SwiftSpellbook is a collection of small Swift libraries for Apple platform devel
 
 <p>
   <img src="https://img.shields.io/badge/swift-6.4-orange" />
-  <img src="https://img.shields.io/badge/platforms-macOS 12 | iOS 15 | watchOS 9 | tvOS 15-freshgreen" />
+  <img src="https://img.shields.io/badge/platforms-macOS 13 | iOS 16 | watchOS 10 | tvOS 16 | visionOS 2-freshgreen" />
   <img src="https://img.shields.io/badge/Xcode-26 | 27-blue" />
   <img src="https://github.com/Alkenso/SwiftSpellbook/actions/workflows/main.yml/badge.svg" />
 </p>

@@ -26,17 +26,7 @@ import Foundation
 extension Task where Success == Never, Failure == Never {
     public static func sleep(forTimeInterval interval: TimeInterval) async throws {
         let nanoseconds = UInt64(interval * TimeInterval(NSEC_PER_SEC))
-        if #available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *) {
-            try await Task.sleep(for: .nanoseconds(nanoseconds))
-        } else {
-            // Workaround for issue: https://github.com/swiftlang/swift/issues/88259
-            let innerTask = Task<Void, Error> { try await sleep(nanoseconds: nanoseconds) }
-            return try await withTaskCancellationHandler {
-                try await innerTask.value
-            } onCancel: {
-                innerTask.cancel()
-            }
-        }
+        try await Task.sleep(for: .nanoseconds(nanoseconds))
     }
 }
 
