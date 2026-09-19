@@ -55,14 +55,22 @@ extension Data {
         guard hexString.count.isMultiple(of: 2) else { return nil }
         
         var data = Data(capacity: hexString.count / 2)
-        for i in stride(from: 0, to: hexString.count, by: 2) {
-            let byteStart = hexString.index(hexString.startIndex, offsetBy: i)
-            let byteEnd = hexString.index(after: byteStart)
-            let byteString = hexString[byteStart...byteEnd]
-            guard let byte = UInt8(byteString, radix: 16) else { return nil }
-            data.append(byte)
+        
+        var iterator = hexString.makeIterator()
+        while let high = iterator.next(), let low = iterator.next() {
+            guard let high = Self.hexDigitValue(high), let low = Self.hexDigitValue(low) else { return nil }
+            data.append(high << 4 | low)
         }
         self = data
+    }
+    
+    private static func hexDigitValue(_ char: UInt8) -> UInt8? {
+        switch char {
+        case UInt8(ascii: "0")...UInt8(ascii: "9"): char - UInt8(ascii: "0")
+        case UInt8(ascii: "a")...UInt8(ascii: "f"): char - UInt8(ascii: "a") + 10
+        case UInt8(ascii: "A")...UInt8(ascii: "F"): char - UInt8(ascii: "A") + 10
+        default: nil
+        }
     }
 }
 

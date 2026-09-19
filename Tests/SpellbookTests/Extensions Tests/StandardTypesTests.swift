@@ -104,6 +104,19 @@ class DataExtensionsTests: XCTestCase {
             Data(hexString: "ффff"),
             nil
         )
+
+        // Prefix.
+        XCTAssertEqual(Data(hexString: "0x"), Data())
+        XCTAssertEqual(Data(hexString: "0X"), Data())
+        XCTAssertEqual(Data(hexString: "0x0"), nil)
+        XCTAssertEqual(Data(hexString: "0X0aF"), nil)
+        XCTAssertEqual(Data(hexString: "0x0x00"), nil)
+        XCTAssertEqual(Data(hexString: "x00"), nil)
+        XCTAssertEqual(Data(hexString: "0xx00"), nil)
+        XCTAssertEqual(Data(hexString: " 0x00"), nil)
+        XCTAssertEqual(Data(hexString: "00x0"), nil)
+        XCTAssertEqual(Data(hexString: "0x00ff"), Data([0x00, 0xff]))
+        XCTAssertEqual(Data(hexString: "00ff"), Data([0x00, 0xff]))
     }
     
     func test_toHexString() {

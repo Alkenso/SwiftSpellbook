@@ -46,9 +46,6 @@ public struct FileStore<T>: @unchecked Sendable {
 }
 
 extension FileStore where T == Data {
-    @available(*, deprecated, renamed: "standard(writingOptions:)")
-    public static let standard: FileStore = .standard()
-    
     public static func standard(writingOptions: Data.WritingOptions = .atomic) -> FileStore {
         .init(
             read: { location, ifNotExists in
