@@ -353,6 +353,8 @@ class CollectionTests: XCTestCase {
         XCTAssertEqual([1, 2, 3].rotated(shift: -4), [3, 1, 2])
         XCTAssertEqual([1, 2, 3].rotated(shift: -5), [2, 3, 1])
         XCTAssertEqual([1, 2, 3].rotated(shift: -6), [1, 2, 3])
+        
+        XCTAssertEqual([Int]().rotated(shift: 1), [])
     }
     
     func test_removeDuplicates_equatable() {

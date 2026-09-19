@@ -57,6 +57,7 @@ public extension DeviceInfo {
                 userInfo: [NSDebugDescriptionErrorKey: "IOServiceGetMatchingService: failed to match IOPlatformExpertDevice"]
             )
         }
+        defer { IOObjectRelease(platformExpert) }
         
         let property = IORegistryEntryCreateCFProperty(
             platformExpert,

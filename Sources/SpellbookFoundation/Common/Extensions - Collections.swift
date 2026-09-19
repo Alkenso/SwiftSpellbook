@@ -494,8 +494,9 @@ extension RangeReplaceableCollection {
     }
     
     public func rotated(shift: Int = 1) -> Self {
+        guard !isEmpty else { return self }
         let shiftCount = abs(shift % count)
-        guard !isEmpty, shiftCount != 0 else { return self }
+        guard shiftCount != 0 else { return self }
         
         if shift > 0 {
             return Self(dropFirst(shiftCount) + prefix(shiftCount))
