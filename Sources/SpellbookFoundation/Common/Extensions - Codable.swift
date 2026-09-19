@@ -270,7 +270,10 @@ extension KeyedArchiveSerializable: Serializable {
     
     fileprivate static func dataToObject(_ data: Data) throws -> Any? {
         try NSException.catchingAll {
-            let object = try NSKeyedUnarchiver.unarchivedObject(ofClass: T.self, from: data)
+            let unarchiver = try NSKeyedUnarchiver(forReadingFrom: data)
+            unarchiver.requiresSecureCoding = false
+            defer { unarchiver.finishDecoding() }
+            let object = unarchiver.decodeObject(forKey: NSKeyedArchiveRootObjectKey)
             return try object.get(name: "\(formatName) root object")
         }
     }

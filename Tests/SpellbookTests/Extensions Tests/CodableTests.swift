@@ -61,6 +61,32 @@ class CodableTests: XCTestCase {
         XCTAssertEqual(decoded.code, 10)
         XCTAssertEqual(decoded.userInfo[NSDebugDescriptionErrorKey] as? String, "test")
     }
+    
+    func test_NSKeyedArchiveSerializable_nonSecureCoding() throws {
+        @KeyedArchiveSerializable var object = NonSecureCodingObject(value: "test")
+        let data = try JSONEncoder().encode(_object)
+        
+        let decoded = try JSONDecoder().decode(KeyedArchiveSerializable<NonSecureCodingObject>.self, from: data).wrappedValue
+        XCTAssertEqual(decoded.value, "test")
+    }
+}
+
+@objc(SpellbookTestsNonSecureCodingObject)
+private final class NonSecureCodingObject: NSObject, NSCoding {
+    let value: String
+    
+    init(value: String) {
+        self.value = value
+    }
+    
+    init?(coder: NSCoder) {
+        guard let value = coder.decodeObject(forKey: "value") as? String else { return nil }
+        self.value = value
+    }
+    
+    func encode(with coder: NSCoder) {
+        coder.encode(value, forKey: "value")
+    }
 }
 
 class DictionaryCoderTests: XCTestCase {

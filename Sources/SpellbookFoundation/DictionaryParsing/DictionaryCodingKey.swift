@@ -97,7 +97,7 @@ extension DictionaryCodingError: CustomNSError {
         
         var fullDescription = description
         fullDescription += context.flatMap { ". \($0)" } ?? ""
-        fullDescription += "Coding path = \(codingPath)"
+        fullDescription += ". Coding path = \(codingPath)"
         userInfo[NSDebugDescriptionErrorKey] = fullDescription
         
         underlyingError.flatMap { userInfo[NSUnderlyingErrorKey] = $0 }
