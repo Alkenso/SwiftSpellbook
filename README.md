@@ -38,7 +38,7 @@ The package is split into independent products. Add only the ones you need; ever
 The core of the package: extensions to the standard library and Foundation, plus a set of small, focused types that remove boilerplate you would otherwise copy between projects.
 
 #### Collections, standard types and utilities
-- **Collections:** `subscript(safe:)`, `removingDuplicates()`, `stableSorted`, `sorted(by: \.keyPath)`, `min/max(by: \.keyPath)`, `firstMapped`/`lastMapped`, `keyedMap`, `recursiveMap`, `rotated`, `appending`, `Dictionary[key, create:]` and more.
+- **Collections:** `subscript(safe:)`, `removingDuplicates()`, `sorted(by: \.keyPath)`, `min/max(by: \.keyPath)`, `firstMapped`/`lastMapped`, `keyedMap`, `recursiveMap`, `rotated`, `appending`, `Dictionary[key, create:]` and more.
 - **Standard types:** `Data` ⇄ hex string and POD conversion, `Optional.get()` that throws a meaningful error instead of force-unwrapping, `Optional[default:]`, `Result.success`/`.failure`, `URL(staticString:)`, `String` path helpers, key-value string parsing, `TimeInterval.minutes(_:)`/`.hours(_:)`, `Date.inPast`/`inFuture`, `UUID.zero`.
 - **Comparable:** `clamped(to:)`, the `@Clamped` property wrapper and `RawComparable` for enums with comparable raw values.
 - **Diffing:** `CollectionDiff` and `DictionaryDiff` describe added, removed and changed elements between two snapshots.
@@ -74,7 +74,7 @@ The core of the package: extensions to the standard library and Foundation, plus
 - `AsyncSerialDispatchQueue` runs async operations strictly one after another.
 - `BlockingQueue`: a producer-consumer queue with blocking `dequeue` and cancellation.
 - `ConcurrentBlockOperation`: an `Operation` that finishes when your async work calls completion.
-- Bridging sync and async code: `synchronouslyWithTask`, `synchronouslyWithCallback`, `Task.runWithCompletion`, `DispatchQueue.syncOnMain`.
+- Bridging sync and async code: `synchronouslyWithTask`, `synchronouslyWithCallback`, `DispatchQueue.syncOnMain`.
 - `DispatchQueue` helpers: `debounce`, `asyncAfter(delay:)`, `asyncPeriodically`.
 - `Task.sleep(forTimeInterval:)`, `UncheckedSendable`, `synchronized(_:_:)` (Objective-C `@synchronized` equivalent).
 

@@ -63,10 +63,10 @@ extension CustomErrorUpdating {
                 if merged[NSUnderlyingErrorKey] == nil {
                     merged[NSUnderlyingErrorKey] = $0.value
                 } else {
-                    let errors = merged[Self.multipleUnderlyingErrorsKey] as? [Any] ?? []
-                    merged[Self.multipleUnderlyingErrorsKey] = errors.appending($0.value)
+                    let errors = merged[NSMultipleUnderlyingErrorsKey] as? [Any] ?? []
+                    merged[NSMultipleUnderlyingErrorsKey] = errors.appending($0.value)
                 }
-            case Self.multipleUnderlyingErrorsKey:
+            case NSMultipleUnderlyingErrorsKey:
                 guard let newErrors = $0.value as? [Error] else {
                     log.error("Value for Error userInfo key \($0.key) MUST be of type [Error]", assert: true)
                     return
@@ -78,13 +78,5 @@ extension CustomErrorUpdating {
             }
         }
         return merged
-    }
-    
-    public static var multipleUnderlyingErrorsKey: String {
-        if #available(macOS 11.3, iOS 14.5, tvOS 14.5, watchOS 7.4, *) {
-            return NSMultipleUnderlyingErrorsKey
-        } else {
-            return "NSMultipleUnderlyingErrorsKey"
-        }
     }
 }

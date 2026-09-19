@@ -72,7 +72,7 @@ class NSErrorTests: XCTestCase {
             .appendingUnderlyingError(underlyingError3)
         XCTAssertEqual((error2.userInfo[NSUnderlyingErrorKey] as? NSError)?.domain, "Test 1")
         XCTAssertEqual((error2.userInfo[NSUnderlyingErrorKey] as? NSError)?.code, 1)
-        if let error2UnderlyingErrors = error2.userInfo[NSError.multipleUnderlyingErrorsKey] as? [NSError], error2UnderlyingErrors.count == 2 {
+        if let error2UnderlyingErrors = error2.userInfo[NSMultipleUnderlyingErrorsKey] as? [NSError], error2UnderlyingErrors.count == 2 {
             XCTAssertEqual(error2UnderlyingErrors[0].domain, "Test 2")
             XCTAssertEqual(error2UnderlyingErrors[0].code, 2)
             

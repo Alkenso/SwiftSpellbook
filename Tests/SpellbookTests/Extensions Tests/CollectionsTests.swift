@@ -171,47 +171,6 @@ class SequenceTests: XCTestCase {
             [2: KeyValue(2, "b"), 3: KeyValue(3, "c"), 1: KeyValue(1, "d"), 5: KeyValue(5, "e")]
         )
     }
-    
-    struct StableSortItem: Equatable {
-        let value: Int
-        let tag: String
-    }
-    
-    func test_stableSorted_byComparator() {
-        let input = [
-            StableSortItem(value: 2, tag: "a"),
-            StableSortItem(value: 1, tag: "b"),
-            StableSortItem(value: 2, tag: "c"),
-            StableSortItem(value: 1, tag: "d")
-        ]
-        
-        let result = input.stableSorted { $0.value < $1.value }
-        
-        XCTAssertEqual(result.map(\.tag), ["b", "d", "a", "c"])
-    }
-    
-    func test_stableSorted_byKeyPath() {
-        let input = [
-            StableSortItem(value: 3, tag: "x"),
-            StableSortItem(value: 2, tag: "y"),
-            StableSortItem(value: 3, tag: "z"),
-        ]
-        
-        let result = input.stableSorted(by: \.value)
-        XCTAssertEqual(result.map(\.tag), ["y", "x", "z"])
-    }
-    
-    func test_stableSorted_empty() {
-        let input: [StableSortItem] = []
-        let result = input.stableSorted(by: \.value)
-        XCTAssertEqual(result, [])
-    }
-    
-    func test_stableSorted_allEqual() {
-        let input = [StableSortItem(value: 1, tag: "a"), StableSortItem(value: 1, tag: "b")]
-        let result = input.stableSorted(by: \.value)
-        XCTAssertEqual(result.map(\.tag), ["a", "b"])
-    }
 }
 
 class CollectionTests: XCTestCase {
