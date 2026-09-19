@@ -68,19 +68,19 @@ extension FileManager {
     }
     
     /// Removes the file or directory at the specified URL only if it exists.
-    /// Just combination of `fileExists` and `removeItem`.
+    /// Same as `removeItem`, but does not throw if the item does not exist.
     public func removeItemIfExists(at url: URL) throws {
-        if fileExists(at: url) {
+        do {
             try removeItem(at: url)
-        }
+        } catch CocoaError.fileNoSuchFile {}
     }
     
     /// Removes the file or directory at the specified path only if it exists.
-    /// Just combination of `fileExists` and `removeItem`.
+    /// Same as `removeItem`, but does not throw if the item does not exist.
     public func removeItemIfExists(atPath path: String) throws {
-        if fileExists(atPath: path) {
+        do {
             try removeItem(atPath: path)
-        }
+        } catch CocoaError.fileNoSuchFile {}
     }
     
     /// stat file at given URL

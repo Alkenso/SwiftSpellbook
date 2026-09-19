@@ -92,6 +92,18 @@ class DataExtensionsTests: XCTestCase {
             Data(hexString: "qq"),
             nil
         )
+        XCTAssertEqual(
+            Data(hexString: "0X0aFF"),
+            Data([0x0a, 0xff])
+        )
+        XCTAssertEqual(
+            Data(hexString: "+f"),
+            nil
+        )
+        XCTAssertEqual(
+            Data(hexString: "ффff"),
+            nil
+        )
     }
     
     func test_toHexString() {

@@ -40,17 +40,14 @@ extension Bundle {
 extension Bundle {
     /// Searches for given resource inside the bundle and checks if the file exists.
     /// Equivalent to Bundle::url(forResource:withExtension) + FileManager::fileExists.
-    /// - throws: NSError with code NSURLErrorFileDoesNotExist, domain NSURLErrorDomain if file does not exist.
+    /// - throws: `CocoaError.Code.fileNoSuchFile` if file does not exist.
     public func existingURL(forResource name: String, withExtension ext: String?) throws -> URL {
         guard let url = url(forResource: name, withExtension: ext),
               FileManager.default.fileExists(atPath: url.path)
         else {
-            throw NSError(
-                domain: NSURLErrorDomain,
-                code: NSURLErrorFileDoesNotExist,
-                userInfo: [
-                    NSDebugDescriptionErrorKey: "Resource file \(name) not found.",
-                ]
+            throw CocoaError(
+                .fileNoSuchFile,
+                userInfo: [NSDebugDescriptionErrorKey: "Resource file \(name) not found."]
             )
         }
         

@@ -36,6 +36,34 @@ class DictionaryTests: XCTestCase {
         XCTAssertEqual(dict[3, create: "e"], "e")
         XCTAssertEqual(dict.count, 3)
     }
+    
+    func test_removePopRandom() throws {
+        var dict = [1: "q", 2: "w"]
+        let removed = dict.removeRandom()
+        XCTAssertNil(dict[removed.key])
+        XCTAssertEqual(dict.count, 1)
+        
+        let popped = try XCTUnwrap(dict.popRandom())
+        XCTAssertNil(dict[popped.key])
+        XCTAssertEqual(dict.count, 0)
+        
+        XCTAssertNil(dict.popRandom())
+    }
+}
+
+class SetTests: XCTestCase {
+    func test_removePopRandom() throws {
+        var set: Set = [1, 2]
+        let removed = set.removeRandom()
+        XCTAssertFalse(set.contains(removed))
+        XCTAssertEqual(set.count, 1)
+        
+        let popped = try XCTUnwrap(set.popRandom())
+        XCTAssertFalse(set.contains(popped))
+        XCTAssertEqual(set.count, 0)
+        
+        XCTAssertNil(set.popRandom())
+    }
 }
 
 class ArrayTests: XCTestCase {
@@ -191,6 +219,10 @@ class CollectionTests: XCTestCase {
         XCTAssertEqual([10][safe: 1], nil)
         XCTAssertEqual([10][safe: -1], nil)
         XCTAssertEqual(Array<Int>()[safe: -1], nil)
+        
+        let string = "ab"
+        XCTAssertEqual(string[safe: string.startIndex], "a")
+        XCTAssertEqual(string[safe: string.endIndex], nil)
     }
     
     func test_subscript_popFirst() {

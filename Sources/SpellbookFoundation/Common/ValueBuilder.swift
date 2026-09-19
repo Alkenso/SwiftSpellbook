@@ -22,8 +22,12 @@
 
 import Foundation
 
-struct ValueBuilder<T> {
+public struct ValueBuilder<T> {
     public var value: T
+    
+    public init(value: T) {
+        self.value = value
+    }
     
     public func set<Property>(_ keyPath: WritableKeyPath<T, Property>, _ value: Property?) -> Self {
         guard let value = value else { return self }

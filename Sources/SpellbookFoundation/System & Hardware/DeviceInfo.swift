@@ -78,21 +78,19 @@ public extension DeviceInfo {
 }
 #endif
 
-// MARK: - iOS
+// MARK: - iOS, tvOS, watchOS, visionOS
 
-#if os(iOS)
+#if !os(macOS)
 extension DeviceInfo {
+    /// Device model identifier, e.g. "iPhone15,2".
     /// Models: https://gist.github.com/adamawolf/3048717
     public static var modelName: String {
         var systemInfo = utsname()
         uname(&systemInfo)
         
-        let machineMirror = Mirror(reflecting: systemInfo.machine)
-        let identifier = machineMirror.children.reduce("") { identifier, element in
-            guard let value = element.value as? Int8, value != 0 else { return identifier }
-            return identifier + String(UnicodeScalar(UInt8(value)))
+        return withUnsafeBytes(of: systemInfo.machine) {
+            String(decoding: $0.prefix { $0 != 0 }, as: UTF8.self)
         }
-        return identifier
     }
 }
 #endif

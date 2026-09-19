@@ -122,7 +122,14 @@ extension Dictionary {
 }
 
 extension Dictionary {
-    public mutating func removeRandom() -> Element? {
+    /// Removes and returns a random element. The dictionary must not be empty.
+    public mutating func removeRandom() -> Element {
+        guard let random = popRandom() else { preconditionFailure("Can't remove random element from an empty dictionary") }
+        return random
+    }
+    
+    /// Removes and returns a random element, or `nil` if the dictionary is empty.
+    public mutating func popRandom() -> Element? {
         guard let random = randomElement() else { return nil }
         removeValue(forKey: random.key)
         return random
@@ -151,7 +158,14 @@ extension Dictionary {
 // MARK: - Set
 
 extension Set {
-    public mutating func removeRandom() -> Element? {
+    /// Removes and returns a random element. The set must not be empty.
+    public mutating func removeRandom() -> Element {
+        guard let random = popRandom() else { preconditionFailure("Can't remove random element from an empty set") }
+        return random
+    }
+    
+    /// Removes and returns a random element, or `nil` if the set is empty.
+    public mutating func popRandom() -> Element? {
         randomElement().flatMap { remove($0) }
     }
 }
@@ -361,7 +375,7 @@ extension Sequence {
 extension Collection {
     /// Bounds-safe access to the element at index.
     public subscript(safe index: Index) -> Element? {
-        indices.contains(index) ? self[index] : nil
+        index >= startIndex && index < endIndex ? self[index] : nil
     }
     
     @inlinable public func firstAfter(_ element: Element) -> Element? where Element: Equatable {
@@ -476,13 +490,15 @@ extension RangeReplaceableCollection {
         }
     }
     
+    /// Removes and returns a random element. The collection must not be empty.
     @inlinable public mutating func removeRandom() -> Element {
-        indices.randomElement().flatMap { remove(at: $0) } ?? removeFirst()
+        guard let random = popRandom() else { preconditionFailure("Can't remove random element from an empty collection") }
+        return random
     }
     
+    /// Removes and returns a random element, or `nil` if the collection is empty.
     @inlinable public mutating func popRandom() -> Element? {
-        guard !isEmpty else { return nil }
-        return removeRandom()
+        indices.randomElement().map { remove(at: $0) }
     }
     
     public func removingDuplicates<E: Error>(by isEqual: (Element, Element) throws(E) -> Bool) throws(E) -> Self {

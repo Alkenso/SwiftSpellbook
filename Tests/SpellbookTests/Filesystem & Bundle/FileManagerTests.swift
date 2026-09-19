@@ -24,6 +24,15 @@ class FileManagerExtensionsTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(at: file))
     }
     
+    func test_removeItemIfExists() throws {
+        let file = try tempDir.createFile(name: "testfile", content: Data())
+        XCTAssertNoThrow(try FileManager.default.removeItemIfExists(at: file))
+        XCTAssertFalse(FileManager.default.fileExists(at: file))
+        
+        XCTAssertNoThrow(try FileManager.default.removeItemIfExists(at: file))
+        XCTAssertNoThrow(try FileManager.default.removeItemIfExists(atPath: file.path))
+    }
+    
     func test_directoryExistsAt() throws {
         let directory = tempDir.location
         let file = try tempDir.createFile(name: "testfile", content: Data())

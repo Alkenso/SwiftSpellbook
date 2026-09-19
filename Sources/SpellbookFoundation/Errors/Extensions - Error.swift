@@ -42,10 +42,20 @@ extension Error {
         let compatibleError = NSError(
             domain: nsError.domain,
             code: nsError.code,
-            userInfo: nsError.userInfo.mapValues {
-                if $0 is NSSecureCoding { $0 } else { String(describing: $0) }
-            }
+            userInfo: nsError.userInfo.mapValues(Self.secureCodingCompliantValue)
         )
         return compatibleError
+    }
+    
+    private static func secureCodingCompliantValue(_ value: Any) -> Any {
+        if let error = value as? Error {
+            error.secureCodingCompliant()
+        } else if let errors = value as? [Error] {
+            errors.map { $0.secureCodingCompliant() }
+        } else if value is NSSecureCoding {
+            value
+        } else {
+            String(describing: value)
+        }
     }
 }

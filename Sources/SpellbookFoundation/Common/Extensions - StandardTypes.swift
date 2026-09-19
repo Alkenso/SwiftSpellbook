@@ -46,9 +46,12 @@ extension DataProtocol {
 extension Data {
     /// Initializes Data with hex string.
     /// - Parameters:
-    ///     - hexString: string in form "00FAB1C0". May be prefixed with "0x".
+    ///     - hexString: string in form "00FAB1C0". May be prefixed with "0x" or "0X".
     public init?(hexString string: String) {
-        let hexString = string.dropFirst(string.hasPrefix("0x") ? 2 : 0)
+        var hexString = string.utf8[...]
+        if string.hasPrefix("0x") || string.hasPrefix("0X") {
+            hexString = hexString.dropFirst(2)
+        }
         guard hexString.count.isMultiple(of: 2) else { return nil }
         
         var data = Data(capacity: hexString.count / 2)
@@ -163,9 +166,8 @@ extension URL {
 }
 
 extension URL {
-    /// Determines file type of given URL.
-    /// Does NOT resolve symlinks.
-    /// - throws: `URLError.Code.unsupportedURL` if URL is not a file URL or file can't be stat'ed.
+    /// Ensures the URL is a file URL.
+    /// - throws: `URLError.Code.unsupportedURL` if URL is not a file URL.
     public func ensureFileURL() throws {
         if !isFileURL {
             throw URLError(
