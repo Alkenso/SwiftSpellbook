@@ -51,6 +51,20 @@ public class DebounceContext: @unchecked Sendable {
 }
 
 extension DispatchQueue {
+    /// Same as `async(execute:)`, but accepts non-Sendable closure by transferring its ownership to the queue.
+    /// It is safe because the queue executes the submitted closure exactly once.
+    /// - Note: `async` name can't be used: closures passed to any `DispatchQueue.async` are inferred as `@Sendable`.
+    public func asyncSending(
+        qos: DispatchQoS = .unspecified,
+        flags: DispatchWorkItemFlags = [],
+        execute work: sending @escaping () -> Void
+    ) {
+        nonisolated(unsafe) let work = work
+        async(qos: qos, flags: flags) { work() }
+    }
+}
+
+extension DispatchQueue {
     public func asyncAfter(
         delay: TimeInterval,
         qos: DispatchQoS = .unspecified,
@@ -109,6 +123,28 @@ extension DispatchQueue {
             } else {
                 return try DispatchQueue.main.sync(execute: work)
             }
+        }
+    }
+}
+
+extension DispatchQueue {
+    /// Wraps `body` into closure that performs it synchronously on the queue.
+    public func wrapSync<each Arg, R, E: Error>(
+        _ body: @escaping @Sendable (repeat each Arg) throws(E) -> R
+    ) -> @Sendable (repeat each Arg) throws(E) -> R {
+        { (args: repeat each Arg) throws(E) -> R in
+            try _typedRethrow(error: E.self) {
+                try self.sync { try body(repeat each args) }
+            }
+        }
+    }
+    
+    /// Wraps `body` into closure that performs it asynchronously on the queue.
+    public func wrapAsync<each Arg: Sendable>(
+        _ body: @escaping @Sendable (repeat each Arg) -> Void
+    ) -> @Sendable (repeat each Arg) -> Void {
+        { (args: repeat each Arg) in
+            self.async { body(repeat each args) }
         }
     }
 }
