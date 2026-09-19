@@ -25,7 +25,7 @@ import Foundation
 
 extension ValueStore: _ValueUpdateWrapping {
     public func _readValue<R>(body: (Value) -> sending R) -> sending R {
-        update { body($0) }
+        body(value)
     }
     
     public func _updateValue<R>(body: (inout Value) -> sending R) -> sending R {

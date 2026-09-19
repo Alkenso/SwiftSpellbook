@@ -205,4 +205,15 @@ struct ValueStoreTests {
         root = nil
         #expect(await iteratorLeafA.next() == nil)
     }
+    
+    @Test
+    func subscriptRead_doesNotNotify() async {
+        let store = ValueStore(initialValue: ["a": 1])
+        var iterator = store.stream().makeAsyncIterator()
+        
+        #expect(store["a"] == 1)
+        store["a"] = 2
+        
+        #expect(await iterator.next()?.new == ["a": 2])
+    }
 }
