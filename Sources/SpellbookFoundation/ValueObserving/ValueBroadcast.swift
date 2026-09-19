@@ -31,7 +31,7 @@ public final class ValueBroadcast<Value: Sendable>: ValueObserving {
     nonisolated(unsafe)
     public var notifyQueue: DispatchQueue? = .global()
     
-    public func observe(includingCurrentValue: Bool = false, _ observer: ValueObserver<Value>) -> Cancellation {
+    public func observe(options: ValueObservingOptions, _ observer: ValueObserver<Value>) -> Cancellation {
         let id = UUID()
         observers[id] = observer
         return .init { [weak observers] in observers?.removeValue(forKey: id) }

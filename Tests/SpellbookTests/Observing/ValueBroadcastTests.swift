@@ -14,7 +14,7 @@ struct ValueBroadcastTests {
             broadcast.observe(.init { value in
                 if let value { firstValues.append(value) }
             }),
-            broadcast.observe(includingCurrentValue: true, .init { value in
+            broadcast.observe(options: .currentValue, .init { value in
                 if let value { secondValues.append(value) }
             }),
         ]

@@ -24,11 +24,11 @@ import Foundation
 
 @dynamicMemberLookup
 public final class ValueObservable<Value: Sendable>: ValueObserving {
-    private let observe: @Sendable (Bool, ValueObserver<ValueChange<Value>>) -> Cancellation
+    private let observe: @Sendable (ValueObservingOptions, ValueObserver<ValueChange<Value>>) -> Cancellation
     
     public init(
         view: ValueView<Value>,
-        observe: @escaping @Sendable (Bool, ValueObserver<ValueChange<Value>>) -> Cancellation
+        observe: @escaping @Sendable (ValueObservingOptions, ValueObserver<ValueChange<Value>>) -> Cancellation
     ) {
         self.view = view
         self.observe = observe
@@ -42,8 +42,8 @@ public final class ValueObservable<Value: Sendable>: ValueObserving {
         value[keyPath: keyPath]
     }
     
-    public func observe(includingCurrentValue: Bool, _ observer: ValueObserver<ValueChange<Value>>) -> Cancellation {
-        observe(includingCurrentValue, observer)
+    public func observe(options: ValueObservingOptions, _ observer: ValueObserver<ValueChange<Value>>) -> Cancellation {
+        observe(options, observer)
     }
 }
 
@@ -55,9 +55,9 @@ extension ValueObservable {
     public func scope<U: Sendable>(_ transform: @escaping @Sendable (Value) -> U) -> ValueObservable<U> {
         ValueObservable<U>(
             view: .init { transform(self.value) },
-            observe: { includingCurrentValue, observer in
+            observe: { options, observer in
                 self.observe(
-                    includingCurrentValue: includingCurrentValue,
+                    options: options,
                     ValueObserver(
                         name: observer.name.flatMap { "\($0).scope(\(U.self))" },
                         observe: { observer.observe($0?.map(transform)) }
@@ -78,8 +78,8 @@ extension ValueObservable {
 
 extension ValueObservable {
     public static func constant(_ value: Value) -> ValueObservable {
-        .init(view: .constant(value)) { includeCurrentValue, observer in
-            if includeCurrentValue {
+        .init(view: .constant(value)) { options, observer in
+            if options.contains(.currentValue) {
                 observer.observe(.init(old: value, new: value, context: ValueChangeContextCurrentValue()))
             }
             return .init {}

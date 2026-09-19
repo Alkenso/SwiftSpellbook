@@ -50,7 +50,7 @@ struct ValueStoreTests {
     @Test
     func simpleNotify_includingCurrentValue() async {
         let store = ValueStore(initialValue: 0)
-        var iterator = store.stream(includingCurrentValue: true).makeAsyncIterator()
+        var iterator = store.stream(options: .currentValue).makeAsyncIterator()
         
         let initialChange = await iterator.next()
         #expect(initialChange?.old == 0)
@@ -70,7 +70,7 @@ struct ValueStoreTests {
         nonisolated(unsafe) var receivedValues: [Int] = []
         
         let cancellation = store.observe(
-            includingCurrentValue: true,
+            options: .currentValue,
             ValueObserver { change in
                 guard let change else { return }
                 receivedValues.append(change.new)

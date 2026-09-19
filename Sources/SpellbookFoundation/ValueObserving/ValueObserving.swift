@@ -25,20 +25,33 @@ import Foundation
 public protocol ValueObserving<ObservedValue>: Sendable {
     associatedtype ObservedValue: Sendable
     
-    func observe(includingCurrentValue: Bool, _ observer: ValueObserver<ObservedValue>) -> Cancellation
+    func observe(options: ValueObservingOptions, _ observer: ValueObserver<ObservedValue>) -> Cancellation
+}
+
+/// Options that control how observation is performed.
+public struct ValueObservingOptions: Hashable, Sendable, OptionSet {
+    public let rawValue: Int
+    public init(rawValue: Int) { self.rawValue = rawValue }
+
+    /// Requests immediate delivery of the current value when observation starts,
+    /// if a current value is available.
+    ///
+    /// Some observables may not have a current value by design. In that case,
+    /// enabling this option has no effect.
+    public static let currentValue = Self(rawValue: 1 << 0)
 }
 
 extension ValueObserving {
     public func observe(_ observer: ValueObserver<ObservedValue>) -> Cancellation {
-        observe(includingCurrentValue: false, observer)
+        observe(options: [], observer)
     }
     
     public func observe(
         isolation: isolated (any Actor)? = #isolation,
-        includingCurrentValue: Bool = false,
+        options: ValueObservingOptions = [],
         _ observer: @escaping (ObservedValue?) async -> Void
     ) -> Cancellation {
-        Task { [stream = stream(includingCurrentValue: includingCurrentValue)] in
+        Task { [stream = stream(options: options)] in
             _ = isolation
             for await change in stream {
                 await observer(change)
@@ -47,7 +60,7 @@ extension ValueObserving {
         }.eraseToCancellation()
     }
     
-    public func stream(includingCurrentValue: Bool = false) -> AsyncStream<ObservedValue> {
+    public func stream(options: ValueObservingOptions = []) -> AsyncStream<ObservedValue> {
         let (stream, continuation) = AsyncStream<ObservedValue>.makeStream()
         
         let observer = ValueObserver<ObservedValue> { value in
@@ -57,7 +70,7 @@ extension ValueObserving {
                 continuation.finish()
             }
         }
-        let subscription = observe(includingCurrentValue: includingCurrentValue, observer)
+        let subscription = observe(options: options, observer)
         continuation.onTermination = { _ in subscription.cancel() }
         
         return stream

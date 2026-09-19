@@ -48,7 +48,7 @@ struct ValueObservableTests {
     @Test
     func simpleNotify_includingCurrentValue() async {
         let store = ValueStore(initialValue: 0)
-        var iterator = store.observable.stream(includingCurrentValue: true).makeAsyncIterator()
+        var iterator = store.observable.stream(options: .currentValue).makeAsyncIterator()
 
         let initialChange = await iterator.next()
         #expect(initialChange?.old == 0)
@@ -128,7 +128,7 @@ struct ValueObservableTests {
         let observable = ValueObservable.constant(10)
         #expect(observable.value == 10)
 
-        var iterator = observable.stream(includingCurrentValue: true).makeAsyncIterator()
+        var iterator = observable.stream(options: .currentValue).makeAsyncIterator()
         let change = await iterator.next()
         #expect(change?.old == 10)
         #expect(change?.new == 10)

@@ -49,8 +49,8 @@ public final class ValueStore<Value: Sendable>: ValueObserving {
     
     public var value: Value { valueStore.read() }
     
-    public func observe(includingCurrentValue: Bool, _ observer: ValueObserver<ValueChange<Value>>) -> Cancellation {
-        downstream.register(observer: observer, withCurrentValue: includingCurrentValue)
+    public func observe(options: ValueObservingOptions, _ observer: ValueObserver<ValueChange<Value>>) -> Cancellation {
+        downstream.register(observer: observer, withCurrentValue: options.contains(.currentValue))
     }
     
     public var observable: ValueObservable<Value> {

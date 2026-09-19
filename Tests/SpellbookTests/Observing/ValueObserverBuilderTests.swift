@@ -256,7 +256,7 @@ struct ValueObserverBuilderTests {
         let currentValues = Synchronized<[Int]>(.unfair, [])
         let store = ValueStore(initialValue: 7)
         let cancellation = store.observe(
-            includingCurrentValue: true,
+            options: .currentValue,
             .map(\.new).sync { value in
                 currentValues.write { $0.append(value) }
             }
