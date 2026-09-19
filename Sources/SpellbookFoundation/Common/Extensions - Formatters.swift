@@ -31,9 +31,10 @@ extension DateFormatter {
     ) {
         self.init()
         
-        self.dateFormat = dateFormat
+        locale = Locale(identifier: "en_US_POSIX")
         dateStyle.flatMap { self.dateStyle = $0 }
         timeStyle.flatMap { self.timeStyle = $0 }
         timeZone.flatMap { self.timeZone = $0 }
+        self.dateFormat = dateFormat
     }
 }

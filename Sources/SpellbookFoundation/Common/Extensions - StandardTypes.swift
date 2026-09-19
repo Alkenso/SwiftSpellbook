@@ -486,7 +486,9 @@ extension Calendar {
     
     /// The last moment of the given date. 1ms less than next day start.
     public func endOfDay(for date: Date) -> Date {
-        startOfDay(for: date).addingTimeInterval(24 * 60 * 60 - 0.001)
+        let start = startOfDay(for: date)
+        let nextDayStart = self.date(byAdding: .day, value: 1, to: start) ?? start.addingTimeInterval(24 * 60 * 60)
+        return nextDayStart.addingTimeInterval(-0.001)
     }
 }
 

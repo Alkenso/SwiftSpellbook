@@ -117,7 +117,7 @@ for await change in store.scope(\.isEnabled).stream() { ... }
 - `BridgedCEnum` for Swift-friendly wrappers around C enums.
 - Mach time conversions: `TimeInterval(machTime:)`, `Date(machTime:)`.
 - `audit_token_t` accessors (pid, euid, …) and `NSXPCConnection.auditToken` (macOS only).
-- `DeviceInfo`: hardware UUID and serial number on macOS, model name on iOS. `ProcessInfo.systemBootDate`.
+- `DeviceInfo`: hardware UUID and serial number on macOS, model name on iOS``.
 
 ### SpellbookHTTP
 

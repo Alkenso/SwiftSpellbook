@@ -41,16 +41,23 @@ extension TimeInterval {
 extension Date {
     public init?(machTime: UInt64) {
         guard let machSeconds = TimeInterval(machTime: machTime) else { return nil }
-        self = ProcessInfo.processInfo.systemBootDate.addingTimeInterval(machSeconds)
+        self = Self.machTimeZero.addingTimeInterval(machSeconds)
     }
     
     public var machTime: UInt64? {
         guard let timebase = try? mach_timebase_info.system() else { return nil }
         
-        let seconds = timeIntervalSince(ProcessInfo.processInfo.systemBootDate)
+        let seconds = timeIntervalSince(Self.machTimeZero)
+        guard seconds >= 0 else { return nil }
         let nanos = seconds * TimeInterval(NSEC_PER_SEC)
         let machTime = nanos * TimeInterval(timebase.denom) / TimeInterval(timebase.numer)
         return UInt64(machTime)
+    }
+    
+    /// Date that corresponds to mach time zero.
+    /// Mach time doesn't advance while the system is asleep, so this differs from real boot date.
+    private static var machTimeZero: Date {
+        Date().addingTimeInterval(-ProcessInfo.processInfo.systemUptime)
     }
 }
 

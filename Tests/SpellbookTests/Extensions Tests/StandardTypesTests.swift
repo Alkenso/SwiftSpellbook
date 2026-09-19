@@ -265,6 +265,25 @@ class DateTimeExtensionsTests: XCTestCase {
         // GMT: Saturday, 8 April 2023 y., 00:00:00
         XCTAssertLessThan(dayEnd, Date(timeIntervalSince1970: 1680912000))
     }
+    
+    func test_Calendar_endOfDay_DST() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/New_York"))
+        
+        // Sunday, 12 March 2023, 12:00 EDT. The day is 23h long due to daylight saving time change.
+        let date = Date(timeIntervalSince1970: 1678636800)
+        print(calendar.startOfDay(for: date), calendar.endOfDay(for: date))
+        let dayEnd = calendar.endOfDay(for: date)
+        
+        // Monday, 13 March 2023, 00:00 EDT minus 1ms.
+        XCTAssertEqual(dayEnd.timeIntervalSince1970, 1678679999.999, accuracy: 0.0001)
+    }
+    
+    func test_DateFormatter_fixedFormat() {
+        let formatter = DateFormatter("yyyy-MM-dd", dateStyle: .long, timeStyle: .long, timeZone: TimeZone(secondsFromGMT: 0))
+        XCTAssertEqual(formatter.string(from: Date(timeIntervalSince1970: 1680864379)), "2023-04-07")
+        XCTAssertEqual(formatter.locale.identifier, "en_US_POSIX")
+    }
 }
 
 class OptionalExtensionsTests: XCTestCase {

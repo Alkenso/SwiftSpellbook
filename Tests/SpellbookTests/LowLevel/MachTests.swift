@@ -14,4 +14,8 @@ class MachTests: XCTestCase {
         let currentDate = try XCTUnwrap(Date(machTime: mach_absolute_time()))
         XCTAssertEqual(currentDate.timeIntervalSince1970, Date().timeIntervalSince1970, accuracy: 0.001)
     }
+    
+    func test_machTime_beforeBoot() {
+        XCTAssertNil(Date.distantPast.machTime)
+    }
 }
