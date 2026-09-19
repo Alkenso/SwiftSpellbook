@@ -8,6 +8,7 @@
 import Foundation
 
 @propertyWrapper
+@dynamicMemberLookup
 public struct UncheckedSendable<Value>: @unchecked Sendable {
     public var wrappedValue: Value
     

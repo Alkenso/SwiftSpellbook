@@ -75,6 +75,7 @@ public final class RWLock: @unchecked Sendable {
     }
     
     deinit {
+        pthread_rwlock_destroy(raw)
         raw.deallocate()
     }
     

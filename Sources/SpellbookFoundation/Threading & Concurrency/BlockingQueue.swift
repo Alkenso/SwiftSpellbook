@@ -27,26 +27,30 @@ private let log = SpellbookLogger.internal(category: "BlockingQueue")
 /// Queue that blocks thread execution waiting new elements.
 /// All methods are designed to be thread-safe.
 public class BlockingQueue<Element>: @unchecked Sendable {
-    private var condition = pthread_cond_t()
-    private var mutex = pthread_mutex_t()
+    private let condition: UnsafeMutablePointer<pthread_cond_t>
+    private let mutex: UnsafeMutablePointer<pthread_mutex_t>
     private var elements: [(Element, Bool)] = []
     private var invalidated = false
     
     public init() {
-        guard pthread_cond_init(&condition, nil) == 0 else { fatalError("Failed to pthread_cond_init") }
-        guard pthread_mutex_init(&mutex, nil) == 0 else { fatalError("Failed to pthread_mutex_init") }
+        self.condition = UnsafeMutablePointer<pthread_cond_t>.allocate(capacity: 1)
+        self.mutex = UnsafeMutablePointer<pthread_mutex_t>.allocate(capacity: 1)
+        guard pthread_cond_init(condition, nil) == 0 else { fatalError("Failed to pthread_cond_init") }
+        guard pthread_mutex_init(mutex, nil) == 0 else { fatalError("Failed to pthread_mutex_init") }
     }
     
     deinit {
-        pthread_mutex_destroy(&mutex)
-        pthread_cond_destroy(&condition)
+        pthread_mutex_destroy(mutex)
+        pthread_cond_destroy(condition)
+        mutex.deallocate()
+        condition.deallocate()
     }
     
     /// Enqueues the element.
     /// - Note: Do NOT enqueue elements into invalidated queue.
     public func enqueue(_ element: Element) {
-        pthread_mutex_lock(&mutex)
-        defer { pthread_mutex_unlock(&mutex) }
+        pthread_mutex_lock(mutex)
+        defer { pthread_mutex_unlock(mutex) }
         
         guard !invalidated else {
             log.error("Failed to enqueue the element into invalidated queue. The element is dropped", assert: true)
@@ -54,7 +58,7 @@ public class BlockingQueue<Element>: @unchecked Sendable {
         }
         
         elements.append((element, false))
-        pthread_cond_signal(&condition)
+        pthread_cond_signal(condition)
     }
     
     /// Dequeues next element from the queue.
@@ -68,13 +72,13 @@ public class BlockingQueue<Element>: @unchecked Sendable {
     /// - Parameter isCancelled: Boolean indicating the element processing was cancelled or not.
     /// - Returns: Next element or `nil` if queue has been invalidated.
     public func dequeue(isCancelled: inout Bool) -> Element? {
-        pthread_mutex_lock(&mutex)
-        defer { pthread_mutex_unlock(&mutex) }
+        pthread_mutex_lock(mutex)
+        defer { pthread_mutex_unlock(mutex) }
         
         while true {
             if elements.isEmpty {
                 guard !invalidated else { return nil }
-                pthread_cond_wait(&condition, &mutex)
+                pthread_cond_wait(condition, mutex)
             } else {
                 let next = elements.removeFirst()
                 isCancelled = next.1
@@ -85,8 +89,8 @@ public class BlockingQueue<Element>: @unchecked Sendable {
     
     /// Marks all elements in the queue as `cancelled`.
     public func cancel() {
-        pthread_mutex_lock(&mutex)
-        defer { pthread_mutex_unlock(&mutex) }
+        pthread_mutex_lock(mutex)
+        defer { pthread_mutex_unlock(mutex) }
         
         elements.mutateElements { $0.1 = true }
     }
@@ -94,14 +98,14 @@ public class BlockingQueue<Element>: @unchecked Sendable {
     /// Invalidates the queue.
     /// After this call, all elements are removed from the queue and `dequeue` methods return `nil`.
     public func invalidate(removeAll: Bool = true) {
-        pthread_mutex_lock(&mutex)
-        defer { pthread_mutex_unlock(&mutex) }
+        pthread_mutex_lock(mutex)
+        defer { pthread_mutex_unlock(mutex) }
         
         invalidated = true
         if removeAll {
             elements.removeAll()
         }
-        pthread_cond_broadcast(&condition)
+        pthread_cond_broadcast(condition)
     }
 }
 
@@ -110,8 +114,8 @@ extension BlockingQueue {
     /// Designed to be used only for debug purposes: the count may be changed from different threads,
     /// so there is no guarantee that the value remains reliable after the method is executed.
     public var approximateCount: Int {
-        pthread_mutex_lock(&mutex)
-        defer { pthread_mutex_unlock(&mutex) }
+        pthread_mutex_lock(mutex)
+        defer { pthread_mutex_unlock(mutex) }
         
         return elements.count
     }
