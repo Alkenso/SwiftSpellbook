@@ -30,7 +30,8 @@ public struct ProxyPublisher<P: Publisher>: Publisher {
     public var context: Any?
     
     public init(_ publisher: P, context: Any? = nil) {
-        proxy = publisher
+        self.proxy = publisher
+        self.context = context
     }
     
     public func receive<S>(subscriber: S) where S: Subscriber, P.Failure == S.Failure, P.Output == S.Input {

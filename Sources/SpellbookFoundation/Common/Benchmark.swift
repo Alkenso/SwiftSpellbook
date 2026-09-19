@@ -61,6 +61,7 @@ public enum Benchmark {
         try await measure(execute: execute).time
     }
     
+    @inline(always)
     private static func duration(startingAt start: DispatchTime) -> TimeInterval {
         let end = DispatchTime.now()
         

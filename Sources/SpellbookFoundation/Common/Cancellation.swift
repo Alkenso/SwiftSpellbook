@@ -27,10 +27,10 @@ public protocol SafeCancellable: Cancellable, Sendable {}
 
 public final class Cancellation: SafeCancellable {
     private let implicit: Bool
-    private let cancelClosure: @Sendable () -> Void
+    nonisolated(unsafe) private let cancelClosure: () -> Void
     private let isCancelled = AtomicFlag()
     
-    public init(implicit: Bool = true, cancel: @escaping @Sendable () -> Void) {
+    public init(implicit: Bool = true, cancel: sending @escaping () -> Void) {
         self.implicit = implicit
         self.cancelClosure = cancel
     }
@@ -76,5 +76,9 @@ extension SafeCancellable {
         in collection: inout [ID: C]
     ) where C: RangeReplaceableCollection, C.Element == Cancellation {
         store(in: &collection[id, default: C()])
+    }
+    
+    public func capturing(_ object: sending Any) -> Cancellation {
+        .init { withExtendedLifetime(object, self.cancel) }
     }
 }
