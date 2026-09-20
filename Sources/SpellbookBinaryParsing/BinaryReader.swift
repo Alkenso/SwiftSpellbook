@@ -125,7 +125,7 @@ public extension BinaryReader {
     func peek<T>(_ type: T.Type, offset: Int) throws -> T {
         try ensureTrivial(T.self)
         
-        let range = Range(offset: offset, length: MemoryLayout<T>.stride)
+        let range = Range(offset: offset, length: MemoryLayout<T>.size)
         let data = try peek(at: range)
         return data.pod(adopting: T.self)
     }
@@ -203,7 +203,7 @@ public extension BinaryReader {
     mutating func read<T>(_ type: T.Type) throws -> T {
         try ensureTrivial(T.self)
         
-        let data = try read(count: MemoryLayout<T>.stride)
+        let data = try read(count: MemoryLayout<T>.size)
         return data.pod(adopting: T.self)
     }
     
