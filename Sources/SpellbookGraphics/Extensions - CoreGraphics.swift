@@ -177,7 +177,7 @@ extension CGImage {
     ///     If `nil`, format is tried to be obtained from `url` path extension.
     /// - Returns: Boolean indicating the write succeeds.
     public func writeToFile(_ url: URL, in format: UTType?) -> Bool {
-        guard let format = format ?? UTType(filenameExtension: url.lastPathComponent, conformingTo: .image) else {
+        guard let format = format ?? UTType(filenameExtension: url.pathExtension, conformingTo: .image) else {
             return false
         }
         guard let destination = CGImageDestinationCreateWithURL(
