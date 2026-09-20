@@ -147,38 +147,46 @@ extension CGImage {
     /// Creates `Data` representation of the image.
     /// - Parameters:
     ///     - format: Desired format of the image representation.
-    /// - Returns: `Data` in requested format or `nil` if error occurs.
-    public func representation(in format: UTType) -> Data? {
+    /// - Returns: `Data` in requested format.
+    /// - Throws: `CocoaError` if the format is not supported or the image fails to be encoded.
+    public func representation(in format: UTType) throws -> Data {
         let data = NSMutableData()
         guard let destination = CGImageDestinationCreateWithData(data, format.identifier as CFString, 1, nil) else {
-            return nil
+            throw Self.writeError("CGImageDestinationCreateWithData failed for format \(format.identifier)")
         }
-        
+
         CGImageDestinationAddImage(destination, self, nil)
-        guard CGImageDestinationFinalize(destination) else { return nil }
-        
+        guard CGImageDestinationFinalize(destination) else {
+            throw Self.writeError("CGImageDestinationFinalize failed for format \(format.identifier)")
+        }
+
         return data as Data
     }
-    
+
     /// Creates `CGImage` from its representation.
     /// - Parameters:
     ///     - data: Binary representation data.
-    /// - Returns: `CGImage` or `nil` if error occurs.
-    public static func fromRepresentation(_ data: Data) -> CGImage? {
-        guard let dataProvider = CGDataProvider(data: data as CFData) else { return nil }
-        guard let source = CGImageSourceCreateWithDataProvider(dataProvider, nil) else { return nil }
-        return CGImageSourceCreateImageAtIndex(source, 0, nil)
+    /// - Returns: `CGImage` created from the representation.
+    /// - Throws: `CocoaError` if the data is not a valid image representation.
+    public static func fromRepresentation(_ data: Data) throws -> CGImage {
+        guard let dataProvider = CGDataProvider(data: data as CFData) else {
+            throw readError("CGDataProvider creation failed", url: nil)
+        }
+        return try image(from: dataProvider, url: nil)
     }
-    
+
     /// Writes image to the file on disk.
     /// - Parameters:
     ///     - url: Location on disk to write the image.
     ///     - format: Desired format of the image representation.
     ///     If `nil`, format is tried to be obtained from `url` path extension.
-    /// - Returns: Boolean indicating the write succeeds.
-    public func writeToFile(_ url: URL, in format: UTType?) -> Bool {
+    /// - Throws: `CocoaError` if the format can't be determined or the image fails to be written.
+    public func writeToFile(_ url: URL, in format: UTType?) throws {
         guard let format = format ?? UTType(filenameExtension: url.pathExtension, conformingTo: .image) else {
-            return false
+            throw CocoaError(.fileWriteInvalidFileName, userInfo: [
+                NSURLErrorKey: url,
+                NSDebugDescriptionErrorKey: "Failed to determine image format from the path extension",
+            ])
         }
         guard let destination = CGImageDestinationCreateWithURL(
             url as CFURL,
@@ -186,22 +194,54 @@ extension CGImage {
             1,
             nil
         ) else {
-            return false
+            throw Self.writeError("CGImageDestinationCreateWithURL failed for format \(format.identifier)", url: url)
         }
-        
+
         CGImageDestinationAddImage(destination, self, nil)
-        guard CGImageDestinationFinalize(destination) else { return false }
-        
-        return true
+        guard CGImageDestinationFinalize(destination) else {
+            throw Self.writeError("CGImageDestinationFinalize failed for format \(format.identifier)", url: url)
+        }
     }
-    
+
     /// Creates `CGImage` from file on disk.
     /// - Parameters:
     ///     - url: Location on disk to read the image from.
-    /// - Returns: `CGImage` or `nil` if error occurs.
-    public static func readFromFile(_ url: URL) -> CGImage? {
-        guard let dataProvider = CGDataProvider(url: url as CFURL) else { return nil }
-        guard let source = CGImageSourceCreateWithDataProvider(dataProvider, nil) else { return nil }
-        return CGImageSourceCreateImageAtIndex(source, 0, nil)
+    /// - Returns: `CGImage` read from the file.
+    /// - Throws: `CocoaError` if the file is missing or is not a valid image.
+    public static func readFromFile(_ url: URL) throws -> CGImage {
+        guard let dataProvider = CGDataProvider(url: url as CFURL) else {
+            let code: CocoaError.Code = FileManager.default.fileExists(atPath: url.path)
+                ? .fileReadUnknown
+                : .fileReadNoSuchFile
+            throw CocoaError(code, userInfo: [
+                NSURLErrorKey: url,
+                NSDebugDescriptionErrorKey: "CGDataProvider creation failed",
+            ])
+        }
+        return try image(from: dataProvider, url: url)
+    }
+
+    private static func image(from provider: CGDataProvider, url: URL?) throws -> CGImage {
+        guard let source = CGImageSourceCreateWithDataProvider(provider, nil) else {
+            throw readError("CGImageSourceCreateWithDataProvider failed", url: url)
+        }
+        guard let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
+            throw readError("CGImageSourceCreateImageAtIndex failed", url: url)
+        }
+        return image
+    }
+
+    private static func readError(_ description: String, url: URL?) -> CocoaError {
+        error(.fileReadCorruptFile, description, url: url)
+    }
+
+    private static func writeError(_ description: String, url: URL? = nil) -> CocoaError {
+        error(.fileWriteUnknown, description, url: url)
+    }
+
+    private static func error(_ code: CocoaError.Code, _ description: String, url: URL?) -> CocoaError {
+        var userInfo: [String: Any] = [NSDebugDescriptionErrorKey: description]
+        if let url { userInfo[NSURLErrorKey] = url }
+        return CocoaError(code, userInfo: userInfo)
     }
 }
