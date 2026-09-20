@@ -109,12 +109,22 @@ extension RGBColor {
 import AppKit
 
 extension RGBColor {
+    /// Creates the color from `NSColor`.
+    ///
+    /// - Note: `NSColor` raises an exception when RGB components are accessed on a color
+    /// that is not RGB-compatible (named, catalog or pattern colors).
+    /// Such colors are converted to sRGB first. If the conversion is not possible,
+    /// all components of the resulting color are set to zero.
     public init(_ nsColor: NSColor) {
+        guard let rgb = nsColor.usingColorSpace(.sRGB) else {
+            self.init(red: 0, green: 0, blue: 0, alpha: 0)
+            return
+        }
         self.init(
-            red: nsColor.redComponent,
-            green: nsColor.greenComponent,
-            blue: nsColor.blueComponent,
-            alpha: nsColor.alphaComponent
+            red: rgb.redComponent,
+            green: rgb.greenComponent,
+            blue: rgb.blueComponent,
+            alpha: rgb.alphaComponent
         )
     }
     
