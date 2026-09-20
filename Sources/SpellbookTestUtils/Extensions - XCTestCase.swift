@@ -72,9 +72,10 @@ extension XCTestCase {
     @discardableResult
     public func waitForExpectations(timeout: TimeInterval = XCTestCase.waitTimeout, ignoreWaitRate: Bool) -> Error? {
         nonisolated(unsafe) let test = self
+        let timeout = ignoreWaitRate ? timeout : .testSeconds(timeout)
         return DispatchQueue.syncOnMain {
             nonisolated(unsafe) var error: Error?
-            test.waitForExpectations(timeout: .testSeconds(timeout)) {
+            test.waitForExpectations(timeout: timeout) {
                 error = $0
             }
             return error
