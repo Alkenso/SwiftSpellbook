@@ -23,34 +23,6 @@
 import Foundation
 
 extension DispatchQueue {
-    /// Schedule some work to be executed on queue.
-    /// Cancels previous execution block if it not running yet.
-    public func debounce(with context: DebounceContext, execute: @escaping () -> Void) {
-        context.schedule(on: self, execute: execute)
-    }
-}
-
-public class DebounceContext: @unchecked Sendable {
-    private let delay: TimeInterval
-    @Atomic private var currentTask: DispatchWorkItem?
-    
-    public init(delay: TimeInterval) {
-        self.delay = delay
-    }
-    
-    public func schedule(on queue: DispatchQueue, execute: @escaping () -> Void) {
-        let task = DispatchWorkItem(block: execute)
-        let previousTask = _currentTask.exchange(task)
-        previousTask?.cancel()
-        queue.asyncAfter(deadline: .now() + delay, execute: task)
-    }
-    
-    public func cancel() {
-        _currentTask.exchange(nil)?.cancel()
-    }
-}
-
-extension DispatchQueue {
     /// Same as `async(execute:)`, but accepts non-Sendable closure by transferring its ownership to the queue.
     /// It is safe because the queue executes the submitted closure exactly once.
     /// - Note: `async` name can't be used: closures passed to any `DispatchQueue.async` are inferred as `@Sendable`.
