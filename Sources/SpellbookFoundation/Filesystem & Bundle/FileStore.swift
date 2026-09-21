@@ -24,13 +24,13 @@ import Foundation
 
 /// Wraps common file operations file reading and writing.
 /// Provides ability to change underlying implementation to mock dealing with real file system.
-public struct FileStore<T>: @unchecked Sendable {
-    private let read: (URL, T?) throws -> T
-    private let write: (T, URL, Bool) throws -> Void
+public struct FileStore<T>: Sendable {
+    private let read: @Sendable (URL, T?) throws -> T
+    private let write: @Sendable (T, URL, Bool) throws -> Void
     
     public init(
-        read: @escaping (URL, T?) throws -> T,
-        write: @escaping (T, URL, Bool) throws -> Void
+        read: @escaping @Sendable (URL, T?) throws -> T,
+        write: @escaping @Sendable (T, URL, Bool) throws -> Void
     ) {
         self.read = read
         self.write = write
@@ -118,7 +118,7 @@ extension FileStore {
 extension FileStore where T == Data {
     private static let nonexistentValue = UUID().uuidString.utf8Data
     
-    public func codable<U: Codable>(
+    public func codable<U: Codable & SendableMetatype>(
         _ type: U.Type = U.self,
         using coder: FileStoreCoder<U>
     ) -> FileStore<U> {
