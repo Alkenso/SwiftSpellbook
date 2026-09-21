@@ -68,7 +68,7 @@ struct CrashTests {
         
         _ = CrashReportAugmentation.addMessage("sig-msg-manual")
         try await CrashReportAugmentation.withMessage("sig-msg-2") {
-            try await Task.sleep(forTimeInterval: .testSeconds(0.001))
+            try await Task.sleep(for: .timeInterval(.testSeconds(0.001)))
             #expect(CrashInfo.string(\.signature)?.contains("sig-msg-2") == true)
         }
         #expect(CrashInfo.string(\.signature)?.contains("sig-msg-2") == false)

@@ -23,10 +23,29 @@
 import Combine
 import Foundation
 
-extension Task where Success == Never, Failure == Never {
-    public static func sleep(forTimeInterval interval: TimeInterval) async throws {
-        let nanoseconds = UInt64(interval * TimeInterval(NSEC_PER_SEC))
-        try await Task.sleep(for: .nanoseconds(nanoseconds))
+extension Task {
+    @discardableResult
+    public static func after(
+        _ delay: Duration,
+        @_inheritActorContext operation: sending @escaping @isolated(any) () async throws(Failure) -> Success
+    ) -> Task where Failure == Error {
+        Self {
+            try await Task<Never, Never>.sleep(for: delay)
+            return try await operation()
+        }
+    }
+    
+    @discardableResult
+    public static func after(
+        _ delay: Duration,
+        @_inheritActorContext operation: sending @escaping @isolated(any) () async -> Void
+    ) -> Task where Success == Void, Failure == Never {
+        Self {
+            do {
+                try await Task<Never, Never>.sleep(for: delay)
+                return await operation()
+            } catch {}
+        }
     }
 }
 

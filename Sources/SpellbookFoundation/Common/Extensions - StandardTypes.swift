@@ -460,6 +460,13 @@ extension Optional {
 
 // MARK: - Date & Time
 
+extension Duration {
+    public static func timeInterval(_ value: TimeInterval) -> Duration {
+        let nanoseconds = UInt64(value * TimeInterval(NSEC_PER_SEC))
+        return .nanoseconds(nanoseconds)
+    }
+}
+
 extension timespec {
     /// Creates `TimeInverval` from `timespec` structure.
     public var timeInterval: TimeInterval {
