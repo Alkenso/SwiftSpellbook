@@ -100,7 +100,6 @@ for await change in store.scope(\.isEnabled).stream() { ... }
 
 #### Types and property wrappers
 - `Resource<T>`: RAII-style ownership — runs a cleanup closure on deinit (e.g. free a pointer, delete a temporary file); `DeinitAction` for arbitrary "run on deinit" logic.
-- `Refreshable<Value>`: a property wrapper that recomputes its value when expired (e.g. by TTL).
 - `Box`, `Weak`, `Unowned`, `Indirect`: reference, weak and indirect wrappers usable as values and in collections.
 - `Closure` / `ThrowingClosure`: store and compose callbacks (one-shot, dispatched on a queue).
 - Small general types: `Either`, `Pair`, `KeyValue`, `Change`, `ProgressValue`, `EmptyCodable`.
