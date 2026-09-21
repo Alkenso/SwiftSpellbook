@@ -58,11 +58,14 @@ public class DataBinaryWriterOutput: BinaryWriterOutput {
     }
     
     public func writeBytes(from: UnsafeBufferPointer<UInt8>, at offset: Int) throws {
-        let appendCount = offset + from.count - data.count
+        guard offset >= 0 else { throw BinaryParsingError.outOfRange }
+
+        let appendCount = (offset + from.count) - data.count
         if appendCount > 0 {
             data += Data(repeating: 0, count: appendCount)
         }
-        data.replaceSubrange(Range(offset: offset, length: from.count), with: from)
+        // `data` may be a slice, whose indices do not start at zero.
+        data.replaceSubrange(Range(offset: data.startIndex + offset, length: from.count), with: from)
     }
     
     public func size() -> Int {

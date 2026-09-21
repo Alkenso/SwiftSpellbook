@@ -55,7 +55,11 @@ extension BinaryReader {
         self.init(
             AnyBinaryReaderInput(
                 readBytes: { dstPtr, offset in
-                    let range = Range(offset: offset, length: dstPtr.count)
+                    // `data` may be a slice, whose indices do not start at zero.
+                    guard offset >= 0, offset + dstPtr.count <= data.count else {
+                        throw BinaryParsingError.outOfRange
+                    }
+                    let range = Range(offset: data.startIndex + offset, length: dstPtr.count)
                     if dstPtr.count != data.copyBytes(to: dstPtr, from: range) {
                         throw BinaryParsingError.outOfRange
                     }
