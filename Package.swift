@@ -42,6 +42,7 @@ let package = Package(
         .target(
             name: "SpellbookFoundation",
             dependencies: ["_SpellbookFoundationObjC"],
+            exclude: ["ValueObserving/README.md"],
             swiftSettings: [
                 .enableExperimentalFeature("CheckImplementationOnly")
             ],
