@@ -31,14 +31,19 @@ jobs:
         uses: mobiledevops/xcode-select-version-action@v1
         with:
           xcode-select-version: ${{ matrix.xcode }}
-      - run: xcodebuild -version 
+      - run: xcodebuild -version
 
       - name: Test macOS with Xcode ${{ matrix.xcode }}
         run: |
           set -e 
           set -o pipefail
           
-          xcodebuild test -scheme SwiftSpellbook-Package -destination "platform=macOS" SWIFT_ACTIVE_COMPILATION_CONDITIONS="SPELLBOOK_TEST_SLEEP_RATE_x10" | xcbeautify
+          xcodebuild test \
+              -scheme SwiftSpellbook-Package \
+              -destination "platform=macOS" \
+              -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+              SWIFT_ACTIVE_COMPILATION_CONDITIONS="SPELLBOOK_TEST_SLEEP_RATE_x10" \
+              2>&1 | tee "$RUNNER_TEMP/xcodebuild-macos.log" | xcbeautify
       
       - name: Test iOS with Xcode ${{ matrix.xcode }}
         run: |
@@ -49,8 +54,25 @@ jobs:
           IOS_DEVICE_ID=$(xcrun simctl list devices available --json | jq -er \
             --arg runtime "com.apple.CoreSimulator.SimRuntime.iOS-${IOS_VERSION//./-}" \
             '[.devices[$runtime][]? | select(.name | startswith("iPhone"))][0].udid // error("No available iPhone simulator for " + $runtime)')
-
-          xcodebuild test -scheme SwiftSpellbook-Package -sdk iphonesimulator -destination "platform=iOS Simulator,id=$IOS_DEVICE_ID" SWIFT_ACTIVE_COMPILATION_CONDITIONS="SPELLBOOK_TEST_SLEEP_RATE_x20" | xcbeautify
+          
+          xcodebuild test \
+              -scheme SwiftSpellbook-Package \
+              -sdk iphonesimulator \
+              -destination "platform=iOS Simulator,id=$IOS_DEVICE_ID" \
+              -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+              SWIFT_ACTIVE_COMPILATION_CONDITIONS="SPELLBOOK_TEST_SLEEP_RATE_x10" \
+              2>&1 | tee "$RUNNER_TEMP/xcodebuild-ios.log" | xcbeautify
+              
         env:
           IOS_VERSION: ${{ matrix.iOS }}
-          
+            
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-logs-${{ matrix.xcode }}
+          path: |
+            ${{ runner.temp }}/xcodebuild-macos.log
+            ${{ runner.temp }}/xcodebuild-ios.log
+          if-no-files-found: ignore
+          retention-days: 3
