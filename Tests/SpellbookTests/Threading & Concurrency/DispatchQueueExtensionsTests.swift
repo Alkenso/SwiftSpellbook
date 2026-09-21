@@ -55,10 +55,11 @@ class DispatchQueueExtensionsTests: XCTestCase {
     }
     
     func test_wrapSync() {
-        let sum = queue.wrapSync { (lhs: Int, rhs: Int) in
+        let closure: @Sendable (Int, Int) -> Int = {
             XCTAssertEqual(DispatchQueue.getSpecific(key: queueKey), queueMark)
-            return lhs + rhs
+            return $0 + $1
         }
+        let sum = queue.wrapSync(closure)
         XCTAssertEqual(sum(10, 20), 30)
         XCTAssertNil(DispatchQueue.getSpecific(key: queueKey))
     }
