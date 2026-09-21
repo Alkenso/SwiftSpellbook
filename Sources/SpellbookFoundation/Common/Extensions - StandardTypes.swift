@@ -292,7 +292,8 @@ extension StringProtocol {
         }
         
         let keyValue = components(separatedBy: separator)
-        guard keyValue.count == 2 || (2 < keyValue.count && allowSeparatorsInValue) else {
+        guard keyValue.count == 2 || (2 < keyValue.count && allowSeparatorsInValue),
+              (!keyValue[0].isEmpty && !keyValue[1].isEmpty) else {
             throw CommonError.invalidArgument(
                 arg: "key-value pair", invalidValue: self,
                 description: "not a key-value pair separated by '\(separator)'"

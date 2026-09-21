@@ -222,6 +222,8 @@ class StringExtensionsTests: XCTestCase {
     func test_parseKeyValuePair() throws {
         XCTAssertThrowsError(try "".parseKeyValuePair(separator: ""))
         XCTAssertThrowsError(try "keyvalue".parseKeyValuePair(separator: "="))
+        XCTAssertThrowsError(try "key=".parseKeyValuePair(separator: "="))
+        XCTAssertThrowsError(try "=value".parseKeyValuePair(separator: "="))
         XCTAssertEqual(try "key=value".parseKeyValuePair(separator: "="), KeyValue("key", "value"))
         
         XCTAssertThrowsError(try "key=value=1".parseKeyValuePair(separator: "="))
