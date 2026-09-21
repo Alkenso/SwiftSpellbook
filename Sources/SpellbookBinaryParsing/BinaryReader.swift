@@ -193,8 +193,16 @@ public extension BinaryReader {
     }
     
     /// Read some amount of data using `while` closure to determine when to stop.
+    /// The data is read starting at the current `offset`.
     /// The data is stopped to be collected if `while` returns `false` or there is no more data.
-    mutating func read(offset: Int = 0, while shouldProceed: (UInt8) -> Bool) throws -> Data {
+    mutating func read(while shouldProceed: (UInt8) -> Bool) throws -> Data {
+        try read(offset: offset, while: shouldProceed)
+    }
+
+    /// Read some amount of data using `while` closure to determine when to stop.
+    /// The data is read starting at `offset`, counting from the beginning of the input.
+    /// The data is stopped to be collected if `while` returns `false` or there is no more data.
+    mutating func read(offset: Int, while shouldProceed: (UInt8) -> Bool) throws -> Data {
         let data = try peek(offset: offset, while: shouldProceed)
         try seek(offset + data.count)
         return data
