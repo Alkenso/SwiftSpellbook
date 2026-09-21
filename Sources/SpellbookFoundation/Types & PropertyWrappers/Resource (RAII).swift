@@ -20,7 +20,6 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-import Combine
 import Foundation
 
 /// Resource wrapper that follows the RAII rule: 'Resource acquisition is initialization'.
@@ -239,6 +238,6 @@ extension Resource: Identifiable where T: Identifiable {
     public var id: T.ID { wrappedValue.id }
 }
 
-extension Resource: Cancellable {
+extension Resource: SafeCancellable {
     public func cancel() { reset() }
 }
