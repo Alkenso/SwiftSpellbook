@@ -24,9 +24,4 @@ import Foundation
 
 public enum BinaryParsingError: Error {
     case outOfRange
-    case notTrivial(String)
-}
-
-internal func ensureTrivial<T>(_ type: T.Type) throws {
-    if !_isPOD(T.self) { throw BinaryParsingError.notTrivial("\(T.self)") }
 }

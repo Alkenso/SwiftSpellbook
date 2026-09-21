@@ -58,9 +58,7 @@ public extension BinaryWriter {
         }
     }
     
-    func write<T>(_ value: T, at offset: Int) throws {
-        try ensureTrivial(T.self)
-        
+    func write<T: BitwiseCopyable>(_ value: T, at offset: Int) throws {
         let data = Data(pod: value)
         try write(data, at: offset)
     }
@@ -118,9 +116,7 @@ public extension BinaryWriter {
         }
     }
     
-    mutating func append<T>(_ value: T) throws {
-        try ensureTrivial(T.self)
-        
+    mutating func append<T: BitwiseCopyable>(_ value: T) throws {
         let data = Data(pod: value)
         try append(data)
     }

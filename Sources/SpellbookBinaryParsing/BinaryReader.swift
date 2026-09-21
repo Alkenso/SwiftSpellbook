@@ -122,16 +122,10 @@ public extension BinaryReader {
         return data
     }
     
-    func peek<T>(_ type: T.Type, offset: Int) throws -> T {
-        try ensureTrivial(T.self)
-        
+    func peek<T: BitwiseCopyable>(_ type: T.Type = T.self, offset: Int) throws -> T {
         let range = Range(offset: offset, length: MemoryLayout<T>.size)
         let data = try peek(at: range)
         return data.pod(adopting: T.self)
-    }
-    
-    func peek<T>(offset: Int) throws -> T {
-        try peek(T.self, offset: offset)
     }
     
     func peekUInt8(offset: Int) throws -> UInt8 {
@@ -208,15 +202,9 @@ public extension BinaryReader {
         return data
     }
     
-    mutating func read<T>(_ type: T.Type) throws -> T {
-        try ensureTrivial(T.self)
-        
+    mutating func read<T: BitwiseCopyable>(_ type: T.Type = T.self) throws -> T {
         let data = try read(count: MemoryLayout<T>.size)
         return data.pod(adopting: T.self)
-    }
-    
-    mutating func read<T>() throws -> T {
-        try read(T.self)
     }
     
     mutating func readUInt8() throws -> UInt8 {
