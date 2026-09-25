@@ -42,7 +42,7 @@ jobs:
               -scheme SwiftSpellbook-Package \
               -destination "platform=macOS" \
               -derivedDataPath "$RUNNER_TEMP/DerivedData" \
-              SWIFT_ACTIVE_COMPILATION_CONDITIONS="SPELLBOOK_TEST_SLEEP_RATE_x10" \
+              SWIFT_ACTIVE_COMPILATION_CONDITIONS="SPELLBOOK_TEST_SLEEP_RATE_x20" \
               2>&1 | tee "$RUNNER_TEMP/xcodebuild-macos.log" | xcbeautify
       
       - name: Test iOS with Xcode ${{ matrix.xcode }}
@@ -60,7 +60,7 @@ jobs:
               -sdk iphonesimulator \
               -destination "platform=iOS Simulator,id=$IOS_DEVICE_ID" \
               -derivedDataPath "$RUNNER_TEMP/DerivedData" \
-              SWIFT_ACTIVE_COMPILATION_CONDITIONS="SPELLBOOK_TEST_SLEEP_RATE_x10" \
+              SWIFT_ACTIVE_COMPILATION_CONDITIONS="SPELLBOOK_TEST_SLEEP_RATE_x20" \
               2>&1 | tee "$RUNNER_TEMP/xcodebuild-ios.log" | xcbeautify
               
         env:
