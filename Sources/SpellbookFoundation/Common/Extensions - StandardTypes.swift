@@ -466,6 +466,11 @@ extension Duration {
         let nanoseconds = UInt64(value * TimeInterval(NSEC_PER_SEC))
         return .nanoseconds(nanoseconds)
     }
+    
+    public var timeInterval: TimeInterval {
+        let components = components
+        return TimeInterval(components.seconds) + TimeInterval(components.attoseconds) / 1e18
+    }
 }
 
 extension timespec {

@@ -269,6 +269,39 @@ class DateTimeExtensionsTests: XCTestCase {
         XCTAssertEqual(ts3.timeInterval, 123.990000000, accuracy: 1 / Double(NSEC_PER_SEC))
     }
     
+    func test_Duration_fromTimeInterval() {
+        XCTAssertEqual(Duration.timeInterval(0), .zero)
+        XCTAssertEqual(Duration.timeInterval(1.5), .milliseconds(1500))
+        XCTAssertEqual(Duration.timeInterval(0.25), .milliseconds(250))
+        XCTAssertEqual(Duration.timeInterval(123), .seconds(123))
+        XCTAssertEqual(Duration.timeInterval(5_000_000_000), .seconds(5_000_000_000))
+
+        let fractional = Duration.timeInterval(0.000_000_456)
+        XCTAssertEqual(fractional.components.seconds, 0)
+        XCTAssertEqual(Double(fractional.components.attoseconds), 456e9, accuracy: 1e9)
+    }
+
+    func test_Duration_toTimeInterval() {
+        XCTAssertEqual(Duration.zero.timeInterval, 0)
+        XCTAssertEqual(Duration.seconds(123).timeInterval, 123)
+        XCTAssertEqual(Duration.milliseconds(1500).timeInterval, 1.5)
+        XCTAssertEqual(Duration.nanoseconds(456).timeInterval, 0.000_000_456, accuracy: 1e-15)
+        XCTAssertEqual(Duration.seconds(5_000_000_000).timeInterval, 5_000_000_000)
+        XCTAssertEqual(Duration.seconds(-2).timeInterval, -2)
+        XCTAssertEqual(Duration.milliseconds(-1500).timeInterval, -1.5)
+        XCTAssertEqual(
+            (Duration.seconds(123) + .nanoseconds(456)).timeInterval,
+            123.000000456,
+            accuracy: 1 / Double(NSEC_PER_SEC)
+        )
+    }
+
+    func test_Duration_timeInterval_roundTrip() {
+        for value: TimeInterval in [0, 0.001, 0.3, 1, 1.1, 59.999, 3600.5, 86400 * 365] {
+            XCTAssertEqual(Duration.timeInterval(value).timeInterval, value, accuracy: 1 / Double(NSEC_PER_SEC))
+        }
+    }
+
     func test_TimeInterval_inits() {
         XCTAssertEqual(TimeInterval.seconds(10.5), 10.5)
         XCTAssertEqual(TimeInterval.milliseconds(123), 0.123)
