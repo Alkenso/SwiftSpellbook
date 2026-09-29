@@ -172,7 +172,8 @@ extension SpellbookLog {
     }
 }
 
-public enum SpellbookLogLevel: Int, Hashable, Sendable {
+@frozen
+public enum SpellbookLogLevel: Int, Hashable, Codable, Sendable {
     /// Something generally unimportant.
     case verbose = 0
     
@@ -211,7 +212,7 @@ extension SpellbookLogLevel: CustomStringConvertible {
     }
 }
 
-public struct SpellbookLogRecord {
+public struct SpellbookLogRecord: Sendable {
     public var source: SpellbookLogSource
     public var level: SpellbookLogLevel
     public var message: String
@@ -219,7 +220,7 @@ public struct SpellbookLogRecord {
     public var function: StaticString
     public var line: Int
     public var date: Date
-    public var context: Any?
+    nonisolated(unsafe) public var context: Any?
     
     public init(
         source: SpellbookLogSource,
@@ -267,7 +268,7 @@ public struct SpellbookLogSource: Sendable {
     public var category: String
     
     /// Any arbitrary data related to the source.
-    public nonisolated(unsafe) var context: Any?
+    nonisolated(unsafe) public var context: Any?
     
     public init(subsystem: String, category: String, context: Any? = nil) {
         self.subsystem = subsystem
