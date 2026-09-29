@@ -173,7 +173,7 @@ extension SpellbookLog {
 }
 
 @frozen
-public enum SpellbookLogLevel: Int, Hashable, Codable, Sendable {
+public enum SpellbookLogLevel: Int, Hashable, Codable, Sendable, CaseIterable {
     /// Something generally unimportant.
     case verbose = 0
     
