@@ -23,8 +23,14 @@
 import Foundation
 
 extension Bundle {
-    /// Bundle name. Value for Info.plist key "CFBundleNameKey".
+    /// Bundle name. Value for Info.plist key "CFBundleName".
     public var name: String? { stringValue(for: kCFBundleNameKey as String) }
+    
+    /// Bundle display name. Value for Info.plist key "CFBundleDisplayName".
+    public var displayName: String? { stringValue(for: "CFBundleDisplayName") }
+    
+    /// Bundle executable name. Value for Info.plist key "CFBundleExecutable".
+    public var executableName: String? { stringValue(for: "CFBundleExecutable") }
     
     /// Bundle short version. Value for Info.plist key "CFBundleShortVersionString".
     public var shortVersion: String? { stringValue(for: "CFBundleShortVersionString") }
