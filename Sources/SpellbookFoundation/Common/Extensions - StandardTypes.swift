@@ -471,6 +471,15 @@ extension Duration {
         let components = components
         return TimeInterval(components.seconds) + TimeInterval(components.attoseconds) / 1e18
     }
+    
+    public static func minutes(_ minutes: some BinaryInteger) -> Duration { .seconds(minutes * 60) }
+    public static func minutes(_ minutes: Double) -> Duration { .seconds(minutes * 60) }
+    
+    public static func hours(_ hours: some BinaryInteger) -> Duration { .seconds(hours * 60 * 60) }
+    public static func hours(_ hours: Double) -> Duration { .seconds(hours * 60 * 60) }
+    
+    public static func days(_ days: some BinaryInteger) -> Duration { .seconds(days * 60 * 60 * 24) }
+    public static func days(_ days: Double) -> Duration { .seconds(days * 60 * 60 * 24) }
 }
 
 extension timespec {
