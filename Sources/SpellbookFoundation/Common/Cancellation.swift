@@ -61,6 +61,10 @@ extension Cancellable {
         nonisolated(unsafe) let cancel = cancel
         return Cancellation { cancel() }
     }
+    
+    public func store<C>(in collection: inout C) where C: RangeReplaceableCollection, C.Element == Cancellation {
+        collection.append(unsafeEraseToCancellation())
+    }
 }
 
 extension SafeCancellable {
