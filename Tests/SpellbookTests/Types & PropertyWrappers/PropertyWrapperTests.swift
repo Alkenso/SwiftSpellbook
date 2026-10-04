@@ -53,6 +53,25 @@ class PropertyWrapperTests: XCTestCase {
         XCTAssertEqual(try JSONEncoder().encode([Test](repeating: Test(), count: 3)), Data(jsonArray.utf8))
     }
     
+    func test_EmptyDecodable() throws {
+        struct Test: Codable, Equatable {
+            @EmptyDecodable var items: [String] = []
+            @EmptyDecodable var name = "default"
+        }
+        let decoder = JSONDecoder()
+        XCTAssertEqual(try decoder.decode(Test.self, from: Data(#"{}"#.utf8)), Test(items: [], name: ""))
+        XCTAssertEqual(try decoder.decode(Test.self, from: Data(#"{"items":null,"name":null}"#.utf8)), Test(items: [], name: ""))
+        XCTAssertEqual(try decoder.decode(Test.self, from: Data(#"{"items":["a"],"name":"b"}"#.utf8)), Test(items: ["a"], name: "b"))
+        XCTAssertThrowsError(try decoder.decode(Test.self, from: Data(#"{"items":1}"#.utf8)))
+
+        XCTAssertEqual(try decoder.decode([EmptyDecodable<[Int]>].self, from: Data(#"[null,[1]]"#.utf8)), [.init(), .init(wrappedValue: [1])])
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        let data = try encoder.encode(Test(items: ["a"], name: "b"))
+        XCTAssertEqual(String(data: data, encoding: .utf8), #"{"items":["a"],"name":"b"}"#)
+    }
+
     func test_ValueView() {
         XCTAssertEqual(ValueView.constant(10).value, 10)
         

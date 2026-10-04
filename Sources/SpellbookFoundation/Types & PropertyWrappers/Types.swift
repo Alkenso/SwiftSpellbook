@@ -249,3 +249,44 @@ extension KeyedDecodingContainer {
 
 /// Makes `@propertyWrapper` with Codable Value to encode/decode wrappedValue directly with coder.
 public typealias PropertyWrapperCodable = Codable & PropertyWrapperEncodable & PropertyWrapperDecodable
+
+/// Property wrapper that decodes missing or `null` value as empty instance created with `init()`.
+///
+/// ```
+/// struct Foo: Codable {
+///     @EmptyDecodable var items: [String]
+/// }
+/// // `{}` and `{"items":null}` are decoded as `Foo(items: [])`
+/// ```
+@propertyWrapper
+public struct EmptyDecodable<Value: EmptyInitializable> {
+    public var wrappedValue: Value
+    
+    public init(wrappedValue: Value = .init()) {
+        self.wrappedValue = wrappedValue
+    }
+}
+
+extension EmptyDecodable: Equatable where Value: Equatable {}
+extension EmptyDecodable: Hashable where Value: Hashable {}
+extension EmptyDecodable: Sendable where Value: Sendable {}
+extension EmptyDecodable: Encodable, PropertyWrapperEncodable where Value: Encodable {}
+
+extension EmptyDecodable: Decodable where Value: Decodable {
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if container.decodeNil() {
+            self.init()
+        } else {
+            self.init(wrappedValue: try container.decode(Value.self))
+        }
+    }
+}
+
+extension KeyedDecodingContainer {
+    public func decode<T: Decodable>(
+        _ type: EmptyDecodable<T>.Type, forKey key: K
+    ) throws -> EmptyDecodable<T> {
+        try decodeIfPresent(type, forKey: key) ?? EmptyDecodable()
+    }
+}
