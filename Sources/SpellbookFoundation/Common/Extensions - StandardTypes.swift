@@ -203,6 +203,16 @@ extension URLResponse {
 
 // MARK: - String
 
+extension String: @retroactive RawRepresentable {
+    public init(rawValue: String) { self = rawValue }
+    public var rawValue: String { self }
+}
+
+extension Substring: @retroactive RawRepresentable {
+    public init(rawValue: String) { self = Substring(rawValue) }
+    public var rawValue: String { String(self) }
+}
+
 extension String {
     public var pathComponents: [String] { (self as NSString).pathComponents }
     public var lastPathComponent: String { (self as NSString).lastPathComponent }
