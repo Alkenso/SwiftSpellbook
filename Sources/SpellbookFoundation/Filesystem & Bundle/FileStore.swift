@@ -62,14 +62,14 @@ extension FileStore where T == Data {
 }
 
 extension FileStore {
-    public static func inMemory(
-        storeRef: UnsafeMutablePointer<Synchronized<[URL: T]>>? = nil
-    ) -> Self where T: Sendable {
-        let store = Synchronized<[URL: T]>(.unfair)
-        storeRef?.pointee = store
-        return .init(
-            read: { location, ifNil in try store.read { $0[location] ?? ifNil }.get(CocoaError(.fileNoSuchFile)) },
-            write: { content, location, _ in store.write { $0[location] = content } }
+    public static func inMemory(store: Synchronized<[URL: T]> = .init(.unfair)) -> Self where T: Sendable {
+        .init(
+            read: { location, ifNil in
+                try store.read { $0[location] ?? ifNil }.get(CocoaError(.fileNoSuchFile))
+            },
+            write: { content, location, _ in
+                store.write { $0[location] = content }
+            }
         )
     }
 }
@@ -84,6 +84,22 @@ extension FileStore {
             },
             write: { value, location, createDirectories in
                 try queue.sync(flags: .barrier) {
+                    try self.write(value, to: location, createDirectories: createDirectories)
+                }
+            }
+        )
+    }
+    
+    public func synchronized(using lock: some SynchronizedLocking) -> Self {
+        .init(
+            read: { location, ifNotExists in
+                try lock.withReadLock {
+                    nonisolated(unsafe) let result = try self.read(from: location, default: ifNotExists)
+                    return result
+                }
+            },
+            write: { value, location, createDirectories in
+                try lock.withWriteLock {
                     try self.write(value, to: location, createDirectories: createDirectories)
                 }
             }
@@ -113,6 +129,8 @@ extension FileStore {
     }
 }
 
+extension FileStore.Exact: Sendable where T: Sendable {}
+
 // MARK: - Codable
 
 extension FileStore where T == Data {
@@ -120,7 +138,7 @@ extension FileStore where T == Data {
     
     public func codable<U: Codable & SendableMetatype>(
         _ type: U.Type = U.self,
-        using coder: FileStoreCoder<U>
+        using coder: ObjectCoder<U>
     ) -> FileStore<U> {
         .init(
             read: { try decode(U.self, from: $0, using: coder.decoder, default: $1) },
@@ -152,25 +170,5 @@ extension FileStore where T == Data {
             data = try read(from: location)
         }
         return try decoder.decode(type, data)
-    }
-}
-
-public struct FileStoreCoder<T: Codable>: Sendable {
-    public var encoder: ObjectEncoder<T>
-    public var decoder: ObjectDecoder<T>
-    
-    public init(encoder: ObjectEncoder<T>, decoder: ObjectDecoder<T>) {
-        self.encoder = encoder
-        self.decoder = decoder
-    }
-}
-
-extension FileStoreCoder {
-    public static func json(_ formatting: JSONEncoder.OutputFormatting = []) -> Self {
-        .init(encoder: .json(formatting), decoder: .json())
-    }
-    
-    public static func plist(_ format: PropertyListSerialization.PropertyListFormat = .xml) -> Self {
-        .init(encoder: .plist(format), decoder: .plist())
     }
 }

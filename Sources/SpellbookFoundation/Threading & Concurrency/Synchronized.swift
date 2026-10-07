@@ -22,6 +22,7 @@
 
 import Foundation
 import Synchronization
+import os
 
 /// Wrapper around DispatchQueue for convenient and safe multithreaded access to the value.
 public final class Synchronized<Value>: @unchecked Sendable {
@@ -182,19 +183,19 @@ public extension Synchronized where Value: FloatingPoint & Sendable {
 
 // MARK: - Locking
 
-private protocol SynchronizedLocking {
+public protocol SynchronizedLocking: ~Copyable, Sendable {
     func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R
     func withReadLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R
 }
 
 extension SynchronizedLocking {
-    func withReadLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
+    public func withReadLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
         try withWriteLock(body)
     }
 }
 
 extension UnfairLock: SynchronizedLocking {
-    func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
+    public func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
         try withLock(body)
     }
 }
@@ -202,11 +203,39 @@ extension UnfairLock: SynchronizedLocking {
 extension RWLock: SynchronizedLocking {}
 
 extension DispatchQueue: SynchronizedLocking {
-    func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
+    public func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
         try sync(flags: .barrier) { UncheckedSendable(Result(catching: body)) }.wrappedValue.get()
     }
     
-    func withReadLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
+    public func withReadLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
         try sync { UncheckedSendable(Result(catching: body)) }.wrappedValue.get()
+    }
+}
+
+extension OSAllocatedUnfairLock: SynchronizedLocking where State == Void {
+    public func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
+        nonisolated(unsafe) let body = body
+        return try _typedRethrow(error: E.self) {
+            try withLock { try UncheckedSendable(body()) }.wrappedValue
+        }
+        
+    }
+    
+    public func withReadLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
+        nonisolated(unsafe) let body = body
+        return try _typedRethrow(error: E.self) {
+            try withLock { try UncheckedSendable(body()) }.wrappedValue
+        }
+    }
+}
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Mutex: SynchronizedLocking where Value == Void {
+    public func withWriteLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
+        try withLock { (_: inout sending Value) throws(E) in try body() }
+    }
+    
+    public func withReadLock<R, E: Error>(_ body: () throws(E) -> sending R) throws(E) -> sending R {
+        try withLock { (_: inout sending Value) throws(E) in try body() }
     }
 }
