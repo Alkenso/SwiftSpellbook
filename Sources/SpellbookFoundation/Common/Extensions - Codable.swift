@@ -134,7 +134,41 @@ extension ObjectDecoder {
     }
 }
 
-// MARK: Any + Codable
+public struct ObjectCoder<T: Codable>: Sendable {
+    public var encoder: ObjectEncoder<T>
+    public var decoder: ObjectDecoder<T>
+    
+    public init(encoder: ObjectEncoder<T>, decoder: ObjectDecoder<T>) {
+        self.encoder = encoder
+        self.decoder = decoder
+    }
+}
+
+extension ObjectCoder {
+    public static func json(_ formatting: JSONEncoder.OutputFormatting = []) -> Self {
+        .init(encoder: .json(formatting), decoder: .json())
+    }
+    
+    public static func plist(_ format: PropertyListSerialization.PropertyListFormat = .xml) -> Self {
+        .init(encoder: .plist(format), decoder: .plist())
+    }
+    
+    public static func foundationJSON(
+        _ format: JSONSerialization.WritingOptions = [],
+        _ options: JSONSerialization.ReadingOptions = []
+    ) -> Self {
+        .init(encoder: .foundationJSON(format), decoder: .foundationJSON(options: options))
+    }
+    
+    public static func foundationPlist(
+        _ format: PropertyListSerialization.PropertyListFormat,
+        _ options: PropertyListSerialization.ReadOptions = []
+    ) -> Self {
+        .init(encoder: .foundationPlist(format), decoder: .foundationPlist(options: options))
+    }
+}
+
+// MARK: - Any + Codable
 
 /// Property wrapper around object compatible with PropertyListSerialization routines.
 ///
