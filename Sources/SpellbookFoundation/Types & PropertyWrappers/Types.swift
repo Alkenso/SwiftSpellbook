@@ -248,7 +248,7 @@ extension KeyedDecodingContainer {
 }
 
 /// Makes `@propertyWrapper` with Codable Value to encode/decode wrappedValue directly with coder.
-public typealias PropertyWrapperCodable = Codable & PropertyWrapperEncodable & PropertyWrapperDecodable
+public typealias PropertyWrapperCodable = PropertyWrapperEncodable & PropertyWrapperDecodable
 
 /// Property wrapper that decodes missing or `null` value as empty instance created with `init()`.
 ///
