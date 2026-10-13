@@ -84,6 +84,18 @@ class GGRectTests: XCTestCase {
 }
 
 class RGBColorTests: XCTestCase {
+    func test_emulatingOpacityUsesExistingAlpha() {
+        let color = RGBColor(red: 1, green: 0, blue: 0, alpha: 0.5)
+        XCTAssertEqual(color.emulatingOpacity(0.5), RGBColor(red: 1, green: 0.75, blue: 0.75))
+        XCTAssertEqual(RGBColor(red: 1, green: 0, blue: 0, alpha: 0).emulatingOpacity(1), .white)
+    }
+
+    func test_emulatingOpacityClampsBeforeApplyingAlpha() {
+        let color = RGBColor(red: 1, green: 0, blue: 0, alpha: 0.5)
+        XCTAssertEqual(color.emulatingOpacity(-1), .white)
+        XCTAssertEqual(color.emulatingOpacity(2), RGBColor(red: 1, green: 0.5, blue: 0.5))
+    }
+
     func test_hex() {
         XCTAssertEqual(RGBColor(hex: ""), nil)
         XCTAssertEqual(RGBColor(hex: "#"), nil)

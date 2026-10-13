@@ -1,9 +1,24 @@
+//  MIT License
 //
-//  RGBColor.swift
-//  SwiftSpellbook
+//  Copyright (c) 2026 Alkenso (Vladimir Vashurkin)
 //
-//  Created by Alkenso (Vladimir Vashurkin) on 2025-01-30.
+//  Permission is hereby granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to deal
+//  in the Software without restriction, including without limitation the rights
+//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//  copies of the Software, and to permit persons to whom the Software is
+//  furnished to do so, subject to the following conditions:
 //
+//  The above copyright notice and this permission notice shall be included in all
+//  copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//  SOFTWARE.
 
 import SpellbookFoundation
 
@@ -28,42 +43,9 @@ public struct RGBColor: Hashable, Codable, Sendable {
     }
 }
 
-extension RGBColor {
-    public init?(hex hexColor: String, alphaFirst: Bool = false) {
-        var hexColor = hexColor
-        if hexColor.hasPrefix("#") {
-            hexColor.removeFirst()
-        }
-        
-        let hasAlpha = hexColor.count == 8
-        guard hexColor.count == 6 || hasAlpha else { return nil }
-        
-        func popColorComponent() -> CGFloat? {
-            guard hexColor.count >= 2 else { return nil }
-            
-            let to = hexColor.index(hexColor.startIndex, offsetBy: 1)
-            let str = hexColor[hexColor.startIndex...to]
-            hexColor.removeFirst(2)
-            
-            let int = Int(str, radix: 16)
-            return int.flatMap { CGFloat($0) / 255 }
-        }
-        
-        var a: CGFloat?
-        if hasAlpha, alphaFirst {
-            a = popColorComponent()
-        }
-        guard let r = popColorComponent(),
-              let g = popColorComponent(),
-              let b = popColorComponent()
-        else {
-            return nil
-        }
-        if a == nil {
-            a = popColorComponent()
-        }
-        
-        self.init(red: r, green: g, blue: b, alpha: a ?? 1.0)
+extension RGBColor: RGBColorInitializable {
+    public init(rgb: RGBColor) {
+        self = rgb
     }
 }
 
@@ -87,7 +69,7 @@ extension RGBColor {
     public static func random(
         red: ClosedRange<CGFloat> = 0...1,
         green: ClosedRange<CGFloat> = 0...1,
-        blue: ClosedRange<CGFloat> = 0...1
+        blue: ClosedRange<CGFloat> = 0...1,
     ) -> RGBColor {
         .init(red: .random(in: red), green: .random(in: green), blue: .random(in: blue))
     }
@@ -95,8 +77,15 @@ extension RGBColor {
     public static let white = RGBColor(red: 1, green: 1, blue: 1)
     public static let black = RGBColor(red: 0, green: 0, blue: 0)
     public static func gray(_ value: CGFloat) -> RGBColor { .init(red: value, green: value, blue: value) }
+    public static let red = RGBColor(red: 1, green: 0, blue: 0)
+    public static let green = RGBColor(red: 0, green: 1, blue: 0)
+    public static let blue = RGBColor(red: 0, green: 0, blue: 1)
+    public static let yellow = RGBColor(red: 1, green: 1, blue: 0)
+    public static let cyan = RGBColor(red: 0, green: 1, blue: 1)
+    public static let magenta = RGBColor(red: 1, green: 0, blue: 1)
     
     public func emulatingOpacity(_ opacity: CGFloat) -> RGBColor {
+        let opacity = opacity.clamped(to: 0...1) * alpha
         let newR = red * opacity + (1 - opacity)
         let newG = green * opacity + (1 - opacity)
         let newB = blue * opacity + (1 - opacity)
@@ -128,7 +117,7 @@ extension RGBColor {
         )
     }
     
-    public var nsColor: NSColor { NSColor(red: red, green: green, blue: blue, alpha: alpha) }
+    public var nsColor: NSColor { NSColor(rgb: self) }
 }
 
 #endif
@@ -142,7 +131,7 @@ extension RGBColor {
         self.init(cgColor: uiColor.cgColor)
     }
     
-    public var uiColor: UIColor { UIColor(red: red, green: green, blue: blue, alpha: alpha) }
+    public var uiColor: UIColor { UIColor(rgb: self) }
 }
 
 #endif

@@ -1,6 +1,6 @@
 //  MIT License
 //
-//  Copyright (c) 2022 Alkenso (Vladimir Vashurkin)
+//  Copyright (c) 2026 Alkenso (Vladimir Vashurkin)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -140,53 +140,6 @@ extension CGRect {
     
     public mutating func verticallyFlip(fullHeight: CGFloat) {
         self = verticallyFlipped(fullHeight: fullHeight)
-    }
-}
-
-extension CGColor {
-    public static func hex(rgb hex: UInt32, alpha: CGFloat? = nil) -> CGColor {
-        // 0xRRGGBB
-        CGColor(
-            srgbRed: component(hex >> 16),
-            green: component(hex >> 8),
-            blue: component(hex),
-            alpha: alpha ?? 1
-        )
-    }
-
-    public static func hex(rgba hex: UInt32) -> CGColor {
-        // 0xRRGGBBAA
-        CGColor(
-            srgbRed: component(hex >> 24),
-            green: component(hex >> 16),
-            blue: component(hex >> 8),
-            alpha: component(hex)
-        )
-    }
-
-    public static func hex(bgr hex: UInt32, alpha: CGFloat? = nil) -> CGColor {
-        // 0xBBGGRR
-        CGColor(
-            srgbRed: component(hex),
-            green: component(hex >> 8),
-            blue: component(hex >> 16),
-            alpha: alpha ?? 1
-        )
-    }
-
-    public static func hex(bgra hex: UInt32) -> CGColor {
-        // 0xBBGGRRAA
-        CGColor(
-            srgbRed: component(hex >> 8),
-            green: component(hex >> 16),
-            blue: component(hex >> 24),
-            alpha: component(hex)
-        )
-    }
-
-    // Extracts the lowest byte and normalizes it to 0...1
-    private static func component(_ value: UInt32) -> CGFloat {
-        CGFloat(value & 0xFF) / 255
     }
 }
 
