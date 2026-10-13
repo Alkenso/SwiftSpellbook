@@ -63,14 +63,26 @@ extension CommonError: _ObjectiveCBridgeableError {
     }
 }
 
-extension CommonError: CustomStringConvertible {
+extension CommonError: CustomStringConvertible, CustomDebugStringConvertible {
     public var description: String {
-        Self.makeDescription(nil, components: [
-            "Error Domain=\(Self.errorDomain) Code=\(code.description)(\(code.rawValue))",
-            (userInfo[NSDebugDescriptionErrorKey] as? String).flatMap { "\"\($0)\"" },
-            "UserInfo={\(userInfo.map { "\($0.key)=\($0.value)" }.joined(separator: ", "))}"
-        ])
+        var components = ["Error Domain=\(Self.errorDomain) Code=\(code.description)(\(code.rawValue))"]
+        let messageKey = [NSDebugDescriptionErrorKey, NSLocalizedDescriptionKey].first {
+            Self.descriptionText(userInfo[$0] as? String) != nil
+        }
+        if let messageKey, let message = Self.descriptionText(userInfo[messageKey]) {
+            components.append(String(reflecting: message))
+        }
+        let details = userInfo.sorted { $0.key < $1.key }.filter { $0.key != messageKey }.map { key, value in
+            let value = (value as? String).map { String(reflecting: $0) } ?? String(describing: value)
+            return "\(key)=\(value)"
+        }
+        if !details.isEmpty {
+            components.append("UserInfo={\(details.joined(separator: ", "))}")
+        }
+        return components.joined(separator: " ")
     }
+    
+    public var debugDescription: String { description }
 }
 
 extension CommonError.Code: CustomStringConvertible {
@@ -134,14 +146,14 @@ extension CommonError {
     
     public static func unwrapNil(_ name: String, description: Any? = nil) -> Self {
         self.init(.unwrapNil, description: description, components: [
-            "Unexpected nil when unwrapping \(name)"
+            "Unexpected nil when unwrapping '\(name)'"
         ])
     }
     
     public static func invalidArgument(arg: String, invalidValue: Any?, description: Any? = nil) -> Self {
         self.init(.invalidArgument, description: description, components: [
             "Invalid value",
-            invalidValue.flatMap { "'\($0)'" },
+            invalidValue.map { "'\($0)'" } ?? "nil",
             "for argument '\(arg)'",
         ])
     }
@@ -149,7 +161,8 @@ extension CommonError {
     public static func cast<From, To>(name: String? = nil, _ from: From, to: To.Type, description: Any? = nil) -> Self {
         self.init(.cast, description: description, components: [
             "Failed to cast",
-            name.flatMap { "\($0) of" } ?? "from",
+            descriptionText(name).map { "'\($0)'" },
+            "from",
             "type \(type(of: from)) to \(to)"
         ])
     }
@@ -157,19 +170,19 @@ extension CommonError {
     public static func notFound(what: String, value: Any? = nil, where: Any? = nil, description: Any? = nil) -> Self {
         self.init(.notFound, description: description, components: [
             what,
-            value.flatMap { "= '\($0)'" },
+            value.map { "'\($0)'" },
             "not found",
-            `where`.flatMap { "in \($0)" },
+            descriptionText(`where`).map { "in \($0)" },
         ])
     }
     
     public static func outOfRange(what: String, value: Any? = nil, where: Any? = nil, limitValue: Any? = nil, description: Any? = nil) -> Self {
         self.init(.outOfRange, description: description, components: [
             what,
-            value.flatMap { "'\($0)'" },
+            value.map { "'\($0)'" },
             "is out of range",
-            `where`.flatMap { "in \($0)" },
-            limitValue.flatMap { "(limit '\($0)')" }
+            descriptionText(`where`).map { "in \($0)" },
+            limitValue.map { "(limit: '\($0)')" }
         ])
     }
     
@@ -186,7 +199,13 @@ extension CommonError {
     }
     
     private static func makeDescription(_ description: Any?, components: [Any?]) -> String {
-        let componentsText = components.compactMap { $0 }.map { "\($0)" }.joined(separator: " ")
-        return [componentsText, description].compactMap { $0 }.map { "\($0)" }.joined(separator: ". ")
+        let componentsText = components.compactMap { descriptionText($0) }.joined(separator: " ")
+        return [descriptionText(componentsText), descriptionText(description)].compactMap { $0 }.joined(separator: ". ")
+    }
+    
+    private static func descriptionText(_ value: Any?) -> String? {
+        guard let value else { return nil }
+        let text = String(describing: value).trimmingCharacters(in: .whitespacesAndNewlines)
+        return text.isEmpty ? nil : text
     }
 }
