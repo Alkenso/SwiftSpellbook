@@ -59,6 +59,7 @@ public struct SBUnitInformationStorage: SBUnit {
     public static let kilobyte = Self(rawValue: 1024)
     public static let megabyte = Self(rawValue: 1024 * kilobyte.rawValue)
     public static let gigabyte = Self(rawValue: 1024 * megabyte.rawValue)
+    public static let terabyte = Self(rawValue: 1024 * gigabyte.rawValue)
 }
 
 public struct SBUnitTime: SBUnit {

@@ -24,7 +24,7 @@ import Foundation
 import Synchronization
 import os
 
-/// Wrapper around DispatchQueue for convenient and safe multithreaded access to the value.
+/// Wrapper for convenient and safe multithreaded access to the value.
 public final class Synchronized<Value>: @unchecked Sendable {
     public enum Primitive {
         case unfair

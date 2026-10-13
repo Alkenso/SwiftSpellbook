@@ -112,8 +112,8 @@ extension DispatchQueue {
     }
 
     /// Wraps `body` into closure that performs it synchronously on the queue.
-    // Non-throwing overload is a workaround for Swift 6.3 compiler crash
-    // when the typed-throws version is used with `E == Never`.
+    /// Non-throwing overload is a workaround for Swift 6.3 compiler crash
+    /// when the typed-throws version is used with `E == Never`.
     public func wrapSync<each Arg, R>(
         _ body: @escaping @Sendable (repeat each Arg) -> R
     ) -> @Sendable (repeat each Arg) -> R {

@@ -32,7 +32,11 @@ public func updateValue<Value>(_ value: Value, using transform: (inout Value) ->
     return value
 }
 
-public func updateValue<Root, Property>(_ value: Root, at keyPath: WritableKeyPath<Root, Property>, with property: Property) -> Root {
+public func updateValue<Root, Property>(
+    _ value: Root,
+    at keyPath: WritableKeyPath<Root, Property>,
+    with property: Property
+) -> Root {
     var value = value
     value[keyPath: keyPath] = property
     return value

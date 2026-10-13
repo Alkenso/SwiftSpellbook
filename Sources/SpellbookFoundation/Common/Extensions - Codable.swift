@@ -384,12 +384,12 @@ public struct DictionaryCoder: Sendable {
     
     public var proxy: Proxy
     
-    public func encode<T: Encodable, Key: Hashable, Value>(
+    public func encode<T: Encodable, Value>(
         _ value: T,
-        as: [Key: Value].Type = [Key: Value].self
-    ) throws -> [Key: Value] {
+        as: [String: Value].Type = [String: Value].self
+    ) throws -> [String: Value] {
         let encoder: ObjectEncoder<T>
-        let decoder: ObjectDecoder<[Key: Value]>
+        let decoder: ObjectDecoder<[String: Value]>
         switch proxy {
         case .json:
             encoder = .json()
@@ -400,12 +400,12 @@ public struct DictionaryCoder: Sendable {
         }
         
         let data = try encoder.encode(value)
-        let dict = try decoder.decode([Key: Value].self, data)
+        let dict = try decoder.decode([String: Value].self, data)
         return dict
     }
     
-    public func decode<T: Decodable, Key: Hashable, Value>(_ type: T.Type = T.self, from: [Key: Value]) throws -> T {
-        let encoder: ObjectEncoder<[Key: Value]>
+    public func decode<T: Decodable, Value>(_ type: T.Type = T.self, from: [String: Value]) throws -> T {
+        let encoder: ObjectEncoder<[String: Value]>
         let decoder: ObjectDecoder<T>
         switch proxy {
         case .json:

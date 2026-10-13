@@ -48,3 +48,13 @@ public protocol SelfIdentifiable: Identifiable where Self: Hashable {}
 extension SelfIdentifiable where Self: Hashable {
     public var id: Self { self }
 }
+
+// MARK: - RawComparable
+
+public protocol RawComparable: RawRepresentable, Comparable where RawValue: Comparable {}
+
+extension RawComparable {
+    public static func < (lhs: Self, rhs: Self) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
+}
