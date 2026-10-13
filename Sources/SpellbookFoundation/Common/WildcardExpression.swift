@@ -24,7 +24,7 @@ import Foundation
 
 /// In contrast to NSRegularExpression, implements matching for string by wildcards `*` and `?`.
 /// `WildcardExpression` is Swift wrapper around `fnmatch` function.
-public struct WildcardExpression {
+public struct WildcardExpression: Sendable {
     public var pattern: String
     public var caseSensitive: Bool
     

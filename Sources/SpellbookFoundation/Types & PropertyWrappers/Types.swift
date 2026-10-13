@@ -200,7 +200,7 @@ extension Either: Encodable where First: Encodable, Second: Encodable {}
 extension Either: Decodable where First: Decodable, Second: Decodable {}
 extension Either: Sendable where First: Sendable, Second: Sendable {}
 
-public struct EmptyCodable: Hashable, Codable {
+public struct EmptyCodable: Hashable, Codable, Sendable {
     public init() {}
 }
 

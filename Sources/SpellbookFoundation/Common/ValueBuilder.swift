@@ -70,3 +70,5 @@ public struct ValueBuilder<T> {
         return copy
     }
 }
+
+extension ValueBuilder: Sendable where T: Sendable {}

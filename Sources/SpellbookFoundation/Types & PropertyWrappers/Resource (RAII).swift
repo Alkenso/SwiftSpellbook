@@ -26,7 +26,7 @@ import Foundation
 /// It is a resource wrapper that performs cleanup when resource is not used anymore.
 @propertyWrapper
 @dynamicMemberLookup
-public final class Resource<T>: @unchecked Sendable {
+public final class Resource<T>: Sendable {
     private struct State {
         var value: T
         var freeFn: (T) -> Void
