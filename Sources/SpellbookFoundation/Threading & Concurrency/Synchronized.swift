@@ -32,7 +32,8 @@ public final class Synchronized<Value>: @unchecked Sendable {
         
         case serial
         case concurrent
-        case custom(DispatchQueue)
+        
+        case custom(SynchronizedLocking)
     }
     
     private let lock: SynchronizedLocking
@@ -50,8 +51,8 @@ public final class Synchronized<Value>: @unchecked Sendable {
             DispatchQueue(label: "\(Self.self).queue", autoreleaseFrequency: .workItem)
         case .concurrent:
             DispatchQueue(label: "\(Self.self).queue", attributes: .concurrent, autoreleaseFrequency: .workItem)
-        case .custom(let queue):
-            queue
+        case .custom(let lock):
+            lock
         }
     }
     
