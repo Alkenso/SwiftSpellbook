@@ -86,11 +86,11 @@ extension ValueObserver {
     /// Creates an observer with synchronous callbacks.
     ///
     /// The caller is responsible for synchronizing captured state.
-    public static func unsafeSync(
+    public static func syncUnchecked(
         onTermination: (() -> Void)? = nil,
         _ observe: @escaping (Value) -> Void
     ) -> Self {
-        ValueObserverBuilder.identity.unsafeSync(onTermination: onTermination, observe)
+        ValueObserverBuilder.identity.syncUnchecked(onTermination: onTermination, observe)
     }
 
     /// Creates an observer with sequential asynchronous callbacks.
@@ -171,7 +171,7 @@ public struct ValueObserverBuilder<Input: Sendable, Output: Sendable>: Sendable 
     /// Builds an observer without requiring sendable callbacks.
     ///
     /// The caller is responsible for synchronizing captured state.
-    public func unsafeSync(
+    public func syncUnchecked(
         onTermination: (() -> Void)? = nil,
         _ observe: @escaping (Output) -> Void
     ) -> ValueObserver<Input> {

@@ -47,13 +47,9 @@ extension ValueObservable {
         public init(observable: ValueObservable<Value>) {
             self.observable = observable
             self.value = observable.value
-            let token = UUID()
-            observable.observe { [weak self] change in
-                if let change, (change.context as? UUID) != token {
-                    DispatchQueue.syncOnMain { self?.value = change.new }
-                }
-            }
-            .store(in: &cancellables)
+            observable
+                .observe(.queue(.main).syncUnchecked { [weak self] in self?.value = $0.new })
+                .store(in: &cancellables)
         }
         
         @Published public private(set) var value: Value

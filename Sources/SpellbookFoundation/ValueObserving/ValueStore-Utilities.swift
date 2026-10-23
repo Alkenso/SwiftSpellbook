@@ -42,11 +42,11 @@ extension ValueStore {
             self.store = store
             self.value = store.value
             let token = UUID()
-            store.observe { [weak self] change in
-                if let change, (change.context as? UUID) != token {
-                    DispatchQueue.syncOnMain { self?.value = change.new }
-                }
-            }
+            store.observe(
+                .filter { ($0.context as? UUID) != token }
+                .queue(.main)
+                .syncUnchecked { [weak self] in self?.value = $0.new }
+            )
             .store(in: &cancellables)
             $value.dropFirst().sink { store.update($0, context: token) }.store(in: &cancellables)
         }
