@@ -38,6 +38,16 @@ public struct ValueChange<Value: Sendable>: Sendable {
     }
 }
 
+extension ValueChange {
+    public func change(_ isEqual: (Value, Value) -> Bool) -> Change<Value>? {
+        .init(old: old, new: new, isEqual: isEqual)
+    }
+    
+    public func change() -> Change<Value>? where Value: Equatable {
+        change(==)
+    }
+}
+
 public struct ValueChangeContextCurrentValue: Equatable, Sendable {
     public init() {}
 }
