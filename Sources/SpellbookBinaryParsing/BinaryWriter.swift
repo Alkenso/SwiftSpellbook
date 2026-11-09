@@ -43,6 +43,7 @@ public struct BinaryWriter {
     }
     
     public func write(_ buffer: UnsafeRawBufferPointer, at offset: Int) throws {
+        guard !buffer.isEmpty else { return }
         try _output.writeBytes(from: buffer.bindMemory(to: UInt8.self), at: offset)
     }
     
@@ -106,6 +107,10 @@ public extension BinaryWriter {
     func writeZeroes(in range: Range<Int>) throws {
         let data = Data(repeating: 0, count: range.count)
         try write(data, at: range.lowerBound)
+    }
+    
+    func writeZeroes(_ count: Int, at offset: Int) throws {
+        try writeZeroes(in: offset..<(offset + count))
     }
 }
 

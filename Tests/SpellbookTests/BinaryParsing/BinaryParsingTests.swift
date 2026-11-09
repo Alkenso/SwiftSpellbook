@@ -27,7 +27,7 @@ class BinaryReaderTests: XCTestCase {
 
 class BinaryWriterTests: XCTestCase {
     func test() throws {
-        let output = DataBinaryWriterOutput()
+        let output = BinaryWriterDataOutput()
         var writer = BinaryWriter(output)
         
         try writer.append(Data([0x00, 0x01]))

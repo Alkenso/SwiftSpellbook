@@ -50,8 +50,8 @@ public class AnyBinaryWriterOutput: BinaryWriterOutput {
     }
 }
 
-public class DataBinaryWriterOutput: BinaryWriterOutput {
-    public var data: Data
+public class BinaryWriterDataOutput: BinaryWriterOutput {
+    public private(set) var data: Data
     
     public init(data: Data = Data()) {
         self.data = data
@@ -70,5 +70,45 @@ public class DataBinaryWriterOutput: BinaryWriterOutput {
     
     public func size() -> Int {
         data.count
+    }
+}
+
+public class BinaryWriterFileOutput: BinaryWriterOutput {
+    private let fileHandle: FileHandle
+    private var fileSize: Int
+    private var fileOffset: Int?
+    
+    public convenience init(url: URL) throws {
+        try self.init(fileHandle: FileHandle(forWritingTo: url))
+    }
+    
+    public init(fileHandle: FileHandle) throws {
+        let size = try fileHandle.seekToEnd()
+        guard let size = Int(exactly: size) else { throw BinaryParsingError.outOfRange }
+        
+        self.fileHandle = fileHandle
+        self.fileSize = size
+        self.fileOffset = size
+    }
+    
+    public func writeBytes(from: UnsafeBufferPointer<UInt8>, at offset: Int) throws {
+        guard offset >= 0, from.count <= Int.max - offset else {
+            throw BinaryParsingError.outOfRange
+        }
+        guard !from.isEmpty else { return }
+        
+        if fileOffset != offset {
+            fileOffset = nil
+            try fileHandle.seek(toOffset: UInt64(offset))
+        }
+        
+        fileOffset = nil
+        try fileHandle.write(contentsOf: Data(from))
+        fileOffset = offset + from.count
+        fileSize = max(fileSize, fileOffset!)
+    }
+    
+    public func size() -> Int {
+        fileSize
     }
 }
