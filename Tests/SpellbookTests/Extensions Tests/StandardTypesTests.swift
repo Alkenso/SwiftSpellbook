@@ -219,6 +219,48 @@ class UUIDExtensionsTests: XCTestCase {
 }
 
 class StringExtensionsTests: XCTestCase {
+    func test_utf8_nullTerminated_true() {
+        XCTAssertEqual(String(utf8: Data("hello\0".utf8), nullTerminated: true), "hello")
+        XCTAssertEqual(String(utf8: Data("hello\0ignored\0".utf8), nullTerminated: true), "hello")
+        XCTAssertEqual(String(utf8: Data([0]), nullTerminated: true), "")
+        XCTAssertEqual(String(utf8: Data([0, 0xff]), nullTerminated: true), "")
+    }
+
+    func test_utf8_nullTerminated_false() {
+        XCTAssertEqual(String(utf8: Data("hello".utf8), nullTerminated: false), "hello")
+        XCTAssertEqual(String(utf8: Data("hello\0world\0".utf8), nullTerminated: false), "hello\0world\0")
+        XCTAssertEqual(String(utf8: Data([0]), nullTerminated: false), "\0")
+        XCTAssertEqual(String(utf8: Data(), nullTerminated: false), "")
+    }
+
+    func test_utf8_nullTerminated_unknown() {
+        XCTAssertEqual(String(utf8: Data("hello".utf8), nullTerminated: nil), "hello")
+        XCTAssertEqual(String(utf8: Data("hello\0".utf8), nullTerminated: nil), "hello")
+        XCTAssertEqual(String(utf8: Data("hello\0ignored\0".utf8), nullTerminated: nil), "hello")
+        XCTAssertEqual(String(utf8: Data([0, 0xff]), nullTerminated: nil), "")
+        XCTAssertEqual(String(utf8: [UInt8(0xff)], nullTerminated: nil), "\u{fffd}")
+        XCTAssertEqual(String(utf8: Data(), nullTerminated: nil), "")
+    }
+
+    func test_utf8_unicode() {
+        let value = "Zażółć 日本語 👩🏽‍💻 e\u{301}"
+        XCTAssertEqual(String(utf8: Data((value + "\0").utf8), nullTerminated: true), value)
+        XCTAssertEqual(String(utf8: Data(value.utf8), nullTerminated: false), value)
+        XCTAssertEqual(String(utf8: Data((value + "\0ignored").utf8), nullTerminated: nil), value)
+    }
+
+    func test_utf8_customCollections() {
+        let data = Data("ignoredhello\0trailing".utf8)
+        let slice = data.dropFirst(7)
+        XCTAssertEqual(String(utf8: slice, nullTerminated: true), "hello")
+        XCTAssertEqual(String(utf8: slice, nullTerminated: false), "hello\0trailing")
+        XCTAssertEqual(String(utf8: slice, nullTerminated: nil), "hello")
+        
+        XCTAssertEqual(String(utf8: [UInt8]("hello\0ignored".utf8), nullTerminated: true), "hello")
+        XCTAssertEqual(String(utf8: [UInt8]("hello\0world".utf8), nullTerminated: false), "hello\0world")
+        XCTAssertEqual(String(utf8: [UInt8]("hello".utf8), nullTerminated: nil), "hello")
+    }
+
     func test_parseKeyValuePair() throws {
         XCTAssertThrowsError(try "".parseKeyValuePair(separator: ""))
         XCTAssertThrowsError(try "keyvalue".parseKeyValuePair(separator: "="))

@@ -242,6 +242,30 @@ extension String {
     public var utf8Data: Data {
         Data(utf8)
     }
+    
+    /// Decodes UTF-8 bytes, replacing invalid sequences.
+    /// Use `false` to decode all bytes, or `nil` (the default) to stop at the first zero, if present.
+    /// With `true`, the input must contain a zero byte within its bounds.
+    ///
+    /// ```swift
+    /// String(utf8: Data("hello\0world".utf8), nullTerminated: true)    // "hello"
+    /// String(utf8: Data("hello\0world\0".utf8), nullTerminated: false) // "hello\0world\0"
+    /// String(utf8: Data("hello".utf8), nullTerminated: nil)            // "hello"
+    /// String(utf8: Data("hello\0world".utf8), nullTerminated: nil)     // "hello"
+    /// ```
+    public init<C: Collection & ContiguousBytes>(utf8: C, nullTerminated: Bool? = nil) where C.Element == UInt8 {
+        switch nullTerminated {
+        case true:
+            self = utf8.withUnsafeBytes {
+                $0.bindMemory(to: UInt8.self).baseAddress.map { String(decodingCString: $0, as: UTF8.self) }
+            } ?? ""
+        case false:
+            self = String(decoding: utf8, as: UTF8.self)
+        case nil:
+            let stringData = utf8.prefix { $0 != 0 }
+            self = String(decoding: stringData, as: UTF8.self)
+        }
+    }
 }
 
 extension StringProtocol {
