@@ -60,7 +60,7 @@ extension HTTPRequest.Body {
     private static let contentTypePlist = "application/x-apple-plist"
     private static let contentTypeJSON = "application/json"
     
-    public init<T>(value: T, encoder: ObjectEncoder<T>, contentType: String?) {
+    public init<T>(value: T, encoder: ValueEncoder<T, Data>, contentType: String?) {
         self.init(contentType: contentType) { try encoder.encode(value) }
     }
     

@@ -138,7 +138,7 @@ extension FileStore where T == Data {
     
     public func codable<U: Codable & SendableMetatype>(
         _ type: U.Type = U.self,
-        using coder: ObjectCoder<U>
+        using coder: ValueCoder<U, Data>
     ) -> FileStore<U> {
         .init(
             read: { try decode(U.self, from: $0, using: coder.decoder, default: $1) },
@@ -149,7 +149,7 @@ extension FileStore where T == Data {
     public func encode<U: Encodable>(
         _ value: U,
         to location: URL,
-        using encoder: ObjectEncoder<U>,
+        using encoder: ValueEncoder<U, Data>,
         createDirectories: Bool = false
     ) throws {
         let data = try encoder.encode(value)
@@ -159,7 +159,7 @@ extension FileStore where T == Data {
     public func decode<U: Decodable>(
         _ type: U.Type,
         from location: URL,
-        using decoder: ObjectDecoder<U>,
+        using decoder: ValueDecoder<U, Data>,
         default ifNotExists: U? = nil
     ) throws -> U {
         let data: Data

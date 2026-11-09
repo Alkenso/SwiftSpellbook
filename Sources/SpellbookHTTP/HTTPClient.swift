@@ -111,7 +111,7 @@ extension HTTPClientProtocol {
     public func object<T>(
         _ type: T.Type = T.self,
         for request: HTTPRequest,
-        decoder: ObjectDecoder<T>,
+        decoder: ValueDecoder<T, Data>,
         completion: @escaping @Sendable (Result<HTTPResult<T>, Error>) -> Void
     ) {
         object(type, for: request.urlRequest, decoder: decoder, completion: completion)
@@ -120,7 +120,7 @@ extension HTTPClientProtocol {
     public func object<T>(
         _ type: T.Type = T.self,
         for request: () throws -> URLRequest,
-        decoder: ObjectDecoder<T>,
+        decoder: ValueDecoder<T, Data>,
         completion: @escaping @Sendable (Result<HTTPResult<T>, Error>) -> Void
     ) {
         data(for: request) {
@@ -134,7 +134,7 @@ extension HTTPClientProtocol {
     public func object<T>(
         _ type: T.Type = T.self,
         for request: URLRequest,
-        decoder: ObjectDecoder<T>,
+        decoder: ValueDecoder<T, Data>,
         completion: @escaping @Sendable (Result<HTTPResult<T>, Error>) -> Void
     ) {
         data(for: request) {
@@ -164,7 +164,7 @@ extension HTTPClientProtocol {
     public func object<T>(
         for request: HTTPRequest,
         delegate: URLSessionTaskDelegate? = nil,
-        decoder: ObjectDecoder<T>
+        decoder: ValueDecoder<T, Data>
     ) async throws -> HTTPResult<T> {
         try await object(for: request.urlRequest, delegate: delegate, decoder: decoder)
     }
@@ -172,7 +172,7 @@ extension HTTPClientProtocol {
     public func object<T>(
         for request: URLRequest,
         delegate: URLSessionTaskDelegate? = nil,
-        decoder: ObjectDecoder<T>
+        decoder: ValueDecoder<T, Data>
     ) async throws -> HTTPResult<T> {
         try await object(for: { request }, delegate: delegate, decoder: decoder)
     }
@@ -180,7 +180,7 @@ extension HTTPClientProtocol {
     public func object<T>(
         for request: () throws -> URLRequest,
         delegate: URLSessionTaskDelegate? = nil,
-        decoder: ObjectDecoder<T>
+        decoder: ValueDecoder<T, Data>
     ) async throws -> HTTPResult<T> {
         let dataResult = try await data(for: request, delegate: delegate)
         let object = try Self.decodeResponse(dataResult.value, decoder: decoder).get()
@@ -191,7 +191,7 @@ extension HTTPClientProtocol {
 extension HTTPClientProtocol {
     private static func decodeResponse<T>(
         _ data: Data,
-        decoder: ObjectDecoder<T>
+        decoder: ValueDecoder<T, Data>
     ) -> Result<T, Error> {
         do {
             let object = try decoder.decode(T.self, data)
@@ -203,7 +203,7 @@ extension HTTPClientProtocol {
     
     private static func decodeResponse(
         _ data: Data,
-        decoder: ObjectDecoder<EmptyCodable>
+        decoder: ValueDecoder<EmptyCodable, Data>
     ) -> Result<EmptyCodable, Error> {
         .success(.init())
     }

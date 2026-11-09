@@ -47,7 +47,7 @@ The core of the package: extensions to the standard library and Foundation, plus
 - **Protocols:** `EmptyInitializable` (types with a natural "empty" value) and `SelfIdentifiable` (`Hashable` types that serve as their own `id`).
 
 #### Codable and dictionary parsing
-- `ObjectEncoder` / `ObjectDecoder`: a uniform way to pass around "how to encode/decode" — JSON, property list, `JSONSerialization` or a custom format.
+- `ValueEncoder` / `ValueDecoder`: a uniform way to pass around "how to encode/decode" — JSON, property list, `JSONSerialization` or a custom format.
 - `DictionaryCoder` converts `Codable` values to and from `[String: Any]`.
 - Property wrappers `@JSONSerializable`, `@PropertyListSerializable`, `@KeyedArchiveSerializable` embed non-`Codable` values into `Codable` types.
 - `DictionaryReader` / `DictionaryWriter` read and write deeply nested `[String: Any]` values (plists, JSON objects) by coding path or dot path — e.g. `dict[dotPath: "settings.network.timeout", as: Int.self]` — with descriptive `DictionaryCodingError`s.
@@ -124,7 +124,7 @@ A thin, testable layer over `URLSession`.
 
 - `HTTPRequest` describes a request declaratively: URL, `HTTPMethod`, query items, headers, and a body built from `Encodable` values, JSON/plist objects or raw data. It converts to `URLRequest` when sent.
 - `HTTPParameters`, `HTTPHeader`, `HTTPQueryItem`, `HTTPAuthorizationType` (`.basic`, `.bearer`) are typed building blocks for headers and query strings.
-- `HTTPClient` sends requests with async/await or completion handlers and returns raw `Data` or decoded objects via `ObjectDecoder`. It can carry default headers for every request. `HTTPClientProtocol` makes it easy to mock in tests.
+- `HTTPClient` sends requests with async/await or completion handlers and returns raw `Data` or decoded objects via `ValueDecoder`. It can carry default headers for every request. `HTTPClientProtocol` makes it easy to mock in tests.
 - `HTTPResult<T>` keeps the decoded value together with its `HTTPURLResponse`, so status codes and headers stay available.
 
 ```swift
@@ -141,7 +141,7 @@ print(result.response.statusCode, result.value)
 Read and write binary file formats and protocols (headers, Mach-O, custom wire formats) without manual pointer arithmetic.
 
 - `BinaryReader` reads integers of any width, fixed-size (POD) values and raw byte ranges — either sequentially with `read`/`skip`/`seek`, or at explicit offsets with `peek` without moving the cursor. It reads from `Data` or any custom `BinaryReaderInput` (e.g. a file handle).
-- `BinaryWriter` writes values sequentially or at offsets into any `BinaryWriterOutput`; `DataBinaryWriterOutput` collects the output into `Data`.
+- `BinaryWriter` writes values sequentially or at offsets into any `BinaryWriterOutput`; `BinaryWriterDataOutput` collects the output into `Data`.
 - `BinaryParsingError` reports out-of-bounds reads and other malformed input instead of crashing.
 
 ### SpellbookGraphics

@@ -28,7 +28,7 @@ extension Encodable {
     /// Encode value to json using specified encoder.
     /// Log failure to SpellbookLog.
     public func encode(
-        with encoder: ObjectEncoder<Self>,
+        with encoder: ValueEncoder<Self, Data>,
         file: StaticString = #file,
         _ function: StaticString = #function,
         line: Int = #line,
@@ -48,26 +48,26 @@ extension Encodable {
     }
 }
 
-public struct ObjectEncoder<T>: Sendable {
+public struct ValueEncoder<Value, Representation>: Sendable {
     public var formatName: String
-    public var encode: @Sendable (T) throws -> Data
+    public var encode: @Sendable (Value) throws -> Representation
     
-    public init(name formatName: String, encode: @escaping @Sendable (T) throws -> Data) {
+    public init(name formatName: String, encode: @escaping @Sendable (Value) throws -> Representation) {
         self.formatName = formatName
         self.encode = encode
     }
 }
 
-extension ObjectEncoder where T: Encodable {
+extension ValueEncoder where Value: Encodable, Representation == Data {
     public static func json(
-        type: T.Type = T.self,
+        type: Value.Type = Value.self,
         encoder: JSONEncoder = JSONEncoder()
     ) -> Self {
         .init(name: "json", encode: encoder.encode)
     }
     
     public static func json(
-        type: T.Type = T.self,
+        type: Value.Type = Value.self,
         _ formatting: JSONEncoder.OutputFormatting
     ) -> Self {
         let encoder = JSONEncoder()
@@ -76,14 +76,14 @@ extension ObjectEncoder where T: Encodable {
     }
     
     public static func plist(
-        type: T.Type = T.self,
+        type: Value.Type = Value.self,
         encoder: PropertyListEncoder = PropertyListEncoder()
     ) -> Self {
         .init(name: "plist", encode: encoder.encode)
     }
     
     public static func plist(
-        type: T.Type = T.self,
+        type: Value.Type = Value.self,
         _ format: PropertyListSerialization.PropertyListFormat
     ) -> Self {
         let encoder = PropertyListEncoder()
@@ -92,16 +92,16 @@ extension ObjectEncoder where T: Encodable {
     }
 }
 
-extension ObjectEncoder {
+extension ValueEncoder where Representation == Data {
     public static func foundationJSON(
-        type: T.Type = T.self,
+        type: Value.Type = Value.self,
         _ options: JSONSerialization.WritingOptions = []
     ) -> Self {
         .init(name: "json") { try JSONSerialization.data(withJSONObject: $0, options: options) }
     }
     
     public static func foundationPlist(
-        type: T.Type = T.self,
+        type: Value.Type = Value.self,
         _ format: PropertyListSerialization.PropertyListFormat
     ) -> Self {
         .init(name: "plist") {
@@ -109,9 +109,9 @@ extension ObjectEncoder {
         }
     }
     
-    public static func keyedArchive(type: T.Type = T.self) -> Self where T: NSObject & NSCoding {
+    public static func keyedArchive(type: Value.Type = Value.self) -> Self where Value: NSObject & NSCoding {
         .init(name: "NSKeyedArchive") {
-            try KeyedArchiveSerializable<T>.objectToData($0)
+            try KeyedArchiveSerializable<Value>.objectToData($0)
         }
     }
 }
@@ -121,7 +121,7 @@ extension Decodable {
     /// Log failure to SpellbookLog.
     public init?(
         from data: Data,
-        decoder: ObjectDecoder<Self>,
+        decoder: ValueDecoder<Self, Data>,
         file: StaticString = #file,
         _ function: StaticString = #function,
         line: Int = #line,
@@ -141,75 +141,75 @@ extension Decodable {
     }
 }
 
-public struct ObjectDecoder<T>: Sendable {
+public struct ValueDecoder<Value, Representation>: Sendable {
     public var formatName: String
-    public var decode: @Sendable (T.Type, Data) throws -> T
+    public var decode: @Sendable (Value.Type, Representation) throws -> Value
     
     public init(
         formatName: String = "custom",
-        decode: @escaping @Sendable (T.Type, Data) throws -> T
+        decode: @escaping @Sendable (Value.Type, Representation) throws -> Value
     ) {
         self.formatName = formatName
         self.decode = decode
     }
 }
 
-extension ObjectDecoder where T: Decodable {
+extension ValueDecoder where Representation == Data, Value: Decodable {
     public static func json(
-        _ type: T.Type = T.self,
+        _ type: Value.Type = Value.self,
         decoder: JSONDecoder = JSONDecoder()
     ) -> Self {
         .init(formatName: "json", decode: decoder.decode)
     }
     
     public static func plist(
-        _ type: T.Type = T.self,
+        _ type: Value.Type = Value.self,
         decoder: PropertyListDecoder = PropertyListDecoder()
     ) -> Self {
         .init(formatName: "plist", decode: decoder.decode)
     }
 }
 
-extension ObjectDecoder {
+extension ValueDecoder where Representation == Data {
     public static func foundationJSON(
-        _ type: T.Type = T.self,
+        _ type: Value.Type = Value.self,
         options: JSONSerialization.ReadingOptions = []
     ) -> Self {
         .init(formatName: "json") {
             let object = try JSONSerialization.jsonObject(with: $1, options: options)
-            return try (object as? T).get(CommonError.cast(name: "JSON object", object, to: $0))
+            return try (object as? Value).get(CommonError.cast(name: "JSON object", object, to: $0))
         }
     }
     
     public static func foundationPlist(
-        _ type: T.Type = T.self,
+        _ type: Value.Type = Value.self,
         options: PropertyListSerialization.ReadOptions = []
     ) -> Self {
         .init(formatName: "plist") {
             let object = try PropertyListSerialization.propertyList(from: $1, options: options, format: nil)
-            return try (object as? T).get(CommonError.cast(name: "Plist object", object, to: $0))
+            return try (object as? Value).get(CommonError.cast(name: "Plist object", object, to: $0))
         }
     }
     
-    public static func keyedArchive(_ type: T.Type = T.self) -> Self where T: NSObject & NSCoding {
+    public static func keyedArchive(_ type: Value.Type = Value.self) -> Self where Value: NSObject & NSCoding {
         .init(formatName: "NSKeyedArchive") {
-            let object = try KeyedArchiveSerializable<T>.dataToObject($1)
+            let object = try KeyedArchiveSerializable<Value>.dataToObject($1)
             return try throwingCast(name: "NSKeyedArchive root object", object as Any, to: $0)
         }
     }
 }
 
-public struct ObjectCoder<T: Codable>: Sendable {
-    public var encoder: ObjectEncoder<T>
-    public var decoder: ObjectDecoder<T>
+public struct ValueCoder<Value, Representation>: Sendable {
+    public var encoder: ValueEncoder<Value, Representation>
+    public var decoder: ValueDecoder<Value, Representation>
     
-    public init(encoder: ObjectEncoder<T>, decoder: ObjectDecoder<T>) {
+    public init(encoder: ValueEncoder<Value, Representation>, decoder: ValueDecoder<Value, Representation>) {
         self.encoder = encoder
         self.decoder = decoder
     }
 }
 
-extension ObjectCoder {
+extension ValueCoder where Value: Codable, Representation == Data {
     public static func json(_ formatting: JSONEncoder.OutputFormatting = []) -> Self {
         .init(encoder: .json(formatting), decoder: .json())
     }
@@ -217,7 +217,9 @@ extension ObjectCoder {
     public static func plist(_ format: PropertyListSerialization.PropertyListFormat = .xml) -> Self {
         .init(encoder: .plist(format), decoder: .plist())
     }
-    
+}
+
+extension ValueCoder where Representation == Data {
     public static func foundationJSON(
         _ format: JSONSerialization.WritingOptions = [],
         _ options: JSONSerialization.ReadingOptions = []
@@ -232,7 +234,7 @@ extension ObjectCoder {
         .init(encoder: .foundationPlist(format), decoder: .foundationPlist(options: options))
     }
     
-    public static func keyedArchive() -> Self where T: NSObject & NSCoding {
+    public static func keyedArchive() -> Self where Value: NSObject & NSCoding {
         .init(encoder: .keyedArchive(), decoder: .keyedArchive())
     }
 }
@@ -457,8 +459,8 @@ public struct DictionaryCoder: Sendable {
         _ value: T,
         as: [String: Value].Type = [String: Value].self
     ) throws -> [String: Value] {
-        let encoder: ObjectEncoder<T>
-        let decoder: ObjectDecoder<[String: Value]>
+        let encoder: ValueEncoder<T, Data>
+        let decoder: ValueDecoder<[String: Value], Data>
         switch proxy {
         case .json:
             encoder = .json()
@@ -474,8 +476,8 @@ public struct DictionaryCoder: Sendable {
     }
     
     public func decode<T: Decodable, Value>(_ type: T.Type = T.self, from: [String: Value]) throws -> T {
-        let encoder: ObjectEncoder<[String: Value]>
-        let decoder: ObjectDecoder<T>
+        let encoder: ValueEncoder<[String: Value], Data>
+        let decoder: ValueDecoder<T, Data>
         switch proxy {
         case .json:
             encoder = .foundationJSON()

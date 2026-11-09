@@ -3,6 +3,42 @@ import SpellbookFoundation
 import XCTest
 
 class CodableTests: XCTestCase {
+    func test_ValueEncoder_customOutput() throws {
+        let encoder = ValueEncoder<Int, String>(name: "decimal") { String($0) }
+        XCTAssertEqual(try encoder.encode(42), "42")
+    }
+
+    func test_ValueDecoder_customInput() throws {
+        let decoder = ValueDecoder<Int, String> { type, input in
+            XCTAssertTrue(type == Int.self)
+            return try XCTUnwrap(Int(input))
+        }
+        XCTAssertEqual(try decoder.decode(Int.self, "42"), 42)
+    }
+
+    func test_ValueCoder_dataFormats() throws {
+        let value = ["answer": 42]
+        let coders: [ValueCoder<[String: Int], Data>] = [
+            .json(), .plist(), .foundationJSON(), .foundationPlist(.binary),
+        ]
+        for coder in coders {
+            let data = try coder.encoder.encode(value)
+            XCTAssertEqual(try coder.decoder.decode([String: Int].self, data), value)
+        }
+    }
+
+    func test_ValueCoder_customRepresentation() throws {
+        struct Value: Equatable {
+            var number: Int
+        }
+        let coder = ValueCoder<Value, String>(
+            encoder: .init(name: "decimal") { String($0.number) },
+            decoder: .init { _, input in Value(number: try XCTUnwrap(Int(input))) }
+        )
+        XCTAssertEqual(try coder.encoder.encode(Value(number: 42)), "42")
+        XCTAssertEqual(try coder.decoder.decode(Value.self, "42"), Value(number: 42))
+    }
+
     func test_PropertyListSerializable() throws {
         @PropertyListSerializable var anyDict = ["key1": "value1", "key2": 20]
         let data = try JSONEncoder().encode(_anyDict)
