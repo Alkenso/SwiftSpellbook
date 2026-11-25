@@ -47,6 +47,31 @@ extension Task {
             } catch {}
         }
     }
+    
+    /// Runs the operation up to `maxCount` times, including the immediate call if requested.
+    public static func periodically(
+        every interval: Duration,
+        immediately: Bool = false,
+        @Clamped(1...Int.max) maxCount: Int = .max,
+        name: String? = nil,
+        priority: TaskPriority? = nil,
+        @_inheritActorContext operation: @escaping @Sendable @isolated(any) () -> Void
+    ) -> Task where Success == Void, Failure == Never {
+        Self(name: name, priority: priority) {
+            if immediately {
+                await operation()
+            }
+            
+            for _ in (immediately ? 1 : 0)..<maxCount {
+                do {
+                    try await Task<Never, Never>.sleep(for: interval)
+                    await operation()
+                } catch {
+                    return
+                }
+            }
+        }
+    }
 }
 
 extension Task: @retroactive Cancellable {}
